@@ -1,0 +1,19 @@
+Control {
+    prop_string: "string value"
+    prop_int: 123
+    prop_float: 123.123
+    prop_bool: true
+    # comment
+    prop_1: false; emptyString: ""
+    resource_prop: ResourceName {
+        prop1: "test"
+        props2: 9000 # port number
+    }; member.property.access: 0
+    theme.background: StyleBoxFlat {
+        bg_color: "#b7b7b7"
+    }
+
+    Control {}
+}
+
+Control2 {}

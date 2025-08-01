@@ -1,0 +1,43 @@
+<!-- a comment -->
+
+<Control>
+  <!-- with children -->
+  <Control></Control>
+</Control>
+
+<!-- without children -->
+<Control />
+
+<!-- set properties -->
+ <Control prop_name="value" />
+
+<!-- example of score bar -->
+
+<MarginContainer
+  anchor_left="0.15"
+  anchor_top="0.03"
+  anchor_right="0.85"
+  anchor_bottom="0.08"
+  grow_horizontal="GrowDirection.Both"
+>
+  <ProgressBar
+    show_percentage="false"
+    size_flags_vertical="SizeFlags.SIZE_FILL"
+  >
+    <ProgressBar.theme.background>
+      <StyleBoxFlat bg_color="#b7b7b7" />
+    </ProgressBar.theme.background>
+    <ProgressBar.theme.fill>
+      <StyleBoxFlat bg_color="#ffff00" />
+    </ProgressBar.theme.fill>
+    <Label
+      horizontal_alignment="HorizontalAlignment.HORIZONTAL_ALIGNMENT_CENTER"
+      vertical_alignment="VerticalAlignment.VERTICAL_ALIGNMENT_CENTER"
+      text="0"
+    >
+      <Label.label_settings>
+        <LabelSettings font_size="32" font_color="#000000" />
+      </Label.label_settings>
+    </Label>
+  </ProgressBar>
+</MarginContainer>
