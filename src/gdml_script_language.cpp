@@ -39,7 +39,8 @@ void GdmlScriptLanguage::_thread_exit() {}
 void GdmlScriptLanguage::_reload_all_scripts() {}
 
 String GdmlScriptLanguage::_validate_path(const String &p_path) const {
-  return "";
+	print_line("validate_path input ", p_path);
+	return "";
 }
 
 Dictionary GdmlScriptLanguage::_validate(
@@ -49,6 +50,16 @@ Dictionary GdmlScriptLanguage::_validate(
   Dictionary result;
   result["valid"] = true;
   return result;
+}
+
+Error godot::GdmlScriptLanguage::_open_in_external_editor(const Ref<Script> &p_script, int32_t p_line, int32_t p_column)
+{
+    return OK;
+}
+
+ScriptLanguage::ScriptNameCasing godot::GdmlScriptLanguage::_preferred_file_name_casing() const
+{
+    return SCRIPT_NAME_CASING_AUTO;
 }
 
 bool GdmlScriptLanguage::_supports_builtin_mode() const { return false; }
@@ -63,13 +74,22 @@ bool GdmlScriptLanguage::_supports_documentation() const {
   return false;
 }
 
+bool godot::GdmlScriptLanguage::_has_named_classes() const {
+    return false;
+}
+
+bool godot::GdmlScriptLanguage::_handles_global_class_type(const String &p_type) const
+{
+    return p_type == _get_type();
+}
+
 PackedStringArray GdmlScriptLanguage::_get_string_delimiters() const {
     return helpers::append_all(PackedStringArray(),
         "\" \""
     );
 }
 
-PackedStringArray godot::GdmlScriptLanguage::_get_comment_delimiters() const {
+PackedStringArray GdmlScriptLanguage::_get_comment_delimiters() const {
     return helpers::append_all(PackedStringArray(),
         "#"
     );
@@ -79,13 +99,38 @@ PackedStringArray GdmlScriptLanguage::_get_reserved_words() const {
   return PackedStringArray();
 }
 
+TypedArray<Dictionary> godot::GdmlScriptLanguage::_get_built_in_templates(const StringName &p_object) const
+{
+    return {};
+}
+
+TypedArray<Dictionary> GdmlScriptLanguage::_get_public_functions() const
+{
+    return {};
+}
+
+Dictionary GdmlScriptLanguage::_get_public_constants() const
+{
+    return {};
+}
+
+TypedArray<Dictionary> GdmlScriptLanguage::_get_public_annotations() const
+{
+    return {};
+}
+
+Dictionary godot::GdmlScriptLanguage::_get_global_class_name(const String &p_path) const
+{
+    return {};
+}
+
 Ref<Script> GdmlScriptLanguage::_make_template(const String &_template, const String &class_name, const String &base_class_name) const {
 	Ref<GdmlScript> script = memnew(GdmlScript);
 	script->set_source_code("test code");
 	return script;
 }
 
-Object *godot::GdmlScriptLanguage::_create_script() const {
+Object *GdmlScriptLanguage::_create_script() const {
     return memnew(GdmlScript);
 }
 

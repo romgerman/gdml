@@ -6,9 +6,19 @@ using namespace godot;
 
 void GdmlScript::_bind_methods() {}
 
+Error godot::GdmlScript::_reload(bool p_keep_state)
+{
+    return OK;
+}
+
 bool GdmlScript::_editor_can_reload_from_file() { return true; }
 
 StringName GdmlScript::_get_global_name() const { return "GlobalName"; }
+
+StringName godot::GdmlScript::_get_instance_base_type() const
+{
+    return "";
+}
 
 bool GdmlScript::_has_static_method(const StringName &p_method) const {
 	return false;
@@ -35,6 +45,11 @@ bool GdmlScript::_has_source_code() const {
 void GdmlScript::_update_exports() {}
 
 bool GdmlScript::_is_tool() const { return false; }
+
+bool godot::GdmlScript::_is_abstract() const
+{
+    return false;
+}
 
 void GdmlScript::_placeholder_erased(void *p_placeholder) {}
 

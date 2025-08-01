@@ -3,6 +3,7 @@
 #include "gdml_script.h"
 #include "gdml_script_language.h"
 #include "gdml_syntax_highlighter.h"
+#include "gdml_script_resource_format_loader.h"
 #include "gdml_script_resource_format_saver.h"
 
 #include <gdextension_interface.h>
@@ -18,9 +19,12 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	
 	GDREGISTER_CLASS(GdmlScript);
 	GDREGISTER_CLASS(GdmlScriptLanguage)
+	GDREGISTER_CLASS(GdmlScriptResourceFormatLoader)
+	GDREGISTER_CLASS(GdmlScriptResourceFormatSaver)
 	GDREGISTER_CLASS(GdmlSyntaxHighlighter);
 
 	GdmlScriptLanguage::get_or_create_singleton();
+	GdmlScriptResourceFormatLoader::register_in_godot();
 	GdmlScriptResourceFormatSaver::register_in_godot();
 	print_line("initialized");
 }
@@ -31,6 +35,7 @@ void uninitialize_example_module(ModuleInitializationLevel p_level) {
 	}
 
 	GdmlScriptResourceFormatSaver::unregister_in_godot();
+	GdmlScriptResourceFormatLoader::unregister_in_godot();
 	GdmlScriptLanguage::delete_singleton();
 }
 
