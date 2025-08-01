@@ -28,7 +28,7 @@ module.exports = grammar({
       '}'
     ),
     resource_definition: $ => seq(
-      $.identifier,
+      optional($.identifier),
       '{',
       repeat($.property_definition),
       '}'
@@ -44,11 +44,23 @@ module.exports = grammar({
       $.identifier,
       $.number,
       $.boolean,
-      $.string
+      $.string,
+      $.array_expression
     ),
     member_expression: $ => seq(
       $.identifier,
       repeat1(seq('.', $.identifier))
+    ),
+    array_expression: $ => seq(
+      '[',
+      optional(seq(
+        $.expression,
+        repeat(seq(
+          ',',
+          $.expression
+        ))
+      )),
+      ']'
     ),
 
     // Primitives

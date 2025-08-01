@@ -1,4 +1,5 @@
 Control {
+    name: "RootControl"
     prop_string: "string value"
     prop_int: 123
     prop_float: 123.123
@@ -12,8 +13,24 @@ Control {
     theme.background: StyleBoxFlat {
         bg_color: "#b7b7b7"
     }
+    prop_dict: {
+        hello: "world";
+        dict_property: 123
+        prop_3: true;
+    }
+    prop_arr: [
+        1, 2,
+        3, 4,
+        "test", false,
+        555.555,
+        [test_identifier]
+    ]
 
-    Control {}
+    # @if true {
+    #     Control {}
+    # } @else {
+
+    # }
 }
 
 Control2 {}
