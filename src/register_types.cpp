@@ -1,7 +1,9 @@
 #include "register_types.h"
 
-#include "gdexample.h"
-#include "gdml_resource.h"
+#include "gdml_script.h"
+#include "gdml_script_language.h"
+#include "gdml_syntax_highlighter.h"
+#include "gdml_script_resource_format_saver.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -10,17 +12,26 @@
 using namespace godot;
 
 void initialize_example_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+	
+	GDREGISTER_CLASS(GdmlScript);
+	GDREGISTER_CLASS(GdmlScriptLanguage)
+	GDREGISTER_CLASS(GdmlSyntaxHighlighter);
 
-	GDREGISTER_CLASS(GdmlResource);
+	GdmlScriptLanguage::get_or_create_singleton();
+	GdmlScriptResourceFormatSaver::register_in_godot();
+	print_line("initialized");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
+	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
 		return;
 	}
+
+	GdmlScriptResourceFormatSaver::unregister_in_godot();
+	GdmlScriptLanguage::delete_singleton();
 }
 
 extern "C" {
@@ -30,7 +41,7 @@ GDExtensionBool GDE_EXPORT example_library_init(GDExtensionInterfaceGetProcAddre
 
 	init_obj.register_initializer(initialize_example_module);
 	init_obj.register_terminator(uninitialize_example_module);
-	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SERVERS);
+	init_obj.set_minimum_library_initialization_level(MODULE_INITIALIZATION_LEVEL_SCENE);
 
 	return init_obj.init();
 }

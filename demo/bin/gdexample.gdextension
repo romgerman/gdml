@@ -27,8 +27,8 @@ android.release.arm64 = "res://bin/libgdexample.android.template_release.arm64.s
 
 [dependencies]
 ios.debug = {
-    "res://bin/libgodot-cpp.ios.template_debug.xcframework": ""
+	"res://bin/libgodot-cpp.ios.template_debug.xcframework": ""
 }
 ios.release = {
-    "res://bin/libgodot-cpp.ios.template_release.xcframework": ""
+	"res://bin/libgodot-cpp.ios.template_release.xcframework": ""
 }
