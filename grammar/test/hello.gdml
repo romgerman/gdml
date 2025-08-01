@@ -23,13 +23,30 @@ Control {
         3, 4,
         "test", false,
         555.555,
-        [test_identifier]
+        [test_identifier.property]
     ]
 
     # @if true {
-    #     Control {}
+    #     TextureRect {
+    #         texture: "res://icon.svg"
+    #     }
+    # } @elif false {
+    #     TextureRect {
+    #         texture: "res://icon2.svg"
+    #     }
     # } @else {
+    #     Button {
+    #         text: "btn"
+    #     }
+    # }
 
+    # VBoxContainer {
+    #     @for item in arrayOfItems {
+    #         Button {
+    #             text: item.name
+    #         }
+    #         Separator {}
+    #     }
     # }
 }
 

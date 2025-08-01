@@ -45,7 +45,8 @@ module.exports = grammar({
       $.number,
       $.boolean,
       $.string,
-      $.array_expression
+      $.array_expression,
+      $.member_expression
     ),
     member_expression: $ => seq(
       $.identifier,
