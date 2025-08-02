@@ -6,7 +6,7 @@ namespace godot {
 
 class Gdml {
 public:
-    void parse(String& text);
+    void parse(const String& text);
 };
 
 }

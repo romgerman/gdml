@@ -5,6 +5,7 @@
 #include "gdml_syntax_highlighter.h"
 #include "gdml_script_resource_format_loader.h"
 #include "gdml_script_resource_format_saver.h"
+#include "gdml.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -27,6 +28,9 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	GdmlScriptResourceFormatLoader::register_in_godot();
 	GdmlScriptResourceFormatSaver::register_in_godot();
 	print_line("initialized");
+
+	auto gdml = Gdml();
+	gdml.parse("test");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {

@@ -1,11 +1,11 @@
 #include "gdml.h"
-// #include "grammar/src/tree_sitter/alloc.h"
-// #include "grammar/src/tree_sitter/array.h"
-// #include "grammar/src/tree_sitter/parser.h"
-// #include "grammar/bindings/c/tree_sitter/tree-sitter-gdml.h"
+
+#include <tree_sitter/api.h>
+#include <tree_sitter/tree-sitter-gdml.h>
 
 using namespace godot;
 
-void Gdml::parse(String& text) {
-    
+void Gdml::parse(const String& text) {
+    TSParser *parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_gdml());
 }
