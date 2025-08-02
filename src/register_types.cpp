@@ -30,7 +30,7 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	print_line("initialized");
 
 	auto gdml = Gdml();
-	gdml.parse("test");
+	gdml.parse("Control{}");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {
