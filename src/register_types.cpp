@@ -5,7 +5,7 @@
 #include "gdml_syntax_highlighter.h"
 #include "gdml_script_resource_format_loader.h"
 #include "gdml_script_resource_format_saver.h"
-#include "gdml.h"
+#include "gdml_renderer.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -23,14 +23,15 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(GdmlScriptResourceFormatLoader)
 	GDREGISTER_CLASS(GdmlScriptResourceFormatSaver)
 	GDREGISTER_CLASS(GdmlSyntaxHighlighter);
+	GDREGISTER_CLASS(GdmlRenderer);
 
 	GdmlScriptLanguage::get_or_create_singleton();
 	GdmlScriptResourceFormatLoader::register_in_godot();
 	GdmlScriptResourceFormatSaver::register_in_godot();
 	print_line("initialized");
 
-	auto gdml = Gdml();
-	gdml.parse("Control{}");
+	GdmlRenderer* render = memnew(GdmlRenderer);
+	render->renderString("Control {}");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {
