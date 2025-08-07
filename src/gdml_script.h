@@ -31,6 +31,9 @@ public:
     bool _is_abstract() const override;
     void _placeholder_erased(void *p_placeholder) override;
     bool _can_instantiate() const override;
+
+public:
+    //void render();
 };
 
 }

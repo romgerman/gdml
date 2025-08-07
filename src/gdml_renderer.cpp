@@ -6,6 +6,40 @@
 
 using namespace godot;
 
+String traversal::GdmlPrinterVisitor::visit(GdmlNode& root_node) {
+    return visitNode(root_node, 0);
+}
+
+String traversal::GdmlPrinterVisitor::visitNode(GdmlNode& node, uint32_t depth) {
+    if (node.type == GdmlNodeType::SOURCE_FILE) {
+        SourceFileNode& self = (SourceFileNode&)node;
+        String out;
+        for (const std::unique_ptr<DefinitionNode>& statement : self.statements) {
+            out += visitNode(*statement.get(), depth + 1);
+        }
+        return out;
+    } else if (node.type == GdmlNodeType::DEFINITION) {
+        DefinitionNode& self = (DefinitionNode&)node;
+        return visitNode(*self.node.get(), depth);
+    } else if (node.type == GdmlNodeType::NODE_DEFINITION) {
+        NodeDefinitionNode& self = (NodeDefinitionNode&)node;
+        String out = self.name->name + " {";
+        for (const std::unique_ptr<PropertyDefinitionNode>& prop : self.properties) {
+            out += visitNode(*prop.get(), depth + 1);
+        }
+        out += " }";
+        return out;
+    } else if (node.type == GdmlNodeType::PROPERTY_DEFINITION) {
+        PropertyDefinitionNode& self = (PropertyDefinitionNode&)node;
+        return visitNode(*self.name.get(), depth);
+    } else if (node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+        IdentifierNode& self = (IdentifierNode&)node;
+        return self.name;
+    } else {
+        return String("(node not implemented)");
+    }
+}
+
 void GdmlRenderer::_bind_methods() {}
 
 GdmlRenderer::GdmlRenderer() {
@@ -13,7 +47,10 @@ GdmlRenderer::GdmlRenderer() {
 }
 
 TypedArray<Control>* GdmlRenderer::renderString(const String &string) {
-    auto tree = gdml->parse(string);
+    auto result = gdml->parse(string);
+    auto treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
+    print_line(treeString);
+    auto tree = gdml->rawParse(string);
     TSNode root = ts_tree_root_node(tree.get());
     return visitSourceFile(root);
 }

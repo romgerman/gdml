@@ -12,6 +12,23 @@
 
 class TSNode;
 
+namespace traversal {
+
+template<typename T>
+class GdmlVisitor {
+public:
+    virtual T visit(godot::GdmlNode& root_node) = 0;
+};
+
+class GdmlPrinterVisitor : public GdmlVisitor<godot::String> {
+public:
+    godot::String visit(godot::GdmlNode& root_node);
+private:
+    godot::String visitNode(godot::GdmlNode& node, uint32_t depth);
+};
+
+}
+
 namespace godot {
 
 class GdmlRenderer : public RefCounted {
@@ -30,6 +47,8 @@ private:
     TypedArray<Control>* visitSourceFile(TSNode root_node);
     Control* visitDefinition(TSNode node);
     Control* visitNodeDefinition(TSNode node);
+    void visitPropertyDefinition(TSNode node);
+    void visitResourceDefinition(TSNode node);
 };
 
 }
