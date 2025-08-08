@@ -47,9 +47,12 @@ GdmlRenderer::GdmlRenderer() {
 }
 
 TypedArray<Control>* GdmlRenderer::renderString(const String &string) {
-    auto result = gdml->parse(string);
-    auto treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
+    std::unique_ptr<godot::SourceFileNode> result = gdml->parse(string);
+    String treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
     print_line(treeString);
+    for (GdmlParseError& err : gdml->getParseErrors()) {
+        print_line(err.toString());
+    }
     auto tree = gdml->rawParse(string);
     TSNode root = ts_tree_root_node(tree.get());
     return visitSourceFile(root);

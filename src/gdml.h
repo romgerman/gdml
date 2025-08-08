@@ -8,6 +8,7 @@
 struct TSParser;
 struct TSTree;
 struct TSNode;
+struct TSPoint;
 
 extern "C" void ts_parser_delete(TSParser* self);
 extern "C" void ts_tree_delete(TSTree* self);
@@ -24,10 +25,15 @@ public:
     TSNode raw();
     const char* getType();
     bool isType(const char* typeName);
+    bool isNull();
     uint32_t getChildCount();
     uint32_t getNamedChildCount();
     Node getChild(uint32_t index);
     Node getNamedChild(uint32_t index);
+    uint32_t getStartByte();
+    uint32_t getEndByte();
+    TSPoint getStartPoint();
+    TSPoint getEndPoint();
     godot::String getText(const godot::String& sourceText);
 };
 
@@ -36,6 +42,54 @@ public:
 namespace godot {
 
 // Base
+
+struct GdmlTextSpan {
+    GdmlTextSpan() = default;
+    GdmlTextSpan(uint32_t start, uint32_t end): start(start), end(end) {}
+
+    uint32_t getLength() {
+        return end - start;
+    }
+
+    bool isEmpty() {
+        return getLength() == 0;
+    }
+
+    uint32_t start = 0;
+    uint32_t end = 0;
+};
+
+struct GdmlLinePosition {
+    GdmlLinePosition() = default;
+    GdmlLinePosition(uint32_t line, uint32_t column): line(line), column(column) {}
+
+    uint32_t line;
+    uint32_t column;
+};
+
+struct GdmlSourceLocation {
+    GdmlSourceLocation() = default;
+    GdmlSourceLocation(ts::Node node);
+
+    String getText(const String& text);
+
+    GdmlTextSpan span;
+    GdmlLinePosition start;
+    GdmlLinePosition end;
+};
+
+struct GdmlParseError {
+    String toString() {
+        return message
+            + " at "
+            + String::num_uint64(location.start.line)
+            + ":"
+            + String::num_uint64(location.start.column);
+    }
+
+    String message;
+    GdmlSourceLocation location;
+};
 
 enum class GdmlNodeType {
     UNKNOWN = 0,
@@ -112,11 +166,14 @@ struct SourceFileNode : public GdmlNode {
 
 class Gdml {
     std::unique_ptr<TSParser, decltype(&ts_parser_delete)> m_parser;
+    std::vector<GdmlParseError> parse_errors;
 
 public:
     Gdml();
     std::unique_ptr<TSTree, decltype(&ts_tree_delete)> rawParse(const String& text);
     std::unique_ptr<SourceFileNode> parse(const String& text);
+
+    std::vector<GdmlParseError>& getParseErrors();
 
 private:
     std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, const String& text);
@@ -132,6 +189,8 @@ private:
     NumberNode visitNumber(TSNode node);
     BooleanNode visitBoolean(TSNode node);
     StringNode visitString(TSNode node);
+
+    void pushError(const String& error, ts::Node node);
 };
 
 }

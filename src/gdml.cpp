@@ -3,6 +3,8 @@
 #include <tree_sitter/api.h>
 #include <tree_sitter/tree-sitter-gdml.h>
 
+#include <godot_cpp/core/print_string.hpp>
+
 using namespace godot;
 
 namespace ts {
@@ -21,6 +23,10 @@ bool Node::isType(const char* typeName) {
     return strcmp(getType(), typeName) == 0;
 }
 
+bool Node::isNull() {
+    return ts_node_is_null(m_node);
+}
+
 uint32_t Node::getChildCount() {
     return ts_node_child_count(m_node);
 }
@@ -37,13 +43,40 @@ Node Node::getNamedChild(uint32_t index) {
     return Node(ts_node_named_child(m_node, index));
 }
 
-godot::String Node::getText(const godot::String& sourceText) {
-    uint32_t start = ts_node_start_byte(m_node);
-    uint32_t end = ts_node_end_byte(m_node);
+uint32_t Node::getStartByte() {
+    return ts_node_start_byte(m_node);
+}
 
+uint32_t Node::getEndByte() {
+    return ts_node_end_byte(m_node);
+}
+
+TSPoint Node::getStartPoint() {
+    return ts_node_start_point(m_node);
+}
+
+TSPoint Node::getEndPoint() {
+    return ts_node_end_point(m_node);
+}
+
+godot::String Node::getText(const godot::String& sourceText) {
+    uint32_t start = getStartByte();
+    uint32_t end = getEndByte();
     return sourceText.substr(start, end - start);
 }
 
+}
+
+GdmlSourceLocation::GdmlSourceLocation(ts::Node node) {
+    span = GdmlTextSpan(node.getStartByte(), node.getEndByte());
+    TSPoint start_point = node.getStartPoint();
+    start = GdmlLinePosition(start_point.row + 1, start_point.column + 1);
+    TSPoint end_point = node.getEndPoint();
+    end = GdmlLinePosition(end_point.row + 1, end_point.column + 1);
+}
+
+String GdmlSourceLocation::getText(const String& text) {
+    return text.substr(span.start, span.getLength());
 }
 
 Gdml::Gdml() : m_parser(ts_parser_new(), ts_parser_delete) {
@@ -58,6 +91,7 @@ std::unique_ptr<TSTree, decltype(&ts_tree_delete)> Gdml::rawParse(const String &
 }
 
 std::unique_ptr<SourceFileNode> Gdml::parse(const String& text) {
+    parse_errors.clear();
     auto tree = rawParse(text);
     ts::Node root_node = ts::Node(ts_tree_root_node(tree.get()));
 
@@ -85,6 +119,8 @@ std::unique_ptr<DefinitionNode> Gdml::visitDefinition(ts::Node node, const Strin
 
         if (child_node.isType("node_definition")) {
             out->node = std::move(visitNodeDefinition(child_node, text));
+        } else {
+            pushError("Unknown node", child_node);
         }
     }
 
@@ -103,6 +139,11 @@ std::unique_ptr<NodeDefinitionNode> Gdml::visitNodeDefinition(ts::Node node, con
         } else if (child_node.isType("property_definition")) {
             std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
             out->properties.push_back(std::move(def));
+        } else if (child_node.isType("node_definition")) {
+            std::unique_ptr<NodeDefinitionNode> def = visitNodeDefinition(child_node, text);
+            out->children.push_back(std::move(def));
+        } else {
+            pushError("Unknown node", child_node);
         }
     }
 
@@ -118,6 +159,8 @@ std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const
 
         if (child_node.isType("identifier")) {
             out->name = visitIdentifier(child_node, text);
+        } else {
+            pushError("Unknown node", child_node);
         }
     }
 
@@ -158,4 +201,15 @@ BooleanNode Gdml::visitBoolean(TSNode node) {
 
 StringNode Gdml::visitString(TSNode node) {
     return StringNode();
+}
+
+std::vector<GdmlParseError>& Gdml::getParseErrors() {
+    return parse_errors;
+}
+
+void Gdml::pushError(const String& error, ts::Node node) {
+    GdmlParseError err;
+    err.message = error;
+    err.location = GdmlSourceLocation(node);
+    parse_errors.push_back(err);
 }
