@@ -104,6 +104,8 @@ std::unique_ptr<SourceFileNode> Gdml::parse(const String& text) {
         if (child_node.isType("definition")) {
             std::unique_ptr<DefinitionNode> def = visitDefinition(child_node.raw(), text);
             out->statements.push_back(std::move(def));
+        } else {
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing source file", child_node);
         }
     }
 
@@ -120,7 +122,7 @@ std::unique_ptr<DefinitionNode> Gdml::visitDefinition(ts::Node node, const Strin
         if (child_node.isType("node_definition")) {
             out->node = std::move(visitNodeDefinition(child_node, text));
         } else {
-            pushError("Unknown node", child_node);
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing definition", child_node);
         }
     }
 
@@ -143,7 +145,7 @@ std::unique_ptr<NodeDefinitionNode> Gdml::visitNodeDefinition(ts::Node node, con
             std::unique_ptr<NodeDefinitionNode> def = visitNodeDefinition(child_node, text);
             out->children.push_back(std::move(def));
         } else {
-            pushError("Unknown node", child_node);
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing node definition", child_node);
         }
     }
 
@@ -159,8 +161,12 @@ std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const
 
         if (child_node.isType("identifier")) {
             out->name = visitIdentifier(child_node, text);
+        } else if (child_node.isType("member_expression")) {
+            out->name = visitMemberExpression(child_node, text);
+        } else if (child_node.isType("expression")) {
+            out->value = visitExpression(child_node, text);
         } else {
-            pushError("Unknown node", child_node);
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing property", child_node);
         }
     }
 
@@ -171,12 +177,38 @@ ResourceDefinitionNode Gdml::visitResource(TSNode node) {
     return ResourceDefinitionNode();
 }
 
-ExpressionNode Gdml::visitExpression(TSNode node) {
-    return ExpressionNode();
+std::unique_ptr<ExpressionNode> Gdml::visitExpression(ts::Node node, const String& text) {
+    std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
+    out->type = GdmlNodeType::UNKNOWN;
+
+    for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+        ts::Node child_node = node.getNamedChild(i);
+
+        if (child_node.isType("string")) {
+            out = visitString(child_node, text);
+        } else {
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing expression", child_node);
+        }
+    }
+
+    return out;
 }
 
-MemberExpressionNode Gdml::visitMemberExpression(TSNode node) {
-    return MemberExpressionNode();
+std::unique_ptr<MemberExpressionNode> Gdml::visitMemberExpression(ts::Node node, const String& text) {
+    std::unique_ptr<MemberExpressionNode> out = std::make_unique<MemberExpressionNode>();
+    out->type = GdmlNodeType::MEMBER_ACCESS_EXPRESSION;
+
+    for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+        ts::Node child_node = node.getNamedChild(i);
+
+        if (child_node.isType("identifier")) {
+            out->path.push_back(std::move(visitIdentifier(child_node, text)));
+        } else {
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing member expression", child_node);
+        }
+    }
+
+    return out;
 }
 
 ArrayExpressionNode Gdml::visitArrayExpression(TSNode node) {
@@ -199,8 +231,17 @@ BooleanNode Gdml::visitBoolean(TSNode node) {
     return BooleanNode();
 }
 
-StringNode Gdml::visitString(TSNode node) {
-    return StringNode();
+std::unique_ptr<StringNode> Gdml::visitString(ts::Node node, const String& text) {
+    std::unique_ptr<StringNode> out = std::make_unique<StringNode>();
+    out->type = GdmlNodeType::STRING_EXPRESSION;
+    out->value = String();
+
+    for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+        ts::Node child_node = ts::Node(node.getNamedChild(i));
+        out->value += child_node.getText(text);
+    }
+
+    return out;
 }
 
 std::vector<GdmlParseError>& Gdml::getParseErrors() {

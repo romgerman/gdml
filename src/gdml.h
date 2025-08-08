@@ -181,14 +181,14 @@ private:
     std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, const String& text);
     ResourceDefinitionNode visitResource(TSNode node);
 
-    ExpressionNode visitExpression(TSNode node);
-    MemberExpressionNode visitMemberExpression(TSNode node);
+    std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, const String& text);
+    std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, const String& text);
     ArrayExpressionNode visitArrayExpression(TSNode node);
 
     std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, const String& text);
     NumberNode visitNumber(TSNode node);
     BooleanNode visitBoolean(TSNode node);
-    StringNode visitString(TSNode node);
+    std::unique_ptr<StringNode> visitString(ts::Node node, const String& text);
 
     void pushError(const String& error, ts::Node node);
 };

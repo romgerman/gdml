@@ -70,12 +70,27 @@ module.exports = grammar({
     boolean: $ => choice(token('true'), token('false')),
     string: $ => seq(
       '"',
-      repeat(token.immediate(prec(1, /[^"\\\r\n]+/))),
+      repeat(choice(
+        $.string_fragment,
+        $.escape_sequence
+      )),
       '"'
     ),
+    string_fragment: $ => token.immediate(prec(1, /[^"\\\r\n]+/)),
     comment: $ => token(seq(
       '#',
       /[^\r\n\u2028\u2029]*/
     )),
+    escape_sequence: $ => token.immediate(seq(
+      '\\',
+      choice(
+        /[^xu0-7]/,
+        /[0-7]{1,3}/,
+        /x[0-9a-fA-F]{2}/,
+        /u[0-9a-fA-F]{4}/,
+        /u\{[0-9a-fA-F]+\}/,
+        /[\r?][\n\u2028\u2029]/,
+      ),
+    ))
   },
 });

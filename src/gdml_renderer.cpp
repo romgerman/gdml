@@ -23,18 +23,22 @@ String traversal::GdmlPrinterVisitor::visitNode(GdmlNode& node, uint32_t depth) 
         return visitNode(*self.node.get(), depth);
     } else if (node.type == GdmlNodeType::NODE_DEFINITION) {
         NodeDefinitionNode& self = (NodeDefinitionNode&)node;
-        String out = self.name->name + " {";
+        String out = self.name->name + " {\n";
         for (const std::unique_ptr<PropertyDefinitionNode>& prop : self.properties) {
             out += visitNode(*prop.get(), depth + 1);
         }
-        out += " }";
+        out += "\n}";
         return out;
     } else if (node.type == GdmlNodeType::PROPERTY_DEFINITION) {
         PropertyDefinitionNode& self = (PropertyDefinitionNode&)node;
-        return visitNode(*self.name.get(), depth);
+        String out = visitNode(*self.name.get(), depth) + " : " + visitNode(*self.value.get(), depth);
+        return out.lpad(out.length() + depth);
     } else if (node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
         IdentifierNode& self = (IdentifierNode&)node;
         return self.name;
+    } else if (node.type == GdmlNodeType::STRING_EXPRESSION) {
+        StringNode& self = (StringNode&)node;
+        return self.value.indent("\"") + "\"";
     } else {
         return String("(node not implemented)");
     }
