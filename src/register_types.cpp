@@ -31,7 +31,7 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	print_line("initialized");
 
 	GdmlRenderer* render = memnew(GdmlRenderer);
-	render->renderString("Control {  test_prop: \"test value\"; }");
+	render->renderString("Control {  test_prop: \"test value\"; resource_prop: ResourceName { res_prop: 123; res_bool: true; res_string: \"hi\"; }; }");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {

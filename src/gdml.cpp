@@ -202,8 +202,18 @@ std::unique_ptr<ExpressionNode> Gdml::visitExpression(ts::Node node, const Strin
     for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
         ts::Node child_node = node.getNamedChild(i);
 
-        if (child_node.isType("string")) {
+        if (child_node.isType("identifier")) {
+            out = visitIdentifier(node, text);
+        } else if (child_node.isType("number")) {
+            out = visitNumber(node, text);
+        } else if (child_node.isType("boolean")) {
+            out = visitBoolean(node, text);
+        } else if (child_node.isType("string")) {
             out = visitString(child_node, text);
+        } else if (child_node.isType("array_expression")) {
+            out = visitArrayExpression(node, text);
+        } else if (child_node.isType("member_expression")) {
+            out = visitMemberExpression(node, text);
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing expression", child_node);
         }
