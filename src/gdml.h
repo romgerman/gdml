@@ -120,6 +120,15 @@ struct IdentifierNode : public ExpressionNode {
 
 struct NumberNode : public ExpressionNode {
     String value;
+    bool isFloat;
+
+    uint32_t getInteger() {
+        return value.to_int();
+    }
+
+    float_t getFloat() {
+        return value.to_float();
+    }
 };
 
 struct BooleanNode : public ExpressionNode {
@@ -179,15 +188,15 @@ private:
     std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, const String& text);
     std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, const String& text);
     std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, const String& text);
-    ResourceDefinitionNode visitResource(TSNode node);
+    std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, const String& text);
 
     std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, const String& text);
     std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, const String& text);
-    ArrayExpressionNode visitArrayExpression(TSNode node);
+    std::unique_ptr<ArrayExpressionNode> visitArrayExpression(ts::Node node, const String& text);
 
     std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, const String& text);
-    NumberNode visitNumber(TSNode node);
-    BooleanNode visitBoolean(TSNode node);
+    std::unique_ptr<NumberNode> visitNumber(ts::Node node, const String& text);
+    std::unique_ptr<BooleanNode> visitBoolean(ts::Node node, const String& text);
     std::unique_ptr<StringNode> visitString(ts::Node node, const String& text);
 
     void pushError(const String& error, ts::Node node);

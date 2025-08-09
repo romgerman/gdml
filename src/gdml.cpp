@@ -165,6 +165,8 @@ std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const
             out->name = visitMemberExpression(child_node, text);
         } else if (child_node.isType("expression")) {
             out->value = visitExpression(child_node, text);
+        } else if (child_node.isType("resource_definition")) {
+            out->value = visitResource(child_node, text);
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing property", child_node);
         }
@@ -173,8 +175,24 @@ std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const
     return out;
 }
 
-ResourceDefinitionNode Gdml::visitResource(TSNode node) {
-    return ResourceDefinitionNode();
+std::unique_ptr<ResourceDefinitionNode> Gdml::visitResource(ts::Node node, const String& text) {
+    std::unique_ptr<ResourceDefinitionNode> out = std::make_unique<ResourceDefinitionNode>();
+    out->type = GdmlNodeType::RESOURCE_DEFINITION;
+
+    for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+        ts::Node child_node = node.getNamedChild(i);
+
+        if (child_node.isType("identifier")) {
+            out->name = visitIdentifier(child_node, text);
+        } else if (child_node.isType("property_definition")) {
+            std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
+            out->properties.push_back(std::move(def));
+        } else {
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
+        }
+    }
+
+    return out;
 }
 
 std::unique_ptr<ExpressionNode> Gdml::visitExpression(ts::Node node, const String& text) {
@@ -211,8 +229,22 @@ std::unique_ptr<MemberExpressionNode> Gdml::visitMemberExpression(ts::Node node,
     return out;
 }
 
-ArrayExpressionNode Gdml::visitArrayExpression(TSNode node) {
-    return ArrayExpressionNode();
+std::unique_ptr<ArrayExpressionNode> Gdml::visitArrayExpression(ts::Node node, const String& text) {
+    std::unique_ptr<ArrayExpressionNode> out = std::make_unique<ArrayExpressionNode>();
+    out->type = GdmlNodeType::ARRAY_EXPRESSION;
+
+    for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+        ts::Node child_node = node.getNamedChild(i);
+
+        if (child_node.isType("expression")) {
+            std::unique_ptr<ExpressionNode> expr = visitExpression(node, text);
+            out->values.push_back(std::move(expr));
+        } else {
+            pushError("Unknown node " + String(child_node.getType()) + " while parsing array expression", child_node);
+        }
+    }
+
+    return out;
 }
 
 std::unique_ptr<IdentifierNode> Gdml::visitIdentifier(ts::Node node, const String& text) {
@@ -223,12 +255,23 @@ std::unique_ptr<IdentifierNode> Gdml::visitIdentifier(ts::Node node, const Strin
     return out;
 }
 
-NumberNode Gdml::visitNumber(TSNode node) {
-    return NumberNode();
+std::unique_ptr<NumberNode> Gdml::visitNumber(ts::Node node, const String& text) {
+    std::unique_ptr<NumberNode> out = std::make_unique<NumberNode>();
+    out->type = GdmlNodeType::NUMBER_EXPRESSION;
+    out->value = node.getText(text);
+    out->isFloat = out->value.contains(".");
+
+    return out;
 }
 
-BooleanNode Gdml::visitBoolean(TSNode node) {
-    return BooleanNode();
+std::unique_ptr<BooleanNode> Gdml::visitBoolean(ts::Node node, const String& text) {
+    std::unique_ptr<BooleanNode> out = std::make_unique<BooleanNode>();
+    out->type = GdmlNodeType::BOOLEAN_EXPRESSION;
+    
+    const String& rawValue = node.getText(text);
+    out->value = rawValue == "true";
+
+    return out;
 }
 
 std::unique_ptr<StringNode> Gdml::visitString(ts::Node node, const String& text) {
