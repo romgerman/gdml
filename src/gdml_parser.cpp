@@ -1,4 +1,4 @@
-#include "gdml.h"
+#include "gdml_parser.h"
 
 #include <tree_sitter/api.h>
 #include <tree_sitter/tree-sitter-gdml.h>
@@ -6,66 +6,6 @@
 #include <godot_cpp/core/print_string.hpp>
 
 using namespace godot;
-
-namespace ts {
-
-Node::Node(TSNode node) : m_node(node) {}
-
-TSNode Node::raw() {
-    return m_node;
-}
-
-const char* Node::getType() {
-    return ts_node_type(m_node);
-}
-
-bool Node::isType(const char* typeName) {
-    return strcmp(getType(), typeName) == 0;
-}
-
-bool Node::isNull() {
-    return ts_node_is_null(m_node);
-}
-
-uint32_t Node::getChildCount() {
-    return ts_node_child_count(m_node);
-}
-
-uint32_t Node::getNamedChildCount() {
-    return ts_node_named_child_count(m_node);
-}
-
-Node Node::getChild(uint32_t index) {
-    return Node(ts_node_child(m_node, index));
-}
-
-Node Node::getNamedChild(uint32_t index) {
-    return Node(ts_node_named_child(m_node, index));
-}
-
-uint32_t Node::getStartByte() {
-    return ts_node_start_byte(m_node);
-}
-
-uint32_t Node::getEndByte() {
-    return ts_node_end_byte(m_node);
-}
-
-TSPoint Node::getStartPoint() {
-    return ts_node_start_point(m_node);
-}
-
-TSPoint Node::getEndPoint() {
-    return ts_node_end_point(m_node);
-}
-
-godot::String Node::getText(const godot::String& sourceText) {
-    uint32_t start = getStartByte();
-    uint32_t end = getEndByte();
-    return sourceText.substr(start, end - start);
-}
-
-}
 
 GdmlSourceLocation::GdmlSourceLocation(ts::Node node) {
     span = GdmlTextSpan(node.getStartByte(), node.getEndByte());
@@ -79,18 +19,18 @@ String GdmlSourceLocation::getText(const String& text) {
     return text.substr(span.start, span.getLength());
 }
 
-Gdml::Gdml() : m_parser(ts_parser_new(), ts_parser_delete) {
+GdmlParser::GdmlParser() : m_parser(ts_parser_new(), ts_parser_delete) {
     ts_parser_set_language(m_parser.get(), tree_sitter_gdml());
 }
 
-std::unique_ptr<TSTree, decltype(&ts_tree_delete)> Gdml::rawParse(const String &text) {
+std::unique_ptr<TSTree, decltype(&ts_tree_delete)> GdmlParser::rawParse(const String &text) {
     return std::unique_ptr<TSTree, decltype(&ts_tree_delete)>(
         ts_parser_parse_string(m_parser.get(), nullptr, text.utf8().get_data(), text.length()),
         ts_tree_delete
     );
 }
 
-std::unique_ptr<SourceFileNode> Gdml::parse(const String& text) {
+std::unique_ptr<SourceFileNode> GdmlParser::parse(const String& text) {
     parse_errors.clear();
     auto tree = rawParse(text);
     ts::Node root_node = ts::Node(ts_tree_root_node(tree.get()));
@@ -112,7 +52,7 @@ std::unique_ptr<SourceFileNode> Gdml::parse(const String& text) {
     return out;
 }
 
-std::unique_ptr<DefinitionNode> Gdml::visitDefinition(ts::Node node, const String& text) {
+std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, const String& text) {
     std::unique_ptr<DefinitionNode> out = std::make_unique<DefinitionNode>();
     out->type = GdmlNodeType::DEFINITION;
 
@@ -129,7 +69,7 @@ std::unique_ptr<DefinitionNode> Gdml::visitDefinition(ts::Node node, const Strin
     return out;
 }
 
-std::unique_ptr<NodeDefinitionNode> Gdml::visitNodeDefinition(ts::Node node, const String& text) {
+std::unique_ptr<NodeDefinitionNode> GdmlParser::visitNodeDefinition(ts::Node node, const String& text) {
     std::unique_ptr<NodeDefinitionNode> out = std::make_unique<NodeDefinitionNode>();
     out->type = GdmlNodeType::NODE_DEFINITION;
 
@@ -152,7 +92,7 @@ std::unique_ptr<NodeDefinitionNode> Gdml::visitNodeDefinition(ts::Node node, con
     return out;
 }
 
-std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const String& text) {
+std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node, const String& text) {
     std::unique_ptr<PropertyDefinitionNode> out = std::make_unique<PropertyDefinitionNode>();
     out->type = GdmlNodeType::PROPERTY_DEFINITION;
 
@@ -175,7 +115,7 @@ std::unique_ptr<PropertyDefinitionNode> Gdml::visitProperty(ts::Node node, const
     return out;
 }
 
-std::unique_ptr<ResourceDefinitionNode> Gdml::visitResource(ts::Node node, const String& text) {
+std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node, const String& text) {
     std::unique_ptr<ResourceDefinitionNode> out = std::make_unique<ResourceDefinitionNode>();
     out->type = GdmlNodeType::RESOURCE_DEFINITION;
 
@@ -195,7 +135,7 @@ std::unique_ptr<ResourceDefinitionNode> Gdml::visitResource(ts::Node node, const
     return out;
 }
 
-std::unique_ptr<ExpressionNode> Gdml::visitExpression(ts::Node node, const String& text) {
+std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, const String& text) {
     std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
     out->type = GdmlNodeType::UNKNOWN;
 
@@ -222,7 +162,7 @@ std::unique_ptr<ExpressionNode> Gdml::visitExpression(ts::Node node, const Strin
     return out;
 }
 
-std::unique_ptr<MemberExpressionNode> Gdml::visitMemberExpression(ts::Node node, const String& text) {
+std::unique_ptr<MemberExpressionNode> GdmlParser::visitMemberExpression(ts::Node node, const String& text) {
     std::unique_ptr<MemberExpressionNode> out = std::make_unique<MemberExpressionNode>();
     out->type = GdmlNodeType::MEMBER_ACCESS_EXPRESSION;
 
@@ -239,7 +179,7 @@ std::unique_ptr<MemberExpressionNode> Gdml::visitMemberExpression(ts::Node node,
     return out;
 }
 
-std::unique_ptr<ArrayExpressionNode> Gdml::visitArrayExpression(ts::Node node, const String& text) {
+std::unique_ptr<ArrayExpressionNode> GdmlParser::visitArrayExpression(ts::Node node, const String& text) {
     std::unique_ptr<ArrayExpressionNode> out = std::make_unique<ArrayExpressionNode>();
     out->type = GdmlNodeType::ARRAY_EXPRESSION;
 
@@ -257,7 +197,7 @@ std::unique_ptr<ArrayExpressionNode> Gdml::visitArrayExpression(ts::Node node, c
     return out;
 }
 
-std::unique_ptr<IdentifierNode> Gdml::visitIdentifier(ts::Node node, const String& text) {
+std::unique_ptr<IdentifierNode> GdmlParser::visitIdentifier(ts::Node node, const String& text) {
     std::unique_ptr<IdentifierNode> out = std::make_unique<IdentifierNode>();
     out->type = GdmlNodeType::IDENTIFIER_EXPRESSION;
     out->name = node.getText(text);
@@ -265,7 +205,7 @@ std::unique_ptr<IdentifierNode> Gdml::visitIdentifier(ts::Node node, const Strin
     return out;
 }
 
-std::unique_ptr<NumberNode> Gdml::visitNumber(ts::Node node, const String& text) {
+std::unique_ptr<NumberNode> GdmlParser::visitNumber(ts::Node node, const String& text) {
     std::unique_ptr<NumberNode> out = std::make_unique<NumberNode>();
     out->type = GdmlNodeType::NUMBER_EXPRESSION;
     out->value = node.getText(text);
@@ -274,7 +214,7 @@ std::unique_ptr<NumberNode> Gdml::visitNumber(ts::Node node, const String& text)
     return out;
 }
 
-std::unique_ptr<BooleanNode> Gdml::visitBoolean(ts::Node node, const String& text) {
+std::unique_ptr<BooleanNode> GdmlParser::visitBoolean(ts::Node node, const String& text) {
     std::unique_ptr<BooleanNode> out = std::make_unique<BooleanNode>();
     out->type = GdmlNodeType::BOOLEAN_EXPRESSION;
     
@@ -284,7 +224,7 @@ std::unique_ptr<BooleanNode> Gdml::visitBoolean(ts::Node node, const String& tex
     return out;
 }
 
-std::unique_ptr<StringNode> Gdml::visitString(ts::Node node, const String& text) {
+std::unique_ptr<StringNode> GdmlParser::visitString(ts::Node node, const String& text) {
     std::unique_ptr<StringNode> out = std::make_unique<StringNode>();
     out->type = GdmlNodeType::STRING_EXPRESSION;
     out->value = String();
@@ -297,11 +237,11 @@ std::unique_ptr<StringNode> Gdml::visitString(ts::Node node, const String& text)
     return out;
 }
 
-std::vector<GdmlParseError>& Gdml::getParseErrors() {
+std::vector<GdmlParseError>& GdmlParser::getParseErrors() {
     return parse_errors;
 }
 
-void Gdml::pushError(const String& error, ts::Node node) {
+void GdmlParser::pushError(const String& error, ts::Node node) {
     GdmlParseError err;
     err.message = error;
     err.location = GdmlSourceLocation(node);

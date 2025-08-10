@@ -1,6 +1,6 @@
 #pragma once
 
-#include "gdml.h"
+#include "gdml_parser.h"
 
 #include <memory>
 
@@ -34,7 +34,7 @@ namespace godot {
 class GdmlRenderer : public RefCounted {
     GDCLASS(GdmlRenderer, RefCounted)
 
-    std::unique_ptr<Gdml> gdml;
+    std::unique_ptr<GdmlParser> gdml;
 
 protected:
     static void _bind_methods();

@@ -59,7 +59,7 @@ String traversal::GdmlPrinterVisitor::visitNode(GdmlNode& node, uint32_t depth) 
 void GdmlRenderer::_bind_methods() {}
 
 GdmlRenderer::GdmlRenderer() {
-    gdml = std::make_unique<Gdml>();
+    gdml = std::make_unique<GdmlParser>();
 }
 
 TypedArray<Control>* GdmlRenderer::renderString(const String &string) {
