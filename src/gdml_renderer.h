@@ -26,12 +26,6 @@ public:
     GdmlRenderer();
     TypedArray<Control>* renderString(const String& string);
     PackedScene* preRenderString(const String& string);
-private:
-    TypedArray<Control>* visitSourceFile(TSNode root_node);
-    Control* visitDefinition(TSNode node);
-    Control* visitNodeDefinition(TSNode node);
-    void visitPropertyDefinition(TSNode node);
-    void visitResourceDefinition(TSNode node);
 };
 
 }

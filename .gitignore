@@ -4,3 +4,4 @@ demo/bin/*
 !demo/bin/gdexample.gdextension
 grammar/node_modules
 *.obj
+*.pdb

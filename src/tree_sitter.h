@@ -1,20 +1,14 @@
 #pragma once
 
+#include <tree_sitter/api.h>
+
 #include <godot_cpp/variant/string.hpp>
-
-struct TSParser;
-struct TSTree;
-struct TSNode;
-struct TSPoint;
-
-extern "C" void ts_parser_delete(TSParser* self);
-extern "C" void ts_tree_delete(TSTree* self);
 
 namespace ts {
 
 class Node {
 private:
-    TSNode& m_node;
+    TSNode m_node;
 
 public:
     Node(TSNode node);

@@ -1,7 +1,5 @@
 #include "tree_sitter.h"
 
-#include <tree_sitter/api.h>
-
 using namespace ts;
 
 Node::Node(TSNode node) : m_node(node) {}

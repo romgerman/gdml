@@ -23,34 +23,9 @@ TypedArray<Control>* GdmlRenderer::renderString(const String &string) {
     }
     auto tree = gdml->rawParse(string);
     TSNode root = ts_tree_root_node(tree.get());
-    return visitSourceFile(root);
+    return memnew(TypedArray<Control>);
 }
 
 PackedScene* GdmlRenderer::preRenderString(const String &string) {
     return memnew(PackedScene);
-}
-
-TypedArray<Control>* GdmlRenderer::visitSourceFile(TSNode root_node) {
-    TypedArray<Control>* result = memnew(TypedArray<Control>);
-    uint32_t child_count = ts_node_named_child_count(root_node);
-
-    for (uint32_t i = 0; i < child_count; i++) {
-        TSNode child_node = ts_node_named_child(root_node, i);
-        const char* node_type = ts_node_type(child_node);
-
-        if (strcmp(node_type, "definition") == 0) {
-            visitDefinition(child_node);
-        }
-    }
-
-    return result;
-}
-
-Control* GdmlRenderer::visitDefinition(TSNode node) {
-    print_line("inside definitoin");
-    return memnew(Control);
-}
-
-Control* GdmlRenderer::visitNodeDefinition(TSNode node) {
-    return memnew(Control);
 }
