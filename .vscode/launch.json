@@ -9,7 +9,8 @@
       "cwd": "${workspaceRoot}/demo",
       "program": "C:\\Code\\godot-src\\bin\\godot.windows.editor.dev.x86_64.exe",
       "args": [
-        "--editor"
+        "--editor",
+        "--verbose"
       ],
       "stopAtEntry": false,
       "environment": [],

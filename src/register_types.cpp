@@ -28,10 +28,7 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	GdmlScriptLanguage::get_or_create_singleton();
 	GdmlScriptResourceFormatLoader::register_in_godot();
 	GdmlScriptResourceFormatSaver::register_in_godot();
-	print_line("initialized");
-
-	GdmlRenderer* render = memnew(GdmlRenderer);
-	render->renderString("Control {  test_prop: \"test value\"; resource_prop: ResourceName { res_prop: 123; res_bool: true; res_string: \"hi\"; }; }");
+	print_line("Gdml initialized");
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level) {

@@ -2,11 +2,11 @@
 
 using namespace godot;
 
-String traversal::GdmlPrinterVisitor::visit(GdmlNode& root_node) {
+String traversal::GdmlPrinterVisitor::visit(const GdmlNode& root_node) {
     return visitNode(root_node, 0);
 }
 
-String traversal::GdmlPrinterVisitor::visitNode(GdmlNode& node, uint32_t depth) {
+String traversal::GdmlPrinterVisitor::visitNode(const GdmlNode& node, uint32_t depth) {
     if (node.type == GdmlNodeType::SOURCE_FILE) {
         SourceFileNode& self = (SourceFileNode&)node;
         String out;

@@ -32,6 +32,9 @@ public:
     Error _open_in_external_editor(const Ref<Script> &p_script, int32_t p_line, int32_t p_column) override;
     ScriptLanguage::ScriptNameCasing _preferred_file_name_casing() const override;
 
+    Dictionary _complete_code(const String &p_code, const String &p_path, Object *p_owner) const override;
+    Dictionary _lookup_code(const String &p_code, const String &p_symbol, const String &p_path, Object *p_owner) const override;
+
     bool _supports_builtin_mode() const override;
     bool _can_inherit_from_file() const override;
     bool _is_using_templates() override;

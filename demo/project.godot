@@ -11,5 +11,6 @@ config_version=5
 [application]
 
 config/name="GDML Demo"
+run/main_scene="uid://bdx6bec07ctvh"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"

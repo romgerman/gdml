@@ -1,1 +1,5 @@
-test code
+Control {
+	Control {
+		prop: "hey"
+	}
+}

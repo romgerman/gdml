@@ -1,16 +1,27 @@
 #pragma once
 
 #include "gdml_parser.h"
+#include "gdml_traversal.h"
+#include "gdml_script_language.h"
+#include "gdml_script.h"
 
 #include <memory>
 
+#include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/string.hpp>
-#include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/packed_scene.hpp>
-#include <godot_cpp/classes/ref_counted.hpp>
-#include <godot_cpp/variant/typed_array.hpp>
 
-class TSNode;
+namespace traversal {
+
+class TreeRendererVisitor : public GdmlVisitor<godot::Variant> {
+public:
+    godot::Variant visit(const godot::GdmlNode& root_node) override;
+private:
+    godot::Variant visitSourceFile(const godot::SourceFileNode& node);
+    godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode& node);
+};
+
+}
 
 namespace godot {
 
@@ -24,8 +35,8 @@ protected:
 
 public:
     GdmlRenderer();
-    TypedArray<Control>* renderString(const String& string);
-    PackedScene* preRenderString(const String& string);
+    Variant renderString(const String& source);
+    Variant renderScript(GdmlScript* script);
 };
 
 }

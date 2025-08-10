@@ -1,13 +1,13 @@
 #include "gdml_script.h"
 #include "gdml_script_language.h"
+
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
 
 void GdmlScript::_bind_methods() {}
 
-Error godot::GdmlScript::_reload(bool p_keep_state)
-{
+Error godot::GdmlScript::_reload(bool p_keep_state) {
     return OK;
 }
 
@@ -15,8 +15,7 @@ bool GdmlScript::_editor_can_reload_from_file() { return true; }
 
 StringName GdmlScript::_get_global_name() const { return "GlobalName"; }
 
-StringName godot::GdmlScript::_get_instance_base_type() const
-{
+StringName godot::GdmlScript::_get_instance_base_type() const {
     return "";
 }
 
@@ -46,8 +45,7 @@ void GdmlScript::_update_exports() {}
 
 bool GdmlScript::_is_tool() const { return false; }
 
-bool godot::GdmlScript::_is_abstract() const
-{
+bool godot::GdmlScript::_is_abstract() const {
     return false;
 }
 
