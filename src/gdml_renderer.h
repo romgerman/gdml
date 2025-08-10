@@ -19,6 +19,8 @@ public:
 private:
     godot::Variant visitSourceFile(const godot::SourceFileNode& node);
     godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode& node);
+
+    void setVariantProperty(godot::Variant &obj, const godot::String& prop_key, const godot::ExpressionNode& value_node);
 };
 
 }

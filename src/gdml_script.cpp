@@ -52,3 +52,7 @@ bool godot::GdmlScript::_is_abstract() const {
 void GdmlScript::_placeholder_erased(void *p_placeholder) {}
 
 bool GdmlScript::_can_instantiate() const { return true; }
+
+TypedArray<Dictionary> godot::GdmlScript::_get_documentation() const {
+  return {};
+}

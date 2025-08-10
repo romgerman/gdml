@@ -8,3 +8,9 @@
 [node name="NodeThatRenders" type="Node2D" parent="."]
 script = ExtResource("1_dxa44")
 what = ExtResource("2_v0t4i")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0

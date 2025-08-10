@@ -1,5 +1,7 @@
 #include "gdml_traversal.h"
 
+#include <godot_cpp/variant/packed_string_array.hpp>
+
 using namespace godot;
 
 String traversal::GdmlPrinterVisitor::visit(const GdmlNode& root_node) {
@@ -38,6 +40,13 @@ String traversal::GdmlPrinterVisitor::visitNode(const GdmlNode& node, uint32_t d
     } else if (node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
         IdentifierNode& self = (IdentifierNode&)node;
         return self.name;
+    } else if (node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+        MemberExpressionNode& self = (MemberExpressionNode&)node;
+        godot::PackedStringArray arr;
+        for (const std::unique_ptr<godot::IdentifierNode>& part : self.path) {
+            arr.append(part->name);
+        }
+        return String(".").join(arr);
     } else if (node.type == GdmlNodeType::STRING_EXPRESSION) {
         StringNode& self = (StringNode&)node;
         return "\"" + self.value + "\"";

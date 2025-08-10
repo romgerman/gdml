@@ -1,5 +1,14 @@
 Control {
+	visible: false
+	size.x: 50.0
+	size.y: 100
+	size: Vector2 {
+		x: 500
+		y: 200
+	}
+	
 	Control {
-		prop: "hey"
+		z_index: 99
+		y_sort_enabled: true
 	}
 }

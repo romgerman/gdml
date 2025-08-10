@@ -8,3 +8,6 @@ func _ready() -> void:
 	print("rendered string ", stringResult)
 	var scriptResult = renderer.renderScript(what)
 	print("rendered script ", scriptResult)
+	add_child(scriptResult)
+	await get_tree().process_frame
+	print(scriptResult.size.x)
