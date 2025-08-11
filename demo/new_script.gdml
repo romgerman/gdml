@@ -3,7 +3,7 @@ Control {
 	size.x: 50.0
 	size.y: 100
 	
-	Control {
+	MyCoolButton {
 		z_index: 99
 		y_sort_enabled: true
 		size: Vector2 {
@@ -11,4 +11,6 @@ Control {
 			y: 200
 		}
 	}
+	
+	MyNextCoolButton {}
 }
