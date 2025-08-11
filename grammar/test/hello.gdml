@@ -17,13 +17,18 @@ Control {
         hello: "world";
         dict_property: 123
         prop_3: true;
+        dict_res: Vector2 {
+            x: 0
+            y: 0
+        }
     }
     prop_arr: [
         1, 2,
         3, 4,
         "test", false,
         555.555,
-        [test_identifier.property]
+        [test_identifier.property],
+        {}
     ]
 
     # @if true {

@@ -20,6 +20,7 @@ module.exports = grammar({
       $.node_definition
     ),
 
+    // Statements
     node_definition: $ => seq(
       $.identifier,
       '{',
@@ -28,7 +29,7 @@ module.exports = grammar({
       '}'
     ),
     resource_definition: $ => seq(
-      optional($.identifier),
+      $.identifier,
       '{',
       repeat($.property_definition),
       '}'
@@ -40,13 +41,15 @@ module.exports = grammar({
       choice('\n', ';')
     ),
 
+    // Expressions
     expression: $ => choice(
       $.identifier,
       $.number,
       $.boolean,
       $.string,
       $.array_expression,
-      $.member_expression
+      $.member_expression,
+      $.dictionary_expression
     ),
     member_expression: $ => seq(
       $.identifier,
@@ -62,6 +65,11 @@ module.exports = grammar({
         ))
       )),
       ']'
+    ),
+    dictionary_expression: $ => seq(
+      '{',
+      optional(repeat($.property_definition)),
+      '}'
     ),
 
     // Primitives

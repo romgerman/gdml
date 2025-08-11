@@ -44,6 +44,8 @@ std::unique_ptr<SourceFileNode> GdmlParser::parse(const String& text) {
         if (child_node.isType("definition")) {
             std::unique_ptr<DefinitionNode> def = visitDefinition(child_node.raw(), text);
             out->statements.push_back(std::move(def));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing source file", child_node);
         }
@@ -61,6 +63,8 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, const
 
         if (child_node.isType("node_definition")) {
             out->node = std::move(visitNodeDefinition(child_node, text));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing definition", child_node);
         }
@@ -84,6 +88,8 @@ std::unique_ptr<NodeDefinitionNode> GdmlParser::visitNodeDefinition(ts::Node nod
         } else if (child_node.isType("node_definition")) {
             std::unique_ptr<NodeDefinitionNode> def = visitNodeDefinition(child_node, text);
             out->children.push_back(std::move(def));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing node definition", child_node);
         }
@@ -107,6 +113,8 @@ std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node,
             out->value = visitExpression(child_node, text);
         } else if (child_node.isType("resource_definition")) {
             out->value = visitResource(child_node, text);
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing property", child_node);
         }
@@ -127,6 +135,8 @@ std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node,
         } else if (child_node.isType("property_definition")) {
             std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
             out->properties.push_back(std::move(def));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
         }
@@ -154,6 +164,8 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, const
             out = visitArrayExpression(node, text);
         } else if (child_node.isType("member_expression")) {
             out = visitMemberExpression(node, text);
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing expression", child_node);
         }
@@ -171,6 +183,8 @@ std::unique_ptr<MemberExpressionNode> GdmlParser::visitMemberExpression(ts::Node
 
         if (child_node.isType("identifier")) {
             out->path.push_back(std::move(visitIdentifier(child_node, text)));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing member expression", child_node);
         }
@@ -189,12 +203,34 @@ std::unique_ptr<ArrayExpressionNode> GdmlParser::visitArrayExpression(ts::Node n
         if (child_node.isType("expression")) {
             std::unique_ptr<ExpressionNode> expr = visitExpression(node, text);
             out->values.push_back(std::move(expr));
+        } else if (child_node.isType("comment")) {
+            continue;
         } else {
             pushError("Unknown node " + String(child_node.getType()) + " while parsing array expression", child_node);
         }
     }
 
     return out;
+}
+
+std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpression(ts::Node node, const String &text) {
+  std::unique_ptr<DictionaryExpressionNode> out = std::make_unique<DictionaryExpressionNode>();
+  out->type = GdmlNodeType::DICTIONARY_EXPRESSION;
+
+  for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+    ts::Node child_node = node.getNamedChild(i);
+
+    if (child_node.isType("property_definition")) {
+        std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
+        out->values.push_back(std::move(def));
+    } else if (child_node.isType("comment")) {
+        continue;
+    } else {
+        pushError("Unknown node " + String(child_node.getType()) + " while parsing dictionary expression", child_node);
+    }
+  }
+
+  return out;
 }
 
 std::unique_ptr<IdentifierNode> GdmlParser::visitIdentifier(ts::Node node, const String& text) {
