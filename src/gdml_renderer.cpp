@@ -90,30 +90,7 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 			setVariantProperty(control, identifier->name, *property->value.get());
 		} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 			const godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
-			godot::Variant previous_variant = control;
-			godot::Variant current_variant = control;
-			bool failed = false;
-
-			for (auto it = member_access->path.begin(); it != member_access->path.end() - 1; ++it) {
-				bool is_valid = false;
-				previous_variant = current_variant;
-				godot::Variant next_property = current_variant.get(it->get()->name, &is_valid);
-
-				if (is_valid) {
-					current_variant = next_property;
-				} else {
-					print_error("Cannot get property " + it->get()->name + " in path");
-					failed = true;
-					break;
-				}
-			}
-
-			if (!failed) {
-				const godot::String& variant_property = member_access->path.back()->name;
-				setVariantProperty(current_variant, variant_property, *property->value.get());
-				const godot::String& previous_property = (member_access->path.end() - 2)->get()->name;
-				previous_variant.set(previous_property, current_variant);
-			}
+			setVariantPropertyDeep(control, member_access->path, *property->value.get());
 		}
 	}
 
@@ -143,16 +120,18 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 	return control;
 }
 
-void traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, const godot::String &prop_key, const godot::ExpressionNode &value_node) {
+bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, const godot::String &prop_key, const godot::ExpressionNode &value_node) {
+	bool is_valid = false;
+	
 	if (value_node.type == GdmlNodeType::STRING_EXPRESSION) {
 		const StringNode &node = (StringNode &)value_node;
-		obj.set(prop_key, node.value);
+		obj.set(prop_key, node.value, &is_valid);
 	} else if (value_node.type == GdmlNodeType::NUMBER_EXPRESSION) {
 		NumberNode node = (NumberNode &)value_node;
 		if (node.isFloat) {
-			obj.set(prop_key, node.getFloat());
+			obj.set(prop_key, node.getFloat(), &is_valid);
 		} else {
-			obj.set(prop_key, node.getInteger());
+			obj.set(prop_key, node.getInteger(), &is_valid);
 		}
 	} else if (value_node.type == GdmlNodeType::BOOLEAN_EXPRESSION) {
 		const BooleanNode &node = (BooleanNode &)value_node;
@@ -172,14 +151,14 @@ void traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, con
 
 			if (error.error != GDEXTENSION_CALL_OK) {
 				print_error("Error constructing variant type " + node.name->name);
-				return;
+				return false;
 			}
 		} else {
 			if (ClassDB::class_exists(node.name->name)) {
 				resource_variant = ClassDB::instantiate(node.name->name);
 			} else {
 				print_error("Error instantiating class " + node.name->name);
-				return;
+				return false;
 			}
 		}
 
@@ -189,12 +168,39 @@ void traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, con
 				setVariantProperty(resource_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 				const godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
-				print_line("member access expression is not implemented");
+				setVariantPropertyDeep(resource_variant, member_access->path, *property->value.get());
 			}
 		}
 
-		obj.set(prop_key, resource_variant);
+		obj.set(prop_key, resource_variant, &is_valid);
 	}
+
+	return is_valid;
+}
+
+bool traversal::TreeRendererVisitor::setVariantPropertyDeep(godot::Variant &obj, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node) {
+	godot::Variant previous_variant;
+	godot::Variant current_variant = obj;
+
+	bool is_valid = false;
+	for (auto it = path.begin(); it != path.end() - 1; ++it) {
+		previous_variant = current_variant;
+		current_variant = current_variant.get(it->get()->name, &is_valid);
+
+		if (!is_valid) {
+			print_error("Cannot get property " + it->get()->name + " in path");
+			return false;
+		}
+	}
+
+	const godot::String& variant_property = path.back()->name;
+	if (setVariantProperty(current_variant, variant_property, value_node)) {
+		const godot::String& previous_property = (path.end() - 2)->get()->name;
+		previous_variant.set(previous_property, current_variant, &is_valid);
+		return is_valid;
+	}
+
+	return false;
 }
 
 // Renderer
