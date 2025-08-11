@@ -6,6 +6,7 @@
 #include "gdml_script.h"
 
 #include <memory>
+#include <map>
 
 #include <godot_cpp/variant/variant.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -14,6 +15,8 @@
 namespace traversal {
 
 class TreeRendererVisitor : public GdmlVisitor<godot::Variant> {
+	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
+
 public:
     godot::Variant visit(const godot::GdmlNode& root_node) override;
 private:
