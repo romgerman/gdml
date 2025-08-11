@@ -28,6 +28,9 @@ String traversal::GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t d
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
 				out += visitNode(*prop.get(), depth + 1) + "\n";
 			}
+			for (const std::unique_ptr<NodeDefinitionNode> &child : self.children) {
+				out += visitNode(*child.get(), depth + 1) + "\n";
+			}
 			return out + "}";
 		} break;
 		case GdmlNodeType::PROPERTY_DEFINITION: {

@@ -90,12 +90,30 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 			setVariantProperty(control, identifier->name, *property->value.get());
 		} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 			const godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
-			godot::PackedStringArray arr;
-			for (const std::unique_ptr<godot::IdentifierNode> &part_node : member_access->path) {
-				arr.append(part_node->name);
+			godot::Variant previous_variant = control;
+			godot::Variant current_variant = control;
+			bool failed = false;
+
+			for (auto it = member_access->path.begin(); it != member_access->path.end() - 1; ++it) {
+				bool is_valid = false;
+				previous_variant = current_variant;
+				godot::Variant next_property = current_variant.get(it->get()->name, &is_valid);
+
+				if (is_valid) {
+					current_variant = next_property;
+				} else {
+					print_error("Cannot get property " + it->get()->name + " in path");
+					failed = true;
+					break;
+				}
 			}
-			// doesn't work?
-			setVariantProperty(control, String(":").join(arr), *property->value.get());
+
+			if (!failed) {
+				const godot::String& variant_property = member_access->path.back()->name;
+				setVariantProperty(current_variant, variant_property, *property->value.get());
+				const godot::String& previous_property = (member_access->path.end() - 2)->get()->name;
+				previous_variant.set(previous_property, current_variant);
+			}
 		}
 	}
 
@@ -126,7 +144,6 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 }
 
 void traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, const godot::String &prop_key, const godot::ExpressionNode &value_node) {
-	print_line(prop_key);
 	if (value_node.type == GdmlNodeType::STRING_EXPRESSION) {
 		const StringNode &node = (StringNode &)value_node;
 		obj.set(prop_key, node.value);
