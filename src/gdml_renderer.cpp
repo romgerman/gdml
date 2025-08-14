@@ -56,6 +56,7 @@ Variant traversal::TreeRendererVisitor::visit(const godot::GdmlNode &root_node) 
 	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
 		return visitSourceFile((godot::SourceFileNode &)root_node);
 	} else {
+		print_error("Cannot render file");
 		return nullptr;
 	}
 }
@@ -238,23 +239,23 @@ bool traversal::TreeRendererVisitor::setVariantPropertyDeep(godot::Variant &obj,
 // Renderer
 
 void GdmlRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString"), &GdmlRenderer::renderString);
-	ClassDB::bind_method(D_METHOD("renderScript"), &GdmlRenderer::renderScript);
+	ClassDB::bind_method(D_METHOD("renderString", "source", "data"), &GdmlRenderer::renderString, DEFVAL(godot::Dictionary()));
+	ClassDB::bind_method(D_METHOD("renderScript", "script", "data"), &GdmlRenderer::renderScript, DEFVAL(godot::Dictionary()));
 }
 
 GdmlRenderer::GdmlRenderer() :
-		gdml(std::make_unique<GdmlParser>()) {}
+		m_parser(std::make_unique<GdmlParser>()) {}
 
-Variant GdmlRenderer::renderString(const String &source) {
-	std::unique_ptr<godot::SourceFileNode> result = gdml->parse(source);
+Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary& data) {
+	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 	String treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
 	print_line(treeString);
-	for (GdmlParseError &err : gdml->getParseErrors()) {
+	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_line(err.toString());
 	}
 	return traversal::TreeRendererVisitor().visit(*result.get());
 }
 
-Variant godot::GdmlRenderer::renderScript(GdmlScript *script) {
-	return renderString(script->get_source_code());
+Variant godot::GdmlRenderer::renderScript(GdmlScript *script, const godot::Dictionary& data) {
+	return renderString(script->get_source_code(), data);
 }

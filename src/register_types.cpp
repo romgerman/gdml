@@ -5,7 +5,10 @@
 #include "gdml_syntax_highlighter.h"
 #include "gdml_script_resource_format_loader.h"
 #include "gdml_script_resource_format_saver.h"
+
+#include "gdml_atom.h"
 #include "gdml_renderer.h"
+#include "gdml_global.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -23,7 +26,10 @@ void initialize_example_module(ModuleInitializationLevel p_level) {
 	GDREGISTER_CLASS(GdmlScriptResourceFormatLoader)
 	GDREGISTER_CLASS(GdmlScriptResourceFormatSaver)
 	GDREGISTER_CLASS(GdmlSyntaxHighlighter);
+
+	GDREGISTER_CLASS(reactive::GdmlAtom);
 	GDREGISTER_CLASS(GdmlRenderer);
+	GDREGISTER_CLASS(global::gdml);
 
 	GdmlScriptLanguage::get_or_create_singleton();
 	GdmlScriptResourceFormatLoader::register_in_godot();

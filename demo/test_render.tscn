@@ -1,11 +1,14 @@
-[gd_scene load_steps=3 format=3 uid="uid://bdx6bec07ctvh"]
+[gd_scene load_steps=4 format=3 uid="uid://bdx6bec07ctvh"]
 
 [ext_resource type="Script" uid="uid://50ej1ovsonsw" path="res://new_script.gd" id="1_dxa44"]
 [ext_resource type="Script" uid="uid://cyoy82e6plgv7" path="res://new_script.gdml" id="2_v0t4i"]
+[ext_resource type="Script" uid="uid://crd36fuo3eoj4" path="res://my_cool_button.gd" id="3_mirat"]
 
 [node name="TestRender" type="Node2D"]
 
-[node name="NodeThatRenders" type="Node2D" parent="."]
+[node name="NodeThatRenders" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
 script = ExtResource("1_dxa44")
 what = ExtResource("2_v0t4i")
 
@@ -14,3 +17,9 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+
+[node name="Button" type="Button" parent="Control"]
+layout_mode = 0
+offset_right = 8.0
+offset_bottom = 8.0
+script = ExtResource("3_mirat")

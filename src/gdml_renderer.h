@@ -34,15 +34,15 @@ namespace godot {
 class GdmlRenderer : public RefCounted {
     GDCLASS(GdmlRenderer, RefCounted)
 
-    std::unique_ptr<GdmlParser> gdml;
+    std::unique_ptr<GdmlParser> m_parser;
 
 protected:
     static void _bind_methods();
 
 public:
     GdmlRenderer();
-    Variant renderString(const String& source);
-    Variant renderScript(GdmlScript* script);
+    Variant renderString(const String& source, const godot::Dictionary& data);
+    Variant renderScript(GdmlScript* script, const godot::Dictionary& data);
 };
 
 }
