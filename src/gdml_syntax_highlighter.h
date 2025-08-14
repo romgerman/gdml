@@ -7,11 +7,13 @@ namespace godot {
 class GdmlSyntaxHighlighter : public EditorSyntaxHighlighter {
     GDCLASS(GdmlSyntaxHighlighter, SyntaxHighlighter)
 
-public:
-	virtual void _update_cache() override;
+protected:
+	static void _bind_methods();
 
-	virtual String _get_name() const override;
-	virtual PackedStringArray _get_supported_languages() const override;
+public:
+	String _get_name() const override;
+	PackedStringArray _get_supported_languages() const override;
+	Dictionary _get_line_syntax_highlighting(int32_t p_line) const override;
 };
 
 }

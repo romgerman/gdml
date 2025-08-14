@@ -1,0 +1,9 @@
+# @reference: main_menu.gd
+
+Control {
+	
+	
+	Label {
+		text: game_name
+	}
+}

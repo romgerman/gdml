@@ -24,12 +24,12 @@ sources = Glob("src/*.cpp") + [
     "grammar/src/parser.c"
 ]
 
-tree_sitter_library = env.StaticLibrary("demo/bin/tree-sitter", ["tree-sitter/lib/src/lib.c"])
+tree_sitter_library = env.StaticLibrary("demo/addons/gdml/bin/tree-sitter", ["tree-sitter/lib/src/lib.c"])
 env.Append(LIBS=[tree_sitter_library])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
-        "demo/bin/libgdexample.{}.{}.framework/libgdexample.{}.{}".format(
+        "demo/addons/gdml/bin/libgdml.{}.{}.framework/libgdml.{}.{}".format(
             env["platform"], env["target"], env["platform"], env["target"]
         ),
         source=sources,
@@ -37,17 +37,17 @@ if env["platform"] == "macos":
 elif env["platform"] == "ios":
     if env["ios_simulator"]:
         library = env.StaticLibrary(
-            "demo/bin/libgdexample.{}.{}.simulator.a".format(env["platform"], env["target"]),
+            "demo/addons/gdml/bin/libgdml.{}.{}.simulator.a".format(env["platform"], env["target"]),
             source=sources,
         )
     else:
         library = env.StaticLibrary(
-            "demo/bin/libgdexample.{}.{}.a".format(env["platform"], env["target"]),
+            "demo/addons/gdml/bin/libgdml.{}.{}.a".format(env["platform"], env["target"]),
             source=sources,
         )
 else:
     library = env.SharedLibrary(
-        "demo/bin/libgdexample{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        "demo/addons/gdml/bin/libgdml{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
 

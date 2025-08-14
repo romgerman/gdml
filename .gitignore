@@ -1,7 +1,7 @@
 .sconsign.dblite
 demo/.godot
-demo/bin/*
-!demo/bin/gdexample.gdextension
+demo/addons/gdml/bin/*
+!demo/addons/gdml/bin/gdml.gdextension
 grammar/node_modules
 *.obj
 *.pdb
