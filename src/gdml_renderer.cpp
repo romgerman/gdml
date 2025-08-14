@@ -2,9 +2,9 @@
 
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/object.hpp>
-#include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/print_string.hpp>
 
@@ -61,15 +61,20 @@ Variant traversal::TreeRendererVisitor::visit(const godot::GdmlNode &root_node) 
 	}
 }
 
+void traversal::TreeRendererVisitor::setRendererData(const godot::Dictionary &data) {
+	m_context = std::make_unique<TreeRendererVisitorContext>();
+	m_context->data = data;
+}
+
 godot::Variant traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node) {
 	if (node.statements.size() > 1) {
-		print_line("Currently doesn't support multiple nodes");
+		print_error("Currently doesn't support multiple nodes");
 		return nullptr;
 	}
 
 	for (const std::unique_ptr<godot::DefinitionNode> &statement : node.statements) {
 		if (!statement->node) {
-			print_line("No node? WTF?");
+			print_error("No node? WTF?");
 			return nullptr;
 		}
 
@@ -82,7 +87,7 @@ godot::Variant traversal::TreeRendererVisitor::visitSourceFile(const godot::Sour
 
 godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::NodeDefinitionNode &node) {
 	if (!ClassDB::can_instantiate(node.name->name)) {
-		print_line("Cannot construct type " + node.name->name);
+		print_error("Cannot construct type " + node.name->name);
 		return nullptr;
 	}
 
@@ -99,7 +104,7 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 		}
 
 		if (c_info.is_empty()) {
-			print_line("Class with name " + node.name->name + " is not found");
+			print_error("Class with name " + node.name->name + " is not found");
 			return nullptr;
 		}
 
@@ -147,7 +152,7 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 			as_node->add_child(child_node);
 		}
 	} else {
-		print_line("Cannot have children on non-Node class");
+		print_error("Cannot have children on non-Node class");
 	}
 
 	return base_variant;
@@ -168,7 +173,15 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, con
 		}
 	} else if (value_node.type == GdmlNodeType::BOOLEAN_EXPRESSION) {
 		const BooleanNode &node = (BooleanNode &)value_node;
-		obj.set(prop_key, node.value);
+		obj.set(prop_key, node.value, &is_valid);
+	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		const IdentifierNode &node = (IdentifierNode &)value_node;
+		if (m_context->data.has(node.name)) {
+			const godot::Variant value = m_context->data.get(node.name, godot::Variant(nullptr));
+			obj.set(prop_key, value, &is_valid);
+		} else {
+			print_error("Value for identifier \"" + node.name + "\" was not found");
+		}
 	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
 		godot::Variant resource_variant;
@@ -246,16 +259,18 @@ void GdmlRenderer::_bind_methods() {
 GdmlRenderer::GdmlRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary& data) {
+Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 	String treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
 	print_line(treeString);
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
-		print_line(err.toString());
+		print_error(err.toString());
 	}
-	return traversal::TreeRendererVisitor().visit(*result.get());
+	traversal::TreeRendererVisitor visitor;
+	visitor.setRendererData(data);
+	return visitor.visit(*result.get());
 }
 
-Variant godot::GdmlRenderer::renderScript(GdmlScript *script, const godot::Dictionary& data) {
+Variant godot::GdmlRenderer::renderScript(GdmlScript *script, const godot::Dictionary &data) {
 	return renderString(script->get_source_code(), data);
 }
