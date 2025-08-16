@@ -13,7 +13,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static reactive::GdmlAtom* create_atom();
+	static reactive::GdmlAtom *create_atom();
 };
 
-}
+} //namespace global

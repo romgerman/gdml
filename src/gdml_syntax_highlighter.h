@@ -3,13 +3,13 @@
 #include <godot_cpp/classes/editor_syntax_highlighter.hpp>
 
 namespace ts {
-	class Node;
+class Node;
 }
 
 namespace godot {
 
 class GdmlSyntaxHighlighter : public SyntaxHighlighter {
-    GDCLASS(GdmlSyntaxHighlighter, SyntaxHighlighter)
+	GDCLASS(GdmlSyntaxHighlighter, SyntaxHighlighter)
 
 protected:
 	static void _bind_methods();
@@ -21,7 +21,7 @@ public:
 
 private:
 	std::vector<ts::Node> find_nodes_on_line(ts::Node root_node, int32_t line) const;
-	godot::Color get_color_for_node(ts::Node& node) const;
+	godot::Color get_color_for_node(ts::Node &node) const;
 };
 
-}
+} //namespace godot

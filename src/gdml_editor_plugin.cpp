@@ -1,10 +1,10 @@
 #include "gdml_editor_plugin.h"
 
 #include <godot_cpp/classes/editor_interface.hpp>
-#include <godot_cpp/classes/script_editor.hpp>
-#include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/editor_syntax_highlighter.hpp>
+#include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
+#include <godot_cpp/classes/script_editor.hpp>
 
 using namespace godot;
 

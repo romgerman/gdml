@@ -2,9 +2,10 @@
 #include "gdml_script.h"
 #include "gdml_script_language.h"
 
-#include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/file_access.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
+#include <godot_cpp/classes/script.hpp>
+
 
 using namespace godot;
 
@@ -23,8 +24,7 @@ bool GdmlScriptResourceFormatLoader::_handles_type(const StringName &p_type) con
 String GdmlScriptResourceFormatLoader::_get_resource_type(const String &p_path) const {
 	if (p_path.get_extension() == "gdml") {
 		return GdmlScript::get_class_static();
-	}
-	else {
+	} else {
 		return "";
 	}
 }
@@ -40,8 +40,7 @@ Variant GdmlScriptResourceFormatLoader::_load(const String &p_path, const String
 	Error status = script->reload();
 	if (status == OK) {
 		return script;
-	}
-	else {
+	} else {
 		return status;
 	}
 }
@@ -55,4 +54,3 @@ void GdmlScriptResourceFormatLoader::unregister_in_godot() {
 	ResourceLoader::get_singleton()->remove_resource_format_loader(instance);
 	instance.unref();
 }
-

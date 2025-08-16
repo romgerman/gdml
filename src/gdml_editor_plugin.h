@@ -18,4 +18,4 @@ public:
 	void _exit_tree() override;
 };
 
-}
+} //namespace godot

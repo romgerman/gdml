@@ -12,9 +12,9 @@ static Ref<GdmlScriptResourceFormatSaver> instance;
 void GdmlScriptResourceFormatSaver::_bind_methods() {}
 
 Error GdmlScriptResourceFormatSaver::_save(const Ref<Resource> &resource,
-                                                  const String &p_path,
-                                                  uint32_t flags) {
-  Ref<GdmlScript> script = resource;
+		const String &p_path,
+		uint32_t flags) {
+	Ref<GdmlScript> script = resource;
 	ERR_FAIL_COND_V(script.is_null(), ERR_INVALID_PARAMETER);
 
 	Ref<FileAccess> file = FileAccess::open(p_path, FileAccess::ModeFlags::WRITE);
@@ -32,12 +32,12 @@ Error GdmlScriptResourceFormatSaver::_save(const Ref<Resource> &resource,
 }
 
 bool GdmlScriptResourceFormatSaver::_recognize(const Ref<Resource> &resource) const {
-    Ref<GdmlScript> script = resource;
-    return script.is_valid();
+	Ref<GdmlScript> script = resource;
+	return script.is_valid();
 }
 
 PackedStringArray GdmlScriptResourceFormatSaver::_get_recognized_extensions(const Ref<Resource> &resource) const {
-    PackedStringArray extensions;
+	PackedStringArray extensions;
 	if (_recognize(resource)) {
 		extensions.push_back("gdml");
 	}
@@ -45,11 +45,11 @@ PackedStringArray GdmlScriptResourceFormatSaver::_get_recognized_extensions(cons
 }
 
 void GdmlScriptResourceFormatSaver::register_in_godot() {
-    instance.instantiate();
+	instance.instantiate();
 	ResourceSaver::get_singleton()->add_resource_format_saver(instance);
 }
 
 void GdmlScriptResourceFormatSaver::unregister_in_godot() {
-    ResourceSaver::get_singleton()->remove_resource_format_saver(instance);
+	ResourceSaver::get_singleton()->remove_resource_format_saver(instance);
 	instance.unref();
 }

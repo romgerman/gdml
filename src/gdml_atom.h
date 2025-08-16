@@ -8,7 +8,7 @@ class GdmlAtom : public godot::Object {
 	GDCLASS(GdmlAtom, Object);
 
 protected:
-    static void _bind_methods();
+	static void _bind_methods();
 };
 
-}
+} //namespace reactive

@@ -5,7 +5,7 @@
 namespace godot {
 
 class GdmlScriptResourceFormatSaver : public ResourceFormatSaver {
-    GDCLASS(GdmlScriptResourceFormatSaver, ResourceFormatSaver);
+	GDCLASS(GdmlScriptResourceFormatSaver, ResourceFormatSaver);
 
 protected:
 	static void _bind_methods();
@@ -19,4 +19,4 @@ public:
 	static void unregister_in_godot();
 };
 
-}
+} //namespace godot

@@ -1,15 +1,15 @@
 #include "gdml_syntax_highlighter.h"
 
-#include "tree_sitter.h"
 #include "gdml_parser.h"
+#include "tree_sitter.h"
 
 #include <tree_sitter/tree-sitter-gdml.h>
 
 #include <functional>
 
-#include <godot_cpp/classes/text_edit.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>
+#include <godot_cpp/classes/text_edit.hpp>
 
 using namespace godot;
 
@@ -29,7 +29,7 @@ Dictionary godot::GdmlSyntaxHighlighter::get_syntax_highlighting(godot::String p
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
 	std::vector<ts::Node> node_on_line = find_nodes_on_line(root_node, p_line);
 
-	for (ts::Node& node : node_on_line) {
+	for (ts::Node &node : node_on_line) {
 		godot::Color color = get_color_for_node(node);
 		godot::Dictionary line_out;
 		line_out.set("color", color);
