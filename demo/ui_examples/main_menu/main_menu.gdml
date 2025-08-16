@@ -1,8 +1,19 @@
 # @reference: main_menu.gd
 
 Control {
-	
-	
+	MyCoolControl {
+		theme: Resource {
+			hello_boi: [
+				"lmao",
+				1.2, 444,
+				true, false,
+				identifier.lol,
+				{
+					map: value
+				}
+			]
+		}
+	}
 	Label {
 		text: game_name
 	}

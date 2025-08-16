@@ -7,7 +7,6 @@
 namespace ts {
 
 class Node {
-private:
     TSNode m_node;
 
 public:
@@ -26,6 +25,20 @@ public:
     TSPoint getStartPoint();
     TSPoint getEndPoint();
     godot::String getText(const godot::String& sourceText);
+
+	static Node getRootNode(const TSTree* tree);
+};
+
+class Cursor {
+	TSTreeCursor m_cursor;
+
+public:
+	Cursor(TSNode start_node);
+	Cursor(Node &start_node);
+
+	Node getCurrentNode();
+	bool gotoFirstChild();
+	bool gotoNextSibling();
 };
 
 }
