@@ -20,8 +20,8 @@ public:
 	Dictionary get_syntax_highlighting(godot::String p_text, int32_t p_line) const;
 
 private:
-	std::vector<ts::Node> find_nodes_on_line(ts::Node root_node, int32_t line) const;
-	godot::Color get_color_for_node(ts::Node &node) const;
+	std::vector<std::tuple<ts::Node, godot::String>> find_nodes_on_line(const ts::Node &root_node, int32_t line) const;
+	godot::Color get_color_for_node(std::tuple<ts::Node, godot::String> &node) const;
 };
 
 } //namespace godot

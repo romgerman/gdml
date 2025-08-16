@@ -27,28 +27,44 @@ Dictionary godot::GdmlSyntaxHighlighter::get_syntax_highlighting(godot::String p
 
 	auto tree = GdmlParser().rawParse(p_text);
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
-	std::vector<ts::Node> node_on_line = find_nodes_on_line(root_node, p_line);
+	std::vector<std::tuple<ts::Node, godot::String>> node_on_line = find_nodes_on_line(root_node, p_line);
 
-	for (ts::Node &node : node_on_line) {
+	for (std::tuple<ts::Node, godot::String> &node : node_on_line) {
 		godot::Color color = get_color_for_node(node);
 		godot::Dictionary line_out;
-		line_out.set("color", color);
-		out.set(Variant(node.getStartPoint().column), line_out);
+		if (color.a != 0.0f) {
+			line_out.set("color", color);
+		}
+		out.set(Variant(std::get<ts::Node>(node).getStartPoint().column), line_out);
 	}
 
 	return out;
 }
 
-std::vector<ts::Node> godot::GdmlSyntaxHighlighter::find_nodes_on_line(ts::Node root_node, int32_t line) const {
-	std::vector<ts::Node> out;
+std::vector<std::tuple<ts::Node, godot::String>> godot::GdmlSyntaxHighlighter::find_nodes_on_line(const ts::Node &root_node, int32_t line) const {
+	std::vector<std::tuple<ts::Node, godot::String>> out;
 
-	std::function<void(ts::Node)> traverse = [&](ts::Node node) {
+	static const std::set<godot::String> possible_parent = {
+		"node_definition",
+		//"property_definition",
+		"resource_definition"
+	};
+
+	godot::String &current_parent = String();
+
+	std::function<void(const ts::Node)> traverse = [&](const ts::Node node) {
 		if (node.getStartPoint().row == line) {
-			out.push_back(node);
+			out.push_back(std::tuple(node, current_parent));
+		}
+
+		if (possible_parent.find(node.getType()) != possible_parent.end()) {
+			current_parent = node.getType();
+		} else {
+			current_parent = String();
 		}
 
 		for (uint32_t i = 0; i < node.getChildCount(); i++) {
-			ts::Node child = node.getChild(i);
+			const ts::Node child = node.getChild(i);
 			traverse(child);
 		}
 	};
@@ -58,12 +74,19 @@ std::vector<ts::Node> godot::GdmlSyntaxHighlighter::find_nodes_on_line(ts::Node 
 	return out;
 }
 
-godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(ts::Node &node) const {
-	const godot::String type = node.getType();
+godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, godot::String> &node) const {
+	const godot::String type = std::get<ts::Node>(node).getType();
+
+	static const std::set<godot::String> possible_parent = {
+		"node_definition",
+		//"property_definition",
+		"resource_definition"
+	};
 
 	auto editor_settings = EditorInterface::get_singleton()->get_editor_settings();
 	Color comment_color = editor_settings->get_setting("text_editor/theme/highlighting/comment_color");
 	Color keyword_color = editor_settings->get_setting("text_editor/theme/highlighting/keyword_color");
+	Color engine_type_color = editor_settings->get_setting("text_editor/theme/highlighting/engine_type_color");
 	Color member_color = editor_settings->get_setting("text_editor/theme/highlighting/member_variable_color");
 	Color number_color = editor_settings->get_setting("text_editor/theme/highlighting/number_color");
 	Color string_color = editor_settings->get_setting("text_editor/theme/highlighting/string_color");
@@ -74,16 +97,20 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(ts::Node &node) co
 	if (type == "comment") {
 		return comment_color;
 	} else if (type == "identifier") {
+		if (possible_parent.find(std::get<godot::String>(node)) != possible_parent.end()) {
+			return engine_type_color;
+		}
 		return member_color;
 	} else if (type == "number") {
 		return number_color;
-	} else if (type == "string") {
+	} else if (type == "string" || type == "string_fragment" || type == "escape_sequence") {
 		return string_color;
-	} else if (type == "boolean") {
+	} else if (type == "boolean" || type == "true" || type == "false") {
 		return keyword_color;
 	} else if (type == "{" || type == "}" || type == "[" || type == "]") {
 		return symbol_color;
 	} else {
-		return text_color;
+		print_line("not colored: " + type);
+		return godot::Color(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }

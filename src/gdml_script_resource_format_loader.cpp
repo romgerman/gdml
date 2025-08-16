@@ -6,7 +6,6 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
 
-
 using namespace godot;
 
 static Ref<GdmlScriptResourceFormatLoader> instance;

@@ -7,6 +7,8 @@
 
 using namespace godot;
 
+namespace parser {
+
 GdmlSourceLocation::GdmlSourceLocation(ts::Node node) {
 	span = GdmlTextSpan(node.getStartByte(), node.getEndByte());
 	TSPoint start_point = node.getStartPoint();
@@ -18,6 +20,20 @@ GdmlSourceLocation::GdmlSourceLocation(ts::Node node) {
 String GdmlSourceLocation::getText(const String &text) {
 	return text.substr(span.start, span.getLength());
 }
+
+godot::String GdmlParseError::toString() {
+	return message + " at " + godot::String::num_uint64(location.start.line) + ":" + godot::String::num_uint64(location.start.column);
+}
+
+uint32_t GdmlTextSpan::getLength() {
+	return end - start;
+}
+
+bool GdmlTextSpan::isEmpty() {
+	return getLength() == 0;
+}
+
+} //namespace parser
 
 GdmlParser::GdmlParser() :
 		m_parser(ts_parser_new(), ts_parser_delete) {
@@ -273,13 +289,13 @@ std::unique_ptr<StringNode> GdmlParser::visitString(ts::Node node, const String 
 	return out;
 }
 
-std::vector<GdmlParseError> &GdmlParser::getParseErrors() {
+std::vector<parser::GdmlParseError> &GdmlParser::getParseErrors() {
 	return parse_errors;
 }
 
 void GdmlParser::pushError(const String &error, ts::Node node) {
-	GdmlParseError err;
+	parser::GdmlParseError err;
 	err.message = error;
-	err.location = GdmlSourceLocation(node);
+	err.location = parser::GdmlSourceLocation(node);
 	parse_errors.push_back(err);
 }

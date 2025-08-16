@@ -9,6 +9,7 @@
 #include <godot_cpp/core/print_string.hpp>
 
 using namespace godot;
+using namespace parser;
 
 // Visitor
 
@@ -261,8 +262,9 @@ GdmlRenderer::GdmlRenderer() :
 
 Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
-	String treeString = traversal::GdmlPrinterVisitor().visit(*result.get());
-	print_line(treeString);
+
+	print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
+	
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());
 	}

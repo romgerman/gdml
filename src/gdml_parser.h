@@ -7,22 +7,16 @@
 
 #include <godot_cpp/variant/string.hpp>
 
-namespace godot {
-
-// Base
+namespace parser {
 
 struct GdmlTextSpan {
 	GdmlTextSpan() = default;
 	GdmlTextSpan(uint32_t start, uint32_t end) :
 			start(start), end(end) {}
 
-	uint32_t getLength() {
-		return end - start;
-	}
+	uint32_t getLength();
 
-	bool isEmpty() {
-		return getLength() == 0;
-	}
+	bool isEmpty();
 
 	uint32_t start = 0;
 	uint32_t end = 0;
@@ -41,7 +35,7 @@ struct GdmlSourceLocation {
 	GdmlSourceLocation() = default;
 	GdmlSourceLocation(ts::Node node);
 
-	String getText(const String &text);
+	godot::String getText(const godot::String &text);
 
 	GdmlTextSpan span;
 	GdmlLinePosition start;
@@ -49,13 +43,17 @@ struct GdmlSourceLocation {
 };
 
 struct GdmlParseError {
-	String toString() {
-		return message + " at " + String::num_uint64(location.start.line) + ":" + String::num_uint64(location.start.column);
-	}
+	godot::String toString();
 
-	String message;
+	godot::String message;
 	GdmlSourceLocation location;
 };
+
+} //namespace parser
+
+namespace godot {
+
+// Base
 
 enum class GdmlNodeType {
 	UNKNOWN = 0,
@@ -147,14 +145,14 @@ struct SourceFileNode : public GdmlNode {
 
 class GdmlParser {
 	std::unique_ptr<TSParser, decltype(&ts_parser_delete)> m_parser;
-	std::vector<GdmlParseError> parse_errors;
+	std::vector<parser::GdmlParseError> parse_errors;
 
 public:
 	GdmlParser();
 	std::unique_ptr<TSTree, decltype(&ts_tree_delete)> rawParse(const String &text);
 	std::unique_ptr<SourceFileNode> parse(const String &text);
 
-	std::vector<GdmlParseError> &getParseErrors();
+	std::vector<parser::GdmlParseError> &getParseErrors();
 
 private:
 	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, const String &text);

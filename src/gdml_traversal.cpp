@@ -3,12 +3,13 @@
 #include <godot_cpp/variant/packed_string_array.hpp>
 
 using namespace godot;
+using namespace traversal;
 
-String traversal::GdmlPrinterVisitor::visit(const GdmlNode &root_node) {
+String GdmlPrinterVisitor::visit(const GdmlNode &root_node) {
 	return visitNode(root_node, 0);
 }
 
-String traversal::GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
+String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 	switch (node.type) {
 		case GdmlNodeType::SOURCE_FILE: {
 			SourceFileNode &self = (SourceFileNode &)node;
