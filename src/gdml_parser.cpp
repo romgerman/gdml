@@ -42,14 +42,14 @@ GdmlParser::GdmlParser() :
 
 std::unique_ptr<TSTree, decltype(&ts_tree_delete)> GdmlParser::rawParse(const String &text) {
 	return std::unique_ptr<TSTree, decltype(&ts_tree_delete)>(
-			ts_parser_parse_string(m_parser.get(), nullptr, text.utf8().get_data(), text.length()),
+			ts_parser_parse_string(m_parser.get(), nullptr, text.utf8().get_data(), text.utf8().length()),
 			ts_tree_delete);
 }
 
 std::unique_ptr<SourceFileNode> GdmlParser::parse(const String &text) {
 	parse_errors.clear();
 	auto tree = rawParse(text);
-	ts::Node root_node = ts::Node(ts_tree_root_node(tree.get()));
+	ts::Node root_node = ts::Node::getRootNode(tree.get());
 
 	std::unique_ptr<SourceFileNode> out = std::make_unique<SourceFileNode>();
 	out->type = GdmlNodeType::SOURCE_FILE;
@@ -58,7 +58,7 @@ std::unique_ptr<SourceFileNode> GdmlParser::parse(const String &text) {
 		ts::Node child_node = root_node.getNamedChild(i);
 
 		if (child_node.isType("definition")) {
-			std::unique_ptr<DefinitionNode> def = visitDefinition(child_node.raw(), text);
+			std::unique_ptr<DefinitionNode> def = visitDefinition(child_node, text);
 			out->statements.push_back(std::move(def));
 		} else if (child_node.isType("comment")) {
 			continue;
@@ -169,17 +169,17 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, const
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("identifier")) {
-			out = visitIdentifier(node, text);
+			out = visitIdentifier(child_node, text);
 		} else if (child_node.isType("number")) {
-			out = visitNumber(node, text);
+			out = visitNumber(child_node, text);
 		} else if (child_node.isType("boolean")) {
-			out = visitBoolean(node, text);
+			out = visitBoolean(child_node, text);
 		} else if (child_node.isType("string")) {
 			out = visitString(child_node, text);
 		} else if (child_node.isType("array_expression")) {
-			out = visitArrayExpression(node, text);
+			out = visitArrayExpression(child_node, text);
 		} else if (child_node.isType("member_expression")) {
-			out = visitMemberExpression(node, text);
+			out = visitMemberExpression(child_node, text);
 		} else if (child_node.isType("comment")) {
 			continue;
 		} else {
@@ -217,7 +217,7 @@ std::unique_ptr<ArrayExpressionNode> GdmlParser::visitArrayExpression(ts::Node n
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("expression")) {
-			std::unique_ptr<ExpressionNode> expr = visitExpression(node, text);
+			std::unique_ptr<ExpressionNode> expr = visitExpression(child_node, text);
 			out->values.push_back(std::move(expr));
 		} else if (child_node.isType("comment")) {
 			continue;
@@ -282,7 +282,7 @@ std::unique_ptr<StringNode> GdmlParser::visitString(ts::Node node, const String 
 	out->value = String();
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
-		ts::Node child_node = ts::Node(node.getNamedChild(i));
+		ts::Node child_node = node.getNamedChild(i);
 		out->value += child_node.getText(text);
 	}
 

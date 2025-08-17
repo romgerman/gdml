@@ -20,6 +20,7 @@ public:
 	uint32_t getNamedChildCount() const;
 	Node getChild(uint32_t index) const;
 	Node getNamedChild(uint32_t index) const;
+	Node getChildByFieldName(const godot::String &fieldName) const;
 	uint32_t getStartByte() const;
 	uint32_t getEndByte() const;
 	TSPoint getStartPoint() const;

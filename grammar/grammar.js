@@ -35,9 +35,9 @@ module.exports = grammar({
       '}'
     ),
     property_definition: $ => seq(
-      choice($.identifier, $.member_expression),
+      field("name", choice($.identifier, $.member_expression)),
       ':',
-      choice($.expression, $.resource_definition),
+      field("value", choice($.expression, $.resource_definition)),
       choice('\n', ';')
     ),
 

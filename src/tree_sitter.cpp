@@ -37,6 +37,10 @@ Node Node::getNamedChild(uint32_t index) const {
 	return Node(ts_node_named_child(m_node, index));
 }
 
+Node Node::getChildByFieldName(const godot::String &fieldName) const {
+	return Node(ts_node_child_by_field_name(m_node, fieldName.utf8().get_data(), fieldName.utf8().length()));
+}
+
 uint32_t Node::getStartByte() const {
 	return ts_node_start_byte(m_node);
 }

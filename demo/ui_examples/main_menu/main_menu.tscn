@@ -6,3 +6,7 @@
 [node name="MainMenu" type="CanvasLayer"]
 script = ExtResource("1_wpk2a")
 ui_script = ExtResource("2_d6iqc")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0

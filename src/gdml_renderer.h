@@ -23,6 +23,7 @@ class TreeRendererVisitor : public GdmlVisitor<godot::Variant> {
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 
 public:
+	TreeRendererVisitor();
 	godot::Variant visit(const godot::GdmlNode &root_node) override;
 	void setRendererData(const godot::Dictionary &data);
 

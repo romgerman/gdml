@@ -13,47 +13,47 @@ using namespace parser;
 
 // Visitor
 
+traversal::TreeRendererVisitor::TreeRendererVisitor() {
+	m_variant_type_map = {
+		{ "Vector2", godot::Variant::Type::VECTOR2 },
+		{ "Vector2i", godot::Variant::Type::VECTOR2I },
+		{ "Rect2", godot::Variant::Type::RECT2 },
+		{ "Rect2i", godot::Variant::Type::RECT2I },
+		{ "Vector3", godot::Variant::Type::VECTOR3 },
+		{ "Vector3i", godot::Variant::Type::VECTOR3I },
+		{ "Transform2D", godot::Variant::Type::TRANSFORM2D },
+		{ "Vector4", godot::Variant::Type::VECTOR4 },
+		{ "Vector4i", godot::Variant::Type::VECTOR4I },
+		{ "Plane", godot::Variant::Type::PLANE },
+		{ "Quaternion", godot::Variant::Type::QUATERNION },
+		{ "AABB", godot::Variant::Type::AABB },
+		{ "Basis", godot::Variant::Type::BASIS },
+		{ "Transform3D", godot::Variant::Type::TRANSFORM3D },
+		{ "Projection", godot::Variant::Type::PROJECTION },
+
+		{ "Color", godot::Variant::Type::COLOR },
+		{ "StringName", godot::Variant::Type::STRING_NAME },
+		{ "NodePath", godot::Variant::Type::NODE_PATH },
+		{ "RID", godot::Variant::Type::RID },
+		{ "CALLABLE", godot::Variant::Type::CALLABLE },
+		{ "Signal", godot::Variant::Type::SIGNAL },
+		{ "Dictionary", godot::Variant::Type::DICTIONARY },
+		{ "Array", godot::Variant::Type::ARRAY },
+
+		{ "PackedByteArray", godot::Variant::Type::PACKED_BYTE_ARRAY },
+		{ "PackedInt32Array", godot::Variant::Type::PACKED_INT32_ARRAY },
+		{ "PackedInt64Array", godot::Variant::Type::PACKED_INT64_ARRAY },
+		{ "PackedFloat32Array", godot::Variant::Type::PACKED_FLOAT32_ARRAY },
+		{ "PackedFloat64Array", godot::Variant::Type::PACKED_FLOAT64_ARRAY },
+		{ "PackedStringArray", godot::Variant::Type::PACKED_STRING_ARRAY },
+		{ "PackedVector2Array", godot::Variant::Type::PACKED_VECTOR2_ARRAY },
+		{ "PackedVector3Array", godot::Variant::Type::PACKED_VECTOR3_ARRAY },
+		{ "PackedColorArray", godot::Variant::Type::PACKED_COLOR_ARRAY },
+		{ "PackedVector4Array", godot::Variant::Type::PACKED_VECTOR4_ARRAY },
+	};
+}
+
 Variant traversal::TreeRendererVisitor::visit(const godot::GdmlNode &root_node) {
-	if (m_variant_type_map.size() == 0) {
-		m_variant_type_map = {
-			{ "Vector2", godot::Variant::Type::VECTOR2 },
-			{ "Vector2i", godot::Variant::Type::VECTOR2I },
-			{ "Rect2", godot::Variant::Type::RECT2 },
-			{ "Rect2i", godot::Variant::Type::RECT2I },
-			{ "Vector3", godot::Variant::Type::VECTOR3 },
-			{ "Vector3i", godot::Variant::Type::VECTOR3I },
-			{ "Transform2D", godot::Variant::Type::TRANSFORM2D },
-			{ "Vector4", godot::Variant::Type::VECTOR4 },
-			{ "Vector4i", godot::Variant::Type::VECTOR4I },
-			{ "Plane", godot::Variant::Type::PLANE },
-			{ "Quaternion", godot::Variant::Type::QUATERNION },
-			{ "AABB", godot::Variant::Type::AABB },
-			{ "Basis", godot::Variant::Type::BASIS },
-			{ "Transform3D", godot::Variant::Type::TRANSFORM3D },
-			{ "Projection", godot::Variant::Type::PROJECTION },
-
-			{ "Color", godot::Variant::Type::COLOR },
-			{ "StringName", godot::Variant::Type::STRING_NAME },
-			{ "NodePath", godot::Variant::Type::NODE_PATH },
-			{ "RID", godot::Variant::Type::RID },
-			{ "CALLABLE", godot::Variant::Type::CALLABLE },
-			{ "Signal", godot::Variant::Type::SIGNAL },
-			{ "Dictionary", godot::Variant::Type::DICTIONARY },
-			{ "Array", godot::Variant::Type::ARRAY },
-
-			{ "PackedByteArray", godot::Variant::Type::PACKED_BYTE_ARRAY },
-			{ "PackedInt32Array", godot::Variant::Type::PACKED_INT32_ARRAY },
-			{ "PackedInt64Array", godot::Variant::Type::PACKED_INT64_ARRAY },
-			{ "PackedFloat32Array", godot::Variant::Type::PACKED_FLOAT32_ARRAY },
-			{ "PackedFloat64Array", godot::Variant::Type::PACKED_FLOAT64_ARRAY },
-			{ "PackedStringArray", godot::Variant::Type::PACKED_STRING_ARRAY },
-			{ "PackedVector2Array", godot::Variant::Type::PACKED_VECTOR2_ARRAY },
-			{ "PackedVector3Array", godot::Variant::Type::PACKED_VECTOR3_ARRAY },
-			{ "PackedColorArray", godot::Variant::Type::PACKED_COLOR_ARRAY },
-			{ "PackedVector4Array", godot::Variant::Type::PACKED_VECTOR4_ARRAY },
-		};
-	}
-
 	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
 		return visitSourceFile((godot::SourceFileNode &)root_node);
 	} else {
@@ -183,6 +183,24 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &obj, con
 		} else {
 			print_error("Value for identifier \"" + node.name + "\" was not found");
 		}
+	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+		// const MemberExpressionNode& node = (MemberExpressionNode&)value_node;		
+		// godot::Variant current_variant = obj;
+
+		// for (auto it = node.path.begin(); it != node.path.end() - 1; ++it) {
+		// 	current_variant = current_variant.get(it->get()->name, &is_valid);
+
+		// 	if (!is_valid) {
+		// 		print_error("Cannot get property " + it->get()->name + " in path");
+		// 		return false;
+		// 	}
+		// }
+
+		// const godot::String &variant_property = node.path.back()->name;
+		// const godot::Variant prop_value = current_variant.get(variant_property, &is_valid);
+		// if (is_valid) {
+		// 	obj.set(prop_key, prop_value, &is_valid);
+		// }
 	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
 		godot::Variant resource_variant;
@@ -264,7 +282,7 @@ Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
-	
+
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());
 	}

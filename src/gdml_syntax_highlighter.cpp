@@ -65,7 +65,9 @@ std::vector<std::tuple<ts::Node, godot::String>> godot::GdmlSyntaxHighlighter::f
 
 		for (uint32_t i = 0; i < node.getChildCount(); i++) {
 			const ts::Node child = node.getChild(i);
-			traverse(child);
+			if (child.getType() != "ERROR") {
+				traverse(child);
+			}
 		}
 	};
 
@@ -110,7 +112,6 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	} else if (type == "{" || type == "}" || type == "[" || type == "]") {
 		return symbol_color;
 	} else {
-		print_line("not colored: " + type);
 		return godot::Color(0.0f, 0.0f, 0.0f, 0.0f);
 	}
 }
