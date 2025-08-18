@@ -1,6 +1,7 @@
 # @reference: main_menu.gd
 
 VBoxContainer {
+	name: "MainMenu"
 	alignment: 1
 	anchor_left: 0.0
 	anchor_top: 0.0

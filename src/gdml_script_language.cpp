@@ -38,7 +38,6 @@ void GdmlScriptLanguage::_thread_exit() {}
 void GdmlScriptLanguage::_reload_all_scripts() {}
 
 String GdmlScriptLanguage::_validate_path(const String &p_path) const {
-	print_line("validate_path input ", p_path);
 	return "";
 }
 
@@ -51,28 +50,46 @@ Dictionary GdmlScriptLanguage::_validate(
 	return result;
 }
 
-Error godot::GdmlScriptLanguage::_open_in_external_editor(const Ref<Script> &p_script, int32_t p_line, int32_t p_column) {
+Error GdmlScriptLanguage::_open_in_external_editor(const Ref<Script> &p_script, int32_t p_line, int32_t p_column) {
 	return OK;
 }
 
-ScriptLanguage::ScriptNameCasing godot::GdmlScriptLanguage::_preferred_file_name_casing() const {
+ScriptLanguage::ScriptNameCasing GdmlScriptLanguage::_preferred_file_name_casing() const {
 	return SCRIPT_NAME_CASING_AUTO;
 }
 
-Dictionary godot::GdmlScriptLanguage::_complete_code(const String &p_code,
+Dictionary GdmlScriptLanguage::_complete_code(const String &p_code,
 		const String &p_path,
 		Object *p_owner) const {
-	return {};
+	Dictionary out;
+
+	// Array options;
+	// out["options"] = options;
+
+	out["result"] = Error::ERR_UNAVAILABLE;
+	out["force"] = Variant(false);
+	out["call_hint"] = Variant(false);
+
+	return out;
 }
 
-Dictionary godot::GdmlScriptLanguage::_lookup_code(const String &p_code,
+Dictionary GdmlScriptLanguage::_lookup_code(const String &p_code,
 		const String &p_symbol,
 		const String &p_path,
 		Object *p_owner) const {
-	Dictionary result;
-	result["result"] = ERR_UNAVAILABLE;
-	result["type"] = Variant::Type::NIL;
-	return result;
+	Dictionary out;
+
+	if (ClassDB::class_exists(p_symbol)) {
+		out["result"] = Error::OK;
+		out["type"] = LookupResultType::LOOKUP_RESULT_CLASS;
+		out["class_name"] = p_symbol;
+		return out;
+	}
+
+	out["result"] = Error::ERR_UNAVAILABLE;
+	out["type"] = Variant::Type::NIL;
+
+	return out;
 }
 
 bool GdmlScriptLanguage::_supports_builtin_mode() const {
@@ -95,11 +112,11 @@ bool GdmlScriptLanguage::_supports_documentation() const {
 	return false;
 }
 
-bool godot::GdmlScriptLanguage::_has_named_classes() const {
+bool GdmlScriptLanguage::_has_named_classes() const {
 	return false;
 }
 
-bool godot::GdmlScriptLanguage::_handles_global_class_type(const String &p_type) const {
+bool GdmlScriptLanguage::_handles_global_class_type(const String &p_type) const {
 	return p_type == _get_type();
 }
 
@@ -117,7 +134,7 @@ PackedStringArray GdmlScriptLanguage::_get_reserved_words() const {
 	return PackedStringArray();
 }
 
-TypedArray<Dictionary> godot::GdmlScriptLanguage::_get_built_in_templates(const StringName &p_object) const {
+TypedArray<Dictionary> GdmlScriptLanguage::_get_built_in_templates(const StringName &p_object) const {
 	return {};
 }
 
@@ -133,13 +150,13 @@ TypedArray<Dictionary> GdmlScriptLanguage::_get_public_annotations() const {
 	return {};
 }
 
-Dictionary godot::GdmlScriptLanguage::_get_global_class_name(const String &p_path) const {
+Dictionary GdmlScriptLanguage::_get_global_class_name(const String &p_path) const {
 	return {};
 }
 
 Ref<Script> GdmlScriptLanguage::_make_template(const String &_template, const String &class_name, const String &base_class_name) const {
 	Ref<GdmlScript> script = memnew(GdmlScript);
-	script->set_source_code("test code");
+	script->set_source_code("Control {\n\n}");
 	return script;
 }
 

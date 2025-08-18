@@ -7,7 +7,7 @@ using namespace godot;
 
 void GdmlScript::_bind_methods() {}
 
-Error godot::GdmlScript::_reload(bool p_keep_state) {
+Error GdmlScript::_reload(bool p_keep_state) {
 	return OK;
 }
 
@@ -19,7 +19,7 @@ StringName GdmlScript::_get_global_name() const {
 	return "GlobalName";
 }
 
-StringName godot::GdmlScript::_get_instance_base_type() const {
+StringName GdmlScript::_get_instance_base_type() const {
 	return "";
 }
 
@@ -27,7 +27,7 @@ bool GdmlScript::_has_static_method(const StringName &p_method) const {
 	return false;
 }
 
-Ref<Script> godot::GdmlScript::_get_base_script() const {
+Ref<Script> GdmlScript::_get_base_script() const {
 	return {};
 }
 
@@ -53,7 +53,7 @@ bool GdmlScript::_is_tool() const {
 	return false;
 }
 
-bool godot::GdmlScript::_is_abstract() const {
+bool GdmlScript::_is_abstract() const {
 	return false;
 }
 
@@ -63,6 +63,6 @@ bool GdmlScript::_can_instantiate() const {
 	return true;
 }
 
-TypedArray<Dictionary> godot::GdmlScript::_get_documentation() const {
+TypedArray<Dictionary> GdmlScript::_get_documentation() const {
 	return {};
 }
