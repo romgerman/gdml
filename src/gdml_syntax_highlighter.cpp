@@ -50,7 +50,7 @@ std::vector<std::tuple<ts::Node, godot::String>> godot::GdmlSyntaxHighlighter::f
 		"resource_definition"
 	};
 
-	godot::String &current_parent = String();
+	godot::String current_parent;
 
 	std::function<void(const ts::Node)> traverse = [&](const ts::Node node) {
 		if (node.getStartPoint().row == line) {

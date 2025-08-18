@@ -5,3 +5,5 @@ demo/addons/gdml/bin/*
 grammar/node_modules
 *.obj
 *.pdb
+*.o
+*.os
