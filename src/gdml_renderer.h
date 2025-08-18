@@ -31,8 +31,8 @@ private:
 	godot::Variant visitSourceFile(const godot::SourceFileNode &node);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 
-	bool setVariantProperty(godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
-	bool setVariantPropertyDeep(godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);
+	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
+	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);
 	bool getPropertyValue(godot::Variant &variant, const godot::String &prop_key, godot::Variant &value);
 };
 
