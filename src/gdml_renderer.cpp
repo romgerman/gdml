@@ -187,24 +187,17 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &root_var
 			print_error("Couldn't access property \"" + node.name + "\" to get value");
 		}
 	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-		print_error("Member access is not implemented");
-		// const MemberExpressionNode& node = (MemberExpressionNode&)value_node;
-		// godot::Variant current_variant = obj;
-
-		// for (auto it = node.path.begin(); it != node.path.end() - 1; ++it) {
-		// 	current_variant = current_variant.get(it->get()->name, &is_valid);
-
-		// 	if (!is_valid) {
-		// 		print_error("Cannot get property " + it->get()->name + " in path");
-		// 		return false;
-		// 	}
-		// }
-
-		// const godot::String &variant_property = node.path.back()->name;
-		// const godot::Variant prop_value = current_variant.get(variant_property, &is_valid);
-		// if (is_valid) {
-		// 	obj.set(prop_key, prop_value, &is_valid);
-		// }
+		const MemberExpressionNode& node = (MemberExpressionNode&)value_node;
+		godot::Variant out_value;
+		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
+			variant.set(prop_key, out_value, &is_valid);
+		} else {
+			godot::PackedStringArray arr;
+			for (const std::unique_ptr<godot::IdentifierNode> &idendifier : node.path) {
+				arr.append(idendifier->name);
+			}
+			print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
+		}
 	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
 		godot::Variant resource_variant;
@@ -266,10 +259,9 @@ bool traversal::TreeRendererVisitor::setVariantPropertyDeep(godot::Variant &root
 	if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
 		const godot::String &previous_property = (path.end() - 2)->get()->name;
 		previous_variant.set(previous_property, current_variant, &is_valid);
-		return is_valid;
 	}
 
-	return false;
+	return is_valid;
 }
 
 bool traversal::TreeRendererVisitor::getPropertyValue(godot::Variant &variant, const godot::String &prop_key, godot::Variant &value) {
@@ -294,6 +286,45 @@ bool traversal::TreeRendererVisitor::getPropertyValue(godot::Variant &variant, c
 		if (is_valid) {
 			value = prop_value;
 		}
+	}
+
+	return is_valid;
+}
+
+bool traversal::TreeRendererVisitor::getDeepPropertyValue(godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::Variant &value) {
+	godot::Variant previous_variant;
+	godot::Variant current_variant = variant;
+
+	bool is_valid = false;
+	for (auto it = path.begin(); it != path.end() - 1; ++it) {
+		previous_variant = current_variant;
+		current_variant = current_variant.get(it->get()->name, &is_valid);
+
+		if (!is_valid) {
+			const godot::String class_name = variant.get_validated_object()->get_class();
+			if (ClassDB::class_has_enum(class_name, it->get()->name)) {
+				if (it == path.end()) {
+					godot::PackedStringArray arr;
+					for (const std::unique_ptr<godot::IdentifierNode> &idendifier : path) {
+						arr.append(idendifier->name);
+					}
+					print_error("No path parts left. Cannot get enum constant in path \"" + String(".").join(arr) + "\"");
+					return false;
+				}
+
+				const godot::String& enum_const_name = (++it)->get()->name;
+				const int64_t enum_value = ClassDB::class_get_integer_constant(class_name, enum_const_name);
+				value = enum_value;
+				return true;
+			}
+
+			print_error("Cannot get property " + it->get()->name + " in path");
+			return false;
+		}
+	}
+
+	if (is_valid) {
+		value = current_variant;
 	}
 
 	return is_valid;
