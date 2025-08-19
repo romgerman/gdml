@@ -66,6 +66,8 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code,
 	// Array options;
 	// out["options"] = options;
 
+	int64_t pos = p_code.find(String::chr(char32_t(0xFFFF)));
+
 	out["result"] = Error::ERR_UNAVAILABLE;
 	out["force"] = Variant(false);
 	out["call_hint"] = Variant(false);

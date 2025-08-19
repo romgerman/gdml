@@ -94,10 +94,13 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	Color string_color = editor_settings->get_setting("text_editor/theme/highlighting/string_color");
 	Color symbol_color = editor_settings->get_setting("text_editor/theme/highlighting/symbol_color");
 	Color text_color = editor_settings->get_setting("text_editor/theme/highlighting/text_color");
+	//Color function_color = editor_settings->get_setting("text_editor/theme/highlighting/function_color");
 	//Color user_type_color = editor_settings->get_setting("text_editor/theme/highlighting/user_type_color");
 
 	if (type == "comment") {
 		return comment_color;
+	} else if (type == "signal_expression") {
+		return keyword_color;
 	} else if (type == "identifier") {
 		if (possible_parent.find(std::get<godot::String>(node)) != possible_parent.end()) {
 			return engine_type_color;

@@ -128,6 +128,22 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 		} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 			const godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
 			setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
+		} else if (property->name->type == GdmlNodeType::SIGNAL_EXPRESSION) {
+			const godot::SignalExpressionNode *signal_expression = static_cast<godot::SignalExpressionNode *>(property->name.get());
+			if (signal_expression->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				const godot::String signal_name = static_cast<godot::IdentifierNode *>(signal_expression->name.get())->name;
+				if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION || property->value->type == GdmlNodeType::STRING_EXPRESSION) {
+					if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+						connectSignal(root_variant, root_variant, signal_name, static_cast<godot::IdentifierNode *>(property->value.get())->name);
+					} else if (property->value->type == GdmlNodeType::STRING_EXPRESSION) {
+						connectSignal(root_variant, root_variant, signal_name, static_cast<godot::StringNode *>(property->value.get())->value);
+					}
+				} else {
+					print_error("Cannot connect signal. Callable name should be an identifier or a string");
+				}
+			} else {
+				print_error("Cannot connect signal. Wrong name expression type");
+			}
 		}
 	}
 
@@ -187,7 +203,7 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &root_var
 			print_error("Couldn't access property \"" + node.name + "\" to get value");
 		}
 	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-		const MemberExpressionNode& node = (MemberExpressionNode&)value_node;
+		const MemberExpressionNode &node = (MemberExpressionNode &)value_node;
 		godot::Variant out_value;
 		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
 			variant.set(prop_key, out_value, &is_valid);
@@ -312,7 +328,7 @@ bool traversal::TreeRendererVisitor::getDeepPropertyValue(godot::Variant &varian
 					return false;
 				}
 
-				const godot::String& enum_const_name = (++it)->get()->name;
+				const godot::String &enum_const_name = (++it)->get()->name;
 				const int64_t enum_value = ClassDB::class_get_integer_constant(class_name, enum_const_name);
 				value = enum_value;
 				return true;
@@ -328,6 +344,27 @@ bool traversal::TreeRendererVisitor::getDeepPropertyValue(godot::Variant &varian
 	}
 
 	return is_valid;
+}
+
+bool traversal::TreeRendererVisitor::connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name) {
+	godot::Object* obj = variant.get_validated_object();
+
+	if (obj) {
+		const godot::Variant name_or_callable = m_context->data.get(callable_name, Variant(nullptr));
+		if (name_or_callable) {
+			if (name_or_callable.get_type() == godot::Variant::STRING) {
+				obj->connect(signal_name, godot::Callable(root_variant, name_or_callable));
+			} else if (name_or_callable.get_type() == godot::Variant::CALLABLE) {
+				obj->connect(signal_name, name_or_callable);
+			} else {
+				print_error("Trying to connect signal with \"" + name_or_callable.get_type_name(name_or_callable.get_type()) + "\"");
+			}
+		}
+	} else {
+		print_error("Trying to connect signal for non-Object type");
+	}
+
+	return false;
 }
 
 // Renderer

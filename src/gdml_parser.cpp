@@ -125,6 +125,8 @@ std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node,
 			out->name = visitIdentifier(child_node, text);
 		} else if (child_node.isType("member_expression")) {
 			out->name = visitMemberExpression(child_node, text);
+		} else if (child_node.isType("signal_expression")) {
+			out->name = visitSignalExpression(child_node, text);
 		} else if (child_node.isType("expression")) {
 			out->value = visitExpression(child_node, text);
 		} else if (child_node.isType("resource_definition")) {
@@ -243,6 +245,23 @@ std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpr
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing dictionary expression", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<SignalExpressionNode> GdmlParser::visitSignalExpression(ts::Node node, const String &text) {
+	std::unique_ptr<SignalExpressionNode> out = std::make_unique<SignalExpressionNode>();
+	out->type = GdmlNodeType::SIGNAL_EXPRESSION;
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->name = visitIdentifier(child_node, text);
+		} else {
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing signal expression", child_node);
 		}
 	}
 

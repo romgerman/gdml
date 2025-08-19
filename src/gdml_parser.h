@@ -64,6 +64,7 @@ enum class GdmlNodeType {
 	ARRAY_EXPRESSION,
 	DICTIONARY_EXPRESSION,
 	MEMBER_ACCESS_EXPRESSION,
+	SIGNAL_EXPRESSION,
 	PROPERTY_DEFINITION,
 	RESOURCE_DEFINITION,
 	NODE_DEFINITION,
@@ -117,6 +118,10 @@ struct MemberExpressionNode : public ExpressionNode {
 	std::vector<std::unique_ptr<IdentifierNode>> path;
 };
 
+struct SignalExpressionNode : public ExpressionNode {
+	std::unique_ptr<ExpressionNode> name;
+};
+
 // Statements
 
 struct PropertyDefinitionNode : public StatementNode {
@@ -164,6 +169,7 @@ private:
 	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, const String &text);
 	std::unique_ptr<ArrayExpressionNode> visitArrayExpression(ts::Node node, const String &text);
 	std::unique_ptr<DictionaryExpressionNode> visitDictionaryExpression(ts::Node node, const String &text);
+	std::unique_ptr<SignalExpressionNode> visitSignalExpression(ts::Node node, const String &text);
 
 	std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, const String &text);
 	std::unique_ptr<NumberNode> visitNumber(ts::Node node, const String &text);

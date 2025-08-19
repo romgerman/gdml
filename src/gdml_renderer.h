@@ -35,6 +35,8 @@ private:
 	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);
 	bool getPropertyValue(godot::Variant &variant, const godot::String &prop_key, godot::Variant &value);
 	bool getDeepPropertyValue(godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::Variant &value);
+
+	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);
 };
 
 } //namespace traversal

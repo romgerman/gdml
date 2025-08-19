@@ -18,6 +18,7 @@ VBoxContainer {
 	
 	Button {
 		text: "Continue"
+		@pressed: button_pressed
 	}
 	
 	Button { text: "New Game"; }

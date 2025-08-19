@@ -87,6 +87,10 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			}
 			return out + "}";
 		} break;
+		case GdmlNodeType::SIGNAL_EXPRESSION: {
+			SignalExpressionNode& self = (SignalExpressionNode&)node;
+			return "@" + visitNode(*self.name.get(), depth);
+		} break;
 		default:
 			return String("(node not implemented)");
 	}

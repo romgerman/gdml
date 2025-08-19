@@ -35,7 +35,7 @@ module.exports = grammar({
       '}'
     ),
     property_definition: $ => seq(
-      field("name", choice($.identifier, $.member_expression)),
+      field("name", choice($.signal_expression, $.identifier, $.member_expression)),
       ':',
       field("value", choice($.expression, $.resource_definition)),
       choice('\n', ';')
@@ -49,7 +49,7 @@ module.exports = grammar({
       $.string,
       $.array_expression,
       $.member_expression,
-      $.dictionary_expression
+      $.dictionary_expression,
     ),
     member_expression: $ => seq(
       $.identifier,
@@ -70,6 +70,10 @@ module.exports = grammar({
       '{',
       optional(repeat($.property_definition)),
       '}'
+    ),
+    signal_expression: $ => seq(
+      '@',
+      $.identifier
     ),
 
     // Primitives

@@ -141,6 +141,10 @@
           {
             "type": "member_expression",
             "named": true
+          },
+          {
+            "type": "signal_expression",
+            "named": true
           }
         ]
       },
@@ -174,6 +178,21 @@
         },
         {
           "type": "property_definition",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "signal_expression",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": false,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
           "named": true
         }
       ]
@@ -236,6 +255,10 @@
   },
   {
     "type": ";",
+    "named": false
+  },
+  {
+    "type": "@",
     "named": false
   },
   {
