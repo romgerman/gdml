@@ -47,7 +47,8 @@ std::vector<std::tuple<ts::Node, godot::String>> godot::GdmlSyntaxHighlighter::f
 	static const std::set<godot::String> possible_parent = {
 		"node_definition",
 		//"property_definition",
-		"resource_definition"
+		"resource_definition",
+		"function_call"
 	};
 
 	godot::String current_parent;
@@ -82,7 +83,8 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	static const std::set<godot::String> possible_parent = {
 		"node_definition",
 		//"property_definition",
-		"resource_definition"
+		"resource_definition",
+		"function_call"
 	};
 
 	auto editor_settings = EditorInterface::get_singleton()->get_editor_settings();
