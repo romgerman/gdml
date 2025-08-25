@@ -182,6 +182,8 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, const
 			out = visitArrayExpression(child_node, text);
 		} else if (child_node.isType("member_expression")) {
 			out = visitMemberExpression(child_node, text);
+		} else if (child_node.isType("function_call")) {
+			out = visitFunctionCallExpression(child_node, text);
 		} else if (child_node.isType("comment")) {
 			continue;
 		} else {
@@ -262,6 +264,28 @@ std::unique_ptr<SignalExpressionNode> GdmlParser::visitSignalExpression(ts::Node
 			out->name = visitIdentifier(child_node, text);
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing signal expression", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCallExpression(ts::Node node, const String &text) {
+	std::unique_ptr<FunctionCallExpressionNode> out = std::make_unique<FunctionCallExpressionNode>();
+	out->type = GdmlNodeType::FUNCTION_CALL;
+
+	ts::Node name_node = node.getChildByFieldName("name");
+	out->name = visitExpression(name_node, text);
+
+	ts::Node arguments_node = node.getChildByFieldName("arguments");
+	for (uint32_t i = 0; i < arguments_node.getNamedChildCount(); i++) {
+		ts::Node child_node = arguments_node.getNamedChild(i);
+
+		if (child_node.isType("expression")) {
+			std::unique_ptr<ExpressionNode> expr = visitExpression(child_node, text);
+			out->arguments.push_back(std::move(expr));
+		} else {
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing function call expression", child_node);
 		}
 	}
 

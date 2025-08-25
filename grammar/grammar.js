@@ -22,16 +22,16 @@ module.exports = grammar({
 
     // Statements
     node_definition: $ => seq(
-      $.identifier,
+      field('name', $.identifier),
       '{',
-      repeat($.property_definition),
-      repeat($.node_definition),
+      field('properties', repeat($.property_definition)),
+      field('children', repeat($.node_definition)),
       '}'
     ),
     resource_definition: $ => seq(
-      $.identifier,
+      field('name', $.identifier),
       '{',
-      repeat($.property_definition),
+      field('properties', repeat($.property_definition)),
       '}'
     ),
     property_definition: $ => seq(
@@ -50,6 +50,7 @@ module.exports = grammar({
       $.array_expression,
       $.member_expression,
       $.dictionary_expression,
+      $.function_call
     ),
     member_expression: $ => seq(
       $.identifier,
@@ -74,6 +75,24 @@ module.exports = grammar({
     signal_expression: $ => seq(
       '@',
       $.identifier
+    ),
+    function_call: $ => seq(
+      field('name', choice(
+        $.member_expression,
+        $.identifier
+      )),
+      '(',
+      field('arguments', optional($.argument_list)),
+      ')'
+    ),
+    argument_list: $ => seq(
+      seq(
+        $.expression,
+        repeat(seq(
+          ',',
+          $.expression
+        ))
+      )
     ),
 
     // Primitives

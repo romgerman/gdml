@@ -18,6 +18,7 @@ VBoxContainer {
 	
 	Button {
 		text: "Continue"
+		theme: load("res://ui/button.tres")
 		@pressed: button_pressed
 	}
 	
