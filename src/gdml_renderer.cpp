@@ -251,6 +251,38 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &root_var
 		}
 
 		variant.set(prop_key, resource_variant, &is_valid);
+	} else if (value_node.type == GdmlNodeType::FUNCTION_CALL) {
+		const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)value_node;
+
+		if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			const IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
+
+			if (m_context->data.has(name_node->name)) {
+				godot::Variant value = m_context->data.get(name_node->name, godot::Variant(nullptr));
+
+				if (value.get_type() == godot::Variant::Type::CALLABLE) {
+					godot::Callable callable = value;
+					godot::Array args;
+
+					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+						if (expr->type == GdmlNodeType::STRING_EXPRESSION) {
+							const StringNode *arg_node = static_cast<StringNode *>(expr.get());
+							args.push_back(arg_node->value);
+						} else {
+							print_error("Unsupported argument type");
+						}
+					}
+
+					print_line("trying to call");
+					callable.callv(args);
+					//variant.set(prop_key, result, &is_valid);
+				} else {
+					print_error("Cannot call non-Callable");
+				}
+			}
+		} else {
+			print_error("Other types of expressions are not implemented for function call name");
+		}
 	}
 
 	return is_valid;
@@ -347,7 +379,7 @@ bool traversal::TreeRendererVisitor::getDeepPropertyValue(godot::Variant &varian
 }
 
 bool traversal::TreeRendererVisitor::connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name) {
-	godot::Object* obj = variant.get_validated_object();
+	godot::Object *obj = variant.get_validated_object();
 
 	if (obj) {
 		const godot::Variant name_or_callable = m_context->data.get(callable_name, Variant(nullptr));
