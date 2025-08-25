@@ -275,7 +275,11 @@ std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCall
 	out->type = GdmlNodeType::FUNCTION_CALL;
 
 	ts::Node name_node = node.getChildByFieldName("name");
-	out->name = visitExpression(name_node, text);
+	if (name_node.isType("identifier")) {
+		out->name = visitIdentifier(name_node, text);
+	} else if (name_node.isType("member_access")) {
+		out->name = visitMemberExpression(name_node, text);
+	}
 
 	ts::Node arguments_node = node.getChildByFieldName("arguments");
 	for (uint32_t i = 0; i < arguments_node.getNamedChildCount(); i++) {

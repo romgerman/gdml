@@ -91,7 +91,19 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			SignalExpressionNode& self = (SignalExpressionNode&)node;
 			return "@" + visitNode(*self.name.get(), depth);
 		} break;
+		case GdmlNodeType::FUNCTION_CALL: {
+			FunctionCallExpressionNode& self = (FunctionCallExpressionNode&)node;
+			String out = visitNode(*self.name.get(), 0) + "(";
+			for (const std::unique_ptr<ExpressionNode> &expr: self.arguments) {
+				out += visitNode(*expr.get(), 0) + ", ";
+			}
+			return out + ")";
+		} break;
 		default:
 			return String("(node not implemented)");
 	}
+}
+
+godot::String traversal::GdmlPrinterVisitor::depthPad(const godot::String &text, uint32_t depth) {
+	return text.lpad(text.length() + depth);
 }

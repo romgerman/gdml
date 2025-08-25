@@ -18,6 +18,7 @@ public:
 
 private:
 	godot::String visitNode(const godot::GdmlNode &node, uint32_t depth);
+	godot::String depthPad(const godot::String &text, uint32_t depth);
 };
 
 } //namespace traversal
