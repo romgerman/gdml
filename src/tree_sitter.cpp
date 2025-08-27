@@ -1,5 +1,7 @@
 #include "tree_sitter.h"
 
+#include <godot_cpp/variant/string.hpp>
+
 using namespace ts;
 
 Node::Node(TSNode node) :

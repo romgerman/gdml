@@ -2,7 +2,9 @@
 
 #include <tree_sitter/api.h>
 
-#include <godot_cpp/variant/string.hpp>
+namespace godot {
+class String;
+}
 
 namespace ts {
 
