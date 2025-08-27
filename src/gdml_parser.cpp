@@ -17,7 +17,7 @@ GdmlSourceLocation::GdmlSourceLocation(ts::Node node) {
 	end = GdmlLinePosition(end_point.row + 1, end_point.column + 1);
 }
 
-String GdmlSourceLocation::getText(const String &text) {
+String GdmlSourceLocation::getText(const String &text) const {
 	return text.substr(span.start, span.getLength());
 }
 
@@ -25,11 +25,11 @@ godot::String GdmlParseError::toString() {
 	return message + " at " + godot::String::num_uint64(location.start.line) + ":" + godot::String::num_uint64(location.start.column);
 }
 
-uint32_t GdmlTextSpan::getLength() {
+uint32_t GdmlTextSpan::getLength() const {
 	return end - start;
 }
 
-bool GdmlTextSpan::isEmpty() {
+bool GdmlTextSpan::isEmpty() const {
 	return getLength() == 0;
 }
 
@@ -342,7 +342,7 @@ std::vector<parser::GdmlParseError> &GdmlParser::getParseErrors() {
 	return parse_errors;
 }
 
-void GdmlParser::pushError(const String &error, ts::Node node) {
+void GdmlParser::pushError(const String &error, const ts::Node &node) {
 	parser::GdmlParseError err;
 	err.message = error;
 	err.location = parser::GdmlSourceLocation(node);

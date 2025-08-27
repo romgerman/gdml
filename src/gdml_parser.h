@@ -14,9 +14,9 @@ struct GdmlTextSpan {
 	GdmlTextSpan(uint32_t start, uint32_t end) :
 			start(start), end(end) {}
 
-	uint32_t getLength();
+	uint32_t getLength() const;
 
-	bool isEmpty();
+	bool isEmpty() const;
 
 	uint32_t start = 0;
 	uint32_t end = 0;
@@ -35,7 +35,7 @@ struct GdmlSourceLocation {
 	GdmlSourceLocation() = default;
 	GdmlSourceLocation(ts::Node node);
 
-	godot::String getText(const godot::String &text);
+	godot::String getText(const godot::String &text) const;
 
 	GdmlTextSpan span;
 	GdmlLinePosition start;
@@ -183,7 +183,7 @@ private:
 	std::unique_ptr<BooleanNode> visitBoolean(ts::Node node, const String &text);
 	std::unique_ptr<StringNode> visitString(ts::Node node, const String &text);
 
-	void pushError(const String &error, ts::Node node);
+	void pushError(const String &error, const ts::Node &node);
 };
 
 } //namespace godot
