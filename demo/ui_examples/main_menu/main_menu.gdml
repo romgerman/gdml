@@ -16,6 +16,7 @@ VBoxContainer {
 		label_settings: LabelSettings {
 			font_size: 32
 		}
+		text: test_raw_fn()
 		theme: load("res://ui_examples/main_menu/game_name.tres")
 	}
 	

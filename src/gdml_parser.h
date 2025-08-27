@@ -89,11 +89,11 @@ struct NumberNode : public ExpressionNode {
 	String value;
 	bool isFloat;
 
-	uint32_t getInteger() {
+	uint32_t getInteger() const {
 		return value.to_int();
 	}
 
-	float_t getFloat() {
+	float_t getFloat() const {
 		return value.to_float();
 	}
 };

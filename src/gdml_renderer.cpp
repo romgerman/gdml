@@ -265,23 +265,22 @@ bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &root_var
 					godot::Array args;
 
 					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-						if (expr->type == GdmlNodeType::STRING_EXPRESSION) {
-							const StringNode *arg_node = static_cast<StringNode *>(expr.get());
-							args.push_back(arg_node->value);
+						godot::Variant arg_value;
+						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+							args.push_back(arg_value);
 						} else {
-							print_error("Unsupported argument type");
+							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
 						}
 					}
 
-					print_line("trying to call");
-					callable.callv(args);
-					//variant.set(prop_key, result, &is_valid);
+					const godot::Variant result = callable.callv(args);
+					variant.set(prop_key, result, &is_valid);
 				} else {
 					print_error("Cannot call non-Callable");
 				}
 			}
 		} else {
-			print_error("Other types of expressions are not implemented for function call name");
+			print_error("Other types of expressions are not implemented for a function call");
 		}
 	}
 
@@ -397,6 +396,49 @@ bool traversal::TreeRendererVisitor::connectSignal(godot::Variant &root_variant,
 	}
 
 	return false;
+}
+
+bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_variant, const ExpressionNode &expr_node, godot::Variant &value) {
+	switch (expr_node.type) {
+		case GdmlNodeType::STRING_EXPRESSION: {
+			const StringNode &node = (StringNode &)expr_node;
+			value = node.value;
+		} break;
+		case GdmlNodeType::NUMBER_EXPRESSION: {
+			const NumberNode node = (NumberNode &)expr_node;
+			value = node.isFloat ? node.getFloat() : node.getInteger();
+		} break;
+		case GdmlNodeType::BOOLEAN_EXPRESSION: {
+			const BooleanNode &node = (BooleanNode &)expr_node;
+			value = node.value;
+		} break;
+		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
+			const IdentifierNode &node = (IdentifierNode &)expr_node;
+			godot::Variant out_value;
+			if (getPropertyValue(root_variant, node.name, out_value)) {
+				value = out_value;
+			} else {
+				print_error("Couldn't access property \"" + node.name + "\" to get value");
+				return false;
+			}
+		} break;
+		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
+			const MemberExpressionNode &node = (MemberExpressionNode &)expr_node;
+			godot::Variant out_value;
+			if (getDeepPropertyValue(root_variant, node.path, out_value)) {
+				value = out_value;
+			} else {
+				godot::PackedStringArray arr;
+				for (const std::unique_ptr<godot::IdentifierNode> &idendifier : node.path) {
+					arr.append(idendifier->name);
+				}
+				print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
+				return false;
+			}
+		} break;
+	}
+
+	return true;
 }
 
 // Renderer
