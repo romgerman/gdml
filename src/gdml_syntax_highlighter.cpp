@@ -3,8 +3,6 @@
 #include "gdml_parser.h"
 #include "tree_sitter.h"
 
-#include <tree_sitter/tree-sitter-gdml.h>
-
 #include <functional>
 
 #include <godot_cpp/classes/editor_interface.hpp>

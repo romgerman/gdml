@@ -1,5 +1,7 @@
 #include "gdml_renderer.h"
 
+#include <assert.h>
+
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
@@ -7,8 +9,6 @@
 #include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/print_string.hpp>
-
-#include <assert.h>
 
 using namespace godot;
 using namespace parser;

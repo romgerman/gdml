@@ -1,5 +1,7 @@
 #include "gdml_script_language.h"
+
 #include "gdml_script.h"
+
 #include <godot_cpp/classes/engine.hpp>
 
 using namespace godot;

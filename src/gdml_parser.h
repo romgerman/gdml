@@ -1,9 +1,9 @@
 #pragma once
 
+#include "tree_sitter.h"
+
 #include <memory>
 #include <vector>
-
-#include "tree_sitter.h"
 
 #include <godot_cpp/variant/string.hpp>
 

@@ -136,5 +136,14 @@
     "xutility": "cpp",
     "map": "cpp"
   },
-  "debug.onTaskErrors": "abort"
+  "debug.onTaskErrors": "abort",
+  "files.exclude": {
+	"**/.git": true,
+	"**/.svn": true,
+	"**/.hg": true,
+	"**/.DS_Store": true,
+	"**/Thumbs.db": true,
+	"**/*.obj": true,
+	"**/*.os": true
+  }
 }
