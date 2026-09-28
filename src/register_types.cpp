@@ -11,6 +11,8 @@
 #include "gdml_global.h"
 #include "gdml_renderer.h"
 
+#include "nodes/gdml_node.h"
+
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
@@ -29,6 +31,8 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(reactive::GdmlAtom);
 			GDREGISTER_CLASS(GdmlRenderer);
 			GDREGISTER_CLASS(global::gdml);
+
+			GDREGISTER_RUNTIME_CLASS(GDMLNode);
 
 			GdmlScriptLanguage::get_or_create_singleton();
 			GdmlScriptResourceFormatLoader::register_in_godot();

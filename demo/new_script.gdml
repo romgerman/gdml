@@ -1,15 +1,7 @@
+signal hello
+
 Control {
 	visible: true
 	size.x: 50.0
 	size.y: 100
-	
-	MyCoolButton {
-		size: Vector2 {
-			x: 500
-			y: 200
-		}
-		text: timeString
-	}
-	
-	MyNextCoolButton {}
 }

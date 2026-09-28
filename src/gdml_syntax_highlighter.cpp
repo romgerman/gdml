@@ -99,7 +99,7 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 
 	if (type == "comment") {
 		return comment_color;
-	} else if (type == "signal_expression") {
+	} else if (type == "signal_expression" || type == "signal_definition") {
 		return keyword_color;
 	} else if (type == "identifier") {
 		if (possible_parent.find(std::get<godot::String>(node)) != possible_parent.end()) {

@@ -1,5 +1,7 @@
 # @reference: main_menu.gd
 
+signal continue_pressed
+
 VBoxContainer {
 	name: "MainMenu"
 	alignment: 1
@@ -25,8 +27,8 @@ VBoxContainer {
 		@pressed: continue_pressed
 	}
 	
-	Button { text: "New Game"; }
-	Button { text: "Settings"; }
-	Button { text: "Authors"; }
-	Button { text: "Quit"; }
+	Button { text: "New Game" }
+	Button { text: "Settings" }
+	Button { text: "Authors" }
+	Button { text: "Quit" }
 }

@@ -47,6 +47,11 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			}
 			return out + "}";
 		} break;
+		case GdmlNodeType::SIGNAL_DEFINITION: {
+			SignalDefinitionNode &self = (SignalDefinitionNode &)node;
+			String out = "signal " + self.name->name + "\n";
+			return out;
+		} break;
 		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
 			IdentifierNode &self = (IdentifierNode &)node;
 			return self.name;

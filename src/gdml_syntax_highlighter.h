@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <godot_cpp/classes/editor_syntax_highlighter.hpp>
 
 namespace ts {

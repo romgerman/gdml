@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.10...3.17)
+project(godot_extension_ide_helper)
+
+set(CMAKE_CXX_STANDARD 17)
+
+# Point CMake to your source files
+file(GLOB_RECURSE SOURCES "src/*.cpp" "src/*.hpp")
+
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+# Target-based include directories using ${CMAKE_CURRENT_SOURCE_DIR}
+target_include_directories(${PROJECT_NAME} PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/godot-cpp/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/godot-cpp/gen/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/godot-cpp/gdextension
+        ${CMAKE_CURRENT_SOURCE_DIR}/tree-sitter/lib/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/tree-sitter/lib/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/grammar/bindings/c
+)

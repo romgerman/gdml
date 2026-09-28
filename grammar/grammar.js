@@ -17,6 +17,7 @@ module.exports = grammar({
   rules: {
     source_file: $ => repeat($.definition),
     definition: $ => choice(
+      $.signal_definition,
       $.node_definition
     ),
 
@@ -40,6 +41,7 @@ module.exports = grammar({
       field("value", choice($.expression, $.resource_definition)),
       choice('\n', ';')
     ),
+    signal_definition: $ => seq("signal", field('name', $.identifier), choice('\n', ';')),
 
     // Expressions
     expression: $ => choice(

@@ -70,14 +70,11 @@ void traversal::TreeRendererVisitor::setRendererData(const godot::Dictionary &da
 }
 
 godot::Variant traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node) {
-	if (node.statements.size() > 1) {
-		print_error("Tree renderer currently does not support multiple root nodes");
-		return nullptr;
-	}
-
 	for (const std::unique_ptr<godot::DefinitionNode> &statement : node.statements) {
-		// Render first one
-		return visitNodeDefinition(*statement->node.get());
+		if (statement->node && statement->node->type == godot::GdmlNodeType::NODE_DEFINITION) {
+			// Render first one
+			return visitNodeDefinition(*statement->node.get());
+		}
 	}
 
 	// No nodes in tree
@@ -454,7 +451,7 @@ GdmlRenderer::GdmlRenderer() :
 Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 
-	print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
+	//print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
 
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());

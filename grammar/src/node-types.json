@@ -45,6 +45,10 @@
         {
           "type": "node_definition",
           "named": true
+        },
+        {
+          "type": "signal_definition",
+          "named": true
         }
       ]
     }
@@ -253,6 +257,22 @@
     }
   },
   {
+    "type": "signal_definition",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "signal_expression",
     "named": true,
     "fields": {},
@@ -366,6 +386,10 @@
   {
     "type": "number",
     "named": true
+  },
+  {
+    "type": "signal",
+    "named": false
   },
   {
     "type": "string_fragment",

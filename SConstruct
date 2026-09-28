@@ -20,12 +20,14 @@ env.Append(CPPPATH=[
     "grammar/src",
     "grammar/bindings/c"
 ])
-sources = Glob("src/*.cpp") + [
+sources = Glob("src/*.cpp") + Glob("src/nodes/*.cpp") + [
     "grammar/src/parser.c"
 ]
 
 tree_sitter_library = env.StaticLibrary("demo/addons/gdml/bin/tree-sitter", ["tree-sitter/lib/src/lib.c"])
 env.Append(LIBS=[tree_sitter_library])
+env.Append(CFLAGS=['/std:c11'])
+env.Append(CFLAGS=['/TC'])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(

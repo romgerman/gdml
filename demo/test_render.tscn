@@ -1,25 +1,36 @@
-[gd_scene load_steps=4 format=3 uid="uid://bdx6bec07ctvh"]
+[gd_scene format=3 uid="uid://bdx6bec07ctvh"]
 
 [ext_resource type="Script" uid="uid://50ej1ovsonsw" path="res://new_script.gd" id="1_dxa44"]
 [ext_resource type="Script" uid="uid://cyoy82e6plgv7" path="res://new_script.gdml" id="2_v0t4i"]
 [ext_resource type="Script" uid="uid://crd36fuo3eoj4" path="res://my_cool_button.gd" id="3_mirat"]
+[ext_resource type="Script" uid="uid://c0ekga0s6tjve" path="res://ui_examples/test.gdml" id="4_hn3h5"]
 
-[node name="TestRender" type="Node2D"]
+[node name="TestRender" type="Node2D" unique_id=43238584]
 
-[node name="NodeThatRenders" type="Control" parent="."]
+[node name="NodeThatRenders" type="Control" parent="." unique_id=671934518]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dxa44")
 what = ExtResource("2_v0t4i")
 
-[node name="Control" type="Control" parent="."]
+[node name="Control" type="Control" parent="." unique_id=991579122]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="Button" type="Button" parent="Control"]
+[node name="Button" type="Button" parent="Control" unique_id=670703550]
 layout_mode = 0
 offset_right = 8.0
 offset_bottom = 8.0
 script = ExtResource("3_mirat")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=560732527]
+
+[node name="GDMLNode" type="GDMLNode" parent="CanvasLayer" unique_id=1510906394]
+markup = ExtResource("4_hn3h5")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

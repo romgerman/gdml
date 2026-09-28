@@ -1,3 +1,5 @@
+signal test
+
 Control {
     name: "RootControl"
     prop_string: "string value"

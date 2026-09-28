@@ -26,6 +26,9 @@ Control {
 
 # example of a score bar
 
+# Definition of a signal on this control
+signal progress
+
 MarginContainer {
     anchor_left: 0.15
     anchor_top: 0.03

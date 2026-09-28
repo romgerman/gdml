@@ -21,8 +21,8 @@ String GdmlSourceLocation::getText(const String &text) const {
 	return text.substr(span.start, span.getLength());
 }
 
-godot::String GdmlParseError::toString() {
-	return message + " at " + godot::String::num_uint64(location.start.line) + ":" + godot::String::num_uint64(location.start.column);
+String GdmlParseError::toString() {
+	return message + " at " + String::num_uint64(location.start.line) + ":" + String::num_uint64(location.start.column);
 }
 
 uint32_t GdmlTextSpan::getLength() const {
@@ -79,6 +79,8 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, const
 
 		if (child_node.isType("node_definition")) {
 			out->node = std::move(visitNodeDefinition(child_node, text));
+		} else if (child_node.isType("signal_definition")) {
+			out->signal = std::move(visitSignalDefinition(child_node, text));
 		} else if (child_node.isType("comment")) {
 			continue;
 		} else {
@@ -155,6 +157,23 @@ std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node,
 			out->properties.push_back(std::move(def));
 		} else if (child_node.isType("comment")) {
 			continue;
+		} else {
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<SignalDefinitionNode> godot::GdmlParser::visitSignalDefinition(ts::Node node, const String &text) {
+	std::unique_ptr<SignalDefinitionNode> out = std::make_unique<SignalDefinitionNode>();
+	out->type = GdmlNodeType::SIGNAL_DEFINITION;
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->name = visitIdentifier(child_node, text);
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
 		}
