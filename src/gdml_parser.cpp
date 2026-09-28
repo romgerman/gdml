@@ -81,6 +81,8 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, const
 			out->node = std::move(visitNodeDefinition(child_node, text));
 		} else if (child_node.isType("signal_definition")) {
 			out->signal = std::move(visitSignalDefinition(child_node, text));
+		} else if (child_node.isType("variable_definition")) {
+			out->variable = std::move(visitVariableDefinition(child_node, text));
 		} else if (child_node.isType("comment")) {
 			continue;
 		} else {
@@ -175,7 +177,26 @@ std::unique_ptr<SignalDefinitionNode> godot::GdmlParser::visitSignalDefinition(t
 		if (child_node.isType("identifier")) {
 			out->name = visitIdentifier(child_node, text);
 		} else {
-			pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing signal definition", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefinition(ts::Node node, const String &text) {
+	std::unique_ptr<VariableDefinitionNode> out = std::make_unique<VariableDefinitionNode>();
+	out->type = GdmlNodeType::VARIABLE_DEFINITION;
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->name = visitIdentifier(child_node, text);
+		} else if (child_node.isType("expression")) {
+			out->value = visitExpression(child_node, text);
+		} else {
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing variable definition", child_node);
 		}
 	}
 

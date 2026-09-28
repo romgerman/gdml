@@ -18,6 +18,7 @@ module.exports = grammar({
     source_file: $ => repeat($.definition),
     definition: $ => choice(
       $.signal_definition,
+      $.variable_definition,
       $.node_definition
     ),
 
@@ -25,6 +26,7 @@ module.exports = grammar({
     node_definition: $ => seq(
       field('name', $.identifier),
       '{',
+      field('variables', repeat($.variable_definition)),
       field('properties', repeat($.property_definition)),
       field('children', repeat($.node_definition)),
       '}'
@@ -42,6 +44,15 @@ module.exports = grammar({
       choice('\n', ';')
     ),
     signal_definition: $ => seq("signal", field('name', $.identifier), choice('\n', ';')),
+    variable_definition: $ => seq(
+      "let",
+      field("name", $.identifier),
+      optional(field("value", seq(
+        '=',
+        $.expression
+      ))),
+      choice('\n', ';')
+    ),
 
     // Expressions
     expression: $ => choice(

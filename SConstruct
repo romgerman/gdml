@@ -20,7 +20,7 @@ env.Append(CPPPATH=[
     "grammar/src",
     "grammar/bindings/c"
 ])
-sources = Glob("src/*.cpp") + Glob("src/nodes/*.cpp") + [
+sources = Glob("src/*.cpp") + Glob("src/render/*.cpp") + Glob("src/nodes/*.cpp") + [
     "grammar/src/parser.c"
 ]
 

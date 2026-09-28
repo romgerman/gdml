@@ -1,4 +1,4 @@
-#include "gdml_renderer.h"
+#include "tree_renderer_visitor.h"
 
 #include <assert.h>
 
@@ -12,8 +12,6 @@
 
 using namespace godot;
 using namespace parser;
-
-// Visitor
 
 traversal::TreeRendererVisitor::TreeRendererVisitor() {
 	m_variant_type_map = {
@@ -436,31 +434,4 @@ bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_vari
 	}
 
 	return true;
-}
-
-// Renderer
-
-void GdmlRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "source", "data"), &GdmlRenderer::renderString, DEFVAL(godot::Dictionary()));
-	ClassDB::bind_method(D_METHOD("renderScript", "script", "data"), &GdmlRenderer::renderScript, DEFVAL(godot::Dictionary()));
-}
-
-GdmlRenderer::GdmlRenderer() :
-		m_parser(std::make_unique<GdmlParser>()) {}
-
-Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
-	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
-
-	//print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
-
-	for (GdmlParseError &err : m_parser->getParseErrors()) {
-		print_error(err.toString());
-	}
-	traversal::TreeRendererVisitor visitor;
-	visitor.setRendererData(data);
-	return visitor.visit(*result.get());
-}
-
-Variant godot::GdmlRenderer::renderScript(GdmlScript *script, const godot::Dictionary &data) {
-	return renderString(script->get_source_code(), data);
 }

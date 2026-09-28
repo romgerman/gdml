@@ -49,6 +49,10 @@
         {
           "type": "signal_definition",
           "named": true
+        },
+        {
+          "type": "variable_definition",
+          "named": true
         }
       ]
     }
@@ -189,6 +193,16 @@
             "named": true
           }
         ]
+      },
+      "variables": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "variable_definition",
+            "named": true
+          }
+        ]
       }
     }
   },
@@ -323,6 +337,36 @@
     }
   },
   {
+    "type": "variable_definition",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "expression",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "\n",
     "named": false
   },
@@ -355,6 +399,10 @@
     "named": false
   },
   {
+    "type": "=",
+    "named": false
+  },
+  {
     "type": "@",
     "named": false
   },
@@ -382,6 +430,10 @@
   {
     "type": "identifier",
     "named": true
+  },
+  {
+    "type": "let",
+    "named": false
   },
   {
     "type": "number",

@@ -1,3 +1,5 @@
+let text = "Hello world!"
+
 Label {
-	text: "hello world"
+	text: text
 }

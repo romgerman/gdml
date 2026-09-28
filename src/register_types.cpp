@@ -9,7 +9,8 @@
 
 #include "gdml_atom.h"
 #include "gdml_global.h"
-#include "gdml_renderer.h"
+
+#include "render/gdml_renderer.h"
 
 #include "nodes/gdml_node.h"
 

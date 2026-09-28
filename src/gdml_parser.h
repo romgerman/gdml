@@ -70,6 +70,7 @@ enum class GdmlNodeType {
 	RESOURCE_DEFINITION,
 	NODE_DEFINITION,
 	SIGNAL_DEFINITION,
+	VARIABLE_DEFINITION,
 	DEFINITION,
 	SOURCE_FILE
 };
@@ -151,9 +152,15 @@ struct SignalDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 };
 
+struct VariableDefinitionNode : public StatementNode {
+	std::unique_ptr<IdentifierNode> name;
+	std::unique_ptr<ExpressionNode> value;
+};
+
 struct DefinitionNode : public StatementNode {
 	std::unique_ptr<NodeDefinitionNode> node;
 	std::unique_ptr<SignalDefinitionNode> signal;
+	std::unique_ptr<VariableDefinitionNode> variable;
 };
 
 struct SourceFileNode : public GdmlNode {
@@ -177,6 +184,7 @@ private:
 	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, const String &text);
 	std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, const String &text);
 	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, const String &text);
+	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, const String &text);
 
 	std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, const String &text);
 	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, const String &text);

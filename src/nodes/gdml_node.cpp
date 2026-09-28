@@ -3,7 +3,7 @@
 #include <godot_cpp/classes/script_language.hpp>
 
 #include "gdml_script.h"
-#include "gdml_renderer.h"
+#include "render/gdml_renderer.h"
 
 using namespace godot;
 
