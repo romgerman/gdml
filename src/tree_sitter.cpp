@@ -23,6 +23,10 @@ bool Node::isNull() const {
 	return ts_node_is_null(m_node);
 }
 
+bool ts::Node::isError() const {
+	return ts_node_is_error(m_node);
+}
+
 uint32_t Node::getChildCount() const {
 	return ts_node_child_count(m_node);
 }

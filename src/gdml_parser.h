@@ -168,13 +168,19 @@ struct SourceFileNode : public GdmlNode {
 	std::vector<std::unique_ptr<DefinitionNode>> statements;
 };
 
+struct TSTreeDeleter {
+	void operator()(const TSTree *tree) const {
+		ts_tree_delete(const_cast<TSTree *>(tree));
+	}
+};
+
 class GdmlParser {
 	std::unique_ptr<TSParser, decltype(&ts_parser_delete)> m_parser;
 	std::vector<parser::GdmlParseError> parse_errors;
 
 public:
 	GdmlParser();
-	std::unique_ptr<TSTree, decltype(&ts_tree_delete)> rawParse(const String &text);
+	std::unique_ptr<const TSTree, TSTreeDeleter> rawParse(const String &text) const;
 	std::unique_ptr<SourceFileNode> parse(const String &text);
 
 	std::vector<parser::GdmlParseError> &getParseErrors();

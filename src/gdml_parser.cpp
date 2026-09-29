@@ -42,11 +42,11 @@ godot::GdmlParser::GdmlParser() :
 	}
 }
 
-std::unique_ptr<TSTree, decltype(&ts_tree_delete)> godot::GdmlParser::rawParse(const String &text) {
+std::unique_ptr<const TSTree, TSTreeDeleter> godot::GdmlParser::rawParse(const String &text) const {
 	const godot::CharString char_text = text.utf8();
-	return std::unique_ptr<TSTree, decltype(&ts_tree_delete)>(
+	return std::unique_ptr<const TSTree, TSTreeDeleter>(
 			ts_parser_parse_string(m_parser.get(), nullptr, char_text.get_data(), char_text.length()),
-			ts_tree_delete);
+			TSTreeDeleter());
 }
 
 std::unique_ptr<SourceFileNode> godot::GdmlParser::parse(const String &text) {
@@ -64,7 +64,7 @@ std::unique_ptr<SourceFileNode> godot::GdmlParser::parse(const String &text) {
 		if (child_node.isType("definition")) {
 			std::unique_ptr<DefinitionNode> def = visitDefinition(child_node, text);
 			out->statements.push_back(std::move(def));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing source file", child_node);
@@ -107,7 +107,7 @@ std::unique_ptr<DefinitionNode> godot::GdmlParser::visitDefinition(ts::Node node
 			out->signal = std::move(visitSignalDefinition(child_node, text));
 		} else if (child_node.isType("variable_definition")) {
 			out->variable = std::move(visitVariableDefinition(child_node, text));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing definition", child_node);
@@ -135,7 +135,7 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 		} else if (child_node.isType("variable_definition")) {
 			std::unique_ptr<VariableDefinitionNode> def = visitVariableDefinition(child_node, text);
 			out->variables.push_back(std::move(def));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing node definition", child_node);
@@ -162,7 +162,7 @@ std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Nod
 			out->value = visitExpression(child_node, text);
 		} else if (child_node.isType("resource_definition")) {
 			out->value = visitResource(child_node, text);
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing property", child_node);
@@ -184,7 +184,7 @@ std::unique_ptr<ResourceDefinitionNode> godot::GdmlParser::visitResource(ts::Nod
 		} else if (child_node.isType("property_definition")) {
 			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
 			out->properties.push_back(std::move(def));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing resource definition", child_node);
@@ -253,7 +253,7 @@ std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node
 			out = visitMemberExpression(child_node, text);
 		} else if (child_node.isType("function_call")) {
 			out = visitFunctionCallExpression(child_node, text);
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing expression", child_node);
@@ -272,7 +272,7 @@ std::unique_ptr<MemberExpressionNode> godot::GdmlParser::visitMemberExpression(t
 
 		if (child_node.isType("identifier")) {
 			out->path.push_back(std::move(visitIdentifier(child_node, text)));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing member expression", child_node);
@@ -292,7 +292,7 @@ std::unique_ptr<ArrayExpressionNode> godot::GdmlParser::visitArrayExpression(ts:
 		if (child_node.isType("expression")) {
 			std::unique_ptr<ExpressionNode> expr = visitExpression(child_node, text);
 			out->values.push_back(std::move(expr));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing array expression", child_node);
@@ -312,7 +312,7 @@ std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpr
 		if (child_node.isType("property_definition")) {
 			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
 			out->values.push_back(std::move(def));
-		} else if (child_node.isType("comment") || child_node.isType("ERROR")) {
+		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing dictionary expression", child_node);

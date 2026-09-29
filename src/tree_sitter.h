@@ -18,6 +18,7 @@ public:
 	const char *getType() const;
 	bool isType(const char *typeName) const;
 	bool isNull() const;
+	bool isError() const;
 	uint32_t getChildCount() const;
 	uint32_t getNamedChildCount() const;
 	Node getChild(uint32_t index) const;

@@ -1,3 +1,11 @@
+let test
+signal hello
+#var test2
+
 Label {
 	text: "Hello world!"
+	dict: {
+		Hello: "Wrodl"
+		hi: true
+	}
 }
