@@ -1,6 +1,10 @@
 # @reference: main_menu.gd
 
 let hello = "world"
+let size = Vector2 {
+	x: 10
+	y: 10
+}
 
 VBoxContainer {
 	alignment: 1

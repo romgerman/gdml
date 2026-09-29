@@ -23,8 +23,7 @@ String GdmlScriptLanguage::_get_extension() const {
 }
 
 PackedStringArray GdmlScriptLanguage::_get_recognized_extensions() const {
-	return helpers::append_all(PackedStringArray(),
-			"gdml");
+	return helpers::append_all(PackedStringArray(), "gdml");
 }
 
 void GdmlScriptLanguage::_init() {}
@@ -64,15 +63,24 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code,
 		const String &p_path,
 		Object *p_owner) const {
 	Dictionary out;
+	Array options;
 
-	// Array options;
-	// out["options"] = options;
+	// Dictionary complete_option;
+	// complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_FUNCTION;
+	// complete_option["display"] = String("display");
+	// complete_option["insert_text"] = String("insert_text");
+	// complete_option["default_value"] = Variant();
+	// complete_option["location"] = CodeCompletionLocation::LOCATION_OTHER;
+
+	// options.push_back(complete_option);
+
+	out["options"] = options;
 
 	int64_t pos = p_code.find(String::chr(char32_t(0xFFFF)));
 
-	out["result"] = Error::ERR_UNAVAILABLE;
+	out["result"] = Error::OK;
 	out["force"] = Variant(false);
-	out["call_hint"] = Variant(false);
+	out["call_hint"] = String();
 
 	return out;
 }

@@ -49,7 +49,7 @@ module.exports = grammar({
       field("name", $.identifier),
       optional(field("value", seq(
         '=',
-        $.expression
+        choice($.expression, $.resource_definition)
       ))),
       choice('\n', ';')
     ),

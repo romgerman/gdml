@@ -222,6 +222,8 @@ std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefiniti
 			out->name = visitIdentifier(child_node, text);
 		} else if (child_node.isType("expression")) {
 			out->value = visitExpression(child_node, text);
+		} else if (child_node.isType("resource_definition")) {
+			out->value = visitResource(child_node, text);
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing variable definition", child_node);
 		}

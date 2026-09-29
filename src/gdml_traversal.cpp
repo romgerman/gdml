@@ -21,7 +21,13 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GdmlNodeType::DEFINITION: {
 			const DefinitionNode &self = static_cast<const DefinitionNode &>(node);
-			return visitNode(*self.node, depth);
+			if (self.signal) {
+				return visitNode(*self.signal, depth);
+			} else if (self.variable) {
+				return visitNode(*self.variable, depth);
+			} else {
+				return visitNode(*self.node, depth);
+			}
 		} break;
 		case GdmlNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode &self = static_cast<const NodeDefinitionNode &>(node);
@@ -32,7 +38,8 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<NodeDefinitionNode> &child : self.children) {
 				out += visitNode(*child, depth + 1) + "\n";
 			}
-			return out + "}";
+			out += "}";
+			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::PROPERTY_DEFINITION: {
 			const PropertyDefinitionNode &self = static_cast<const PropertyDefinitionNode &>(node);
@@ -45,17 +52,18 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
 				out += visitNode(*prop, depth + 1) + "\n";
 			}
-			return out + "}";
+			out += "}";
+			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::SIGNAL_DEFINITION: {
 			const SignalDefinitionNode &self = static_cast<const SignalDefinitionNode &>(node);
 			String out = "signal " + self.name->name + "\n";
-			return out;
+			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::VARIABLE_DEFINITION: {
 			const VariableDefinitionNode &self = static_cast<const VariableDefinitionNode &>(node);
 			String out = "let " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
-			return out;
+			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
 			const IdentifierNode &self = static_cast<const IdentifierNode &>(node);
@@ -87,7 +95,8 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<ExpressionNode> &expr : self.values) {
 				out += visitNode(*expr, depth) + ", ";
 			}
-			return out + "]";
+			out += "]";
+			return out;
 		} break;
 		case GdmlNodeType::DICTIONARY_EXPRESSION: {
 			const DictionaryExpressionNode &self = static_cast<const DictionaryExpressionNode &>(node);
@@ -95,7 +104,8 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.values) {
 				out += visitNode(*prop, depth + 1) + "\n";
 			}
-			return out + "}";
+			out += "}";
+			return out;
 		} break;
 		case GdmlNodeType::SIGNAL_EXPRESSION: {
 			const SignalExpressionNode& self = static_cast<const SignalExpressionNode&>(node);
@@ -107,13 +117,14 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<ExpressionNode> &expr: self.arguments) {
 				out += visitNode(*expr, 0) + ", ";
 			}
-			return out + ")";
+			out += ")";
+			return out;
 		} break;
 		case GdmlNodeType::UNKNOWN: {
-			return String("(Unknown node)");
+			return depthPad(String("(Unknown node)"), depth);
 		} break;
 		default:
-			return String("(node not implemented)");
+			return depthPad(String("(node not implemented)"), depth);
 	}
 }
 
