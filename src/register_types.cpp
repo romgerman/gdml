@@ -30,6 +30,7 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(GdmlSyntaxHighlighter);
 
 			GDREGISTER_CLASS(reactive::GdmlAtom);
+			GDREGISTER_CLASS(GDMLResult);
 			GDREGISTER_CLASS(GdmlRenderer);
 			GDREGISTER_CLASS(global::gdml);
 

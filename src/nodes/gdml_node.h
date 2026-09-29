@@ -6,6 +6,7 @@ namespace godot {
 
 class GdmlScript;
 class GdmlRenderer;
+class GDMLResult;
 
 class GDMLNode : public Control {
 	GDCLASS(GDMLNode, Control)
@@ -13,6 +14,7 @@ class GDMLNode : public Control {
 private:
 	Ref<GdmlScript> _markup;
 	Ref<GdmlRenderer> _renderer;
+	Ref<godot::GDMLResult> _renderer_result;
 
 protected:
 	static void _bind_methods();

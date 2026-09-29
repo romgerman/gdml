@@ -12,15 +12,28 @@
 using namespace godot;
 using namespace parser;
 
+void godot::GDMLResult::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("get_nodes"), &GDMLResult::get_nodes);
+	ClassDB::bind_method(D_METHOD("get_variables"), &GDMLResult::get_variables);
+}
+
+godot::Array godot::GDMLResult::get_nodes() {
+	return nodes;
+}
+
+godot::Dictionary godot::GDMLResult::get_variables() {
+	return variables;
+}
+
 void GdmlRenderer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("renderString", "source", "data"), &GdmlRenderer::renderString, DEFVAL(godot::Dictionary()));
-	ClassDB::bind_method(D_METHOD("renderScript", "script", "data"), &GdmlRenderer::renderScript, DEFVAL(godot::Dictionary()));
+	ClassDB::bind_method(D_METHOD("renderMarkup", "markup_script", "data"), &GdmlRenderer::renderMarkup, DEFVAL(godot::Dictionary()));
 }
 
 GdmlRenderer::GdmlRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
+Ref<GDMLResult> GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
@@ -30,9 +43,21 @@ Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary
 	}
 	traversal::TreeRendererVisitor visitor;
 	visitor.setRendererData(data);
-	return visitor.visit(*result);
+	traversal::TreeRendererVisitorResult visitor_result = visitor.visit(*result);
+
+	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
+
+	for (godot::Variant node : visitor_result.nodes) {
+		out->nodes.push_back(node);
+	}
+
+	for (std::pair<godot::String, godot::Variant> var : visitor_result.variables) {
+		out->variables.set(var.first, var.second);
+	}
+
+	return out;
 }
 
-Variant godot::GdmlRenderer::renderScript(GdmlScript *script, const godot::Dictionary &data) {
+Ref<GDMLResult> godot::GdmlRenderer::renderMarkup(GdmlScript *script, const godot::Dictionary &data) {
 	return renderString(script->get_source_code(), data);
 }

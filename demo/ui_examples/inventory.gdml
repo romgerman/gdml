@@ -3,6 +3,12 @@ let item_size = Vector2 {
 	y: 100
 }
 
+let item_color = Color {
+	r: 255
+	g: 255
+	b: 0
+}
+
 GridContainer {
 	columns: 5
 	anchor_left: 0.0
@@ -11,14 +17,7 @@ GridContainer {
 	anchor_bottom: 1.0
 	
 	ColorRect {
-		custom_minimum_size: Vector2 {
-			x: 100
-			y: 100
-		}
-		color: Color {
-			r: 255
-			g: 255
-			b: 255
-		}
+		custom_minimum_size: item_size
+		color: item_color
 	}
 }

@@ -7,6 +7,7 @@
 
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -18,17 +19,22 @@ struct TreeRendererVisitorContext {
 	godot::Dictionary data;
 };
 
-class TreeRendererVisitor : public GdmlVisitor<godot::Variant> {
+struct TreeRendererVisitorResult {
+	std::vector<godot::Variant> nodes;
+	std::map<godot::String, godot::Variant> variables;
+};
+
+class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 
 public:
 	TreeRendererVisitor();
-	godot::Variant visit(const godot::GdmlNode &root_node) override;
+	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 	void setRendererData(const godot::Dictionary &data);
 
 private:
-	godot::Variant visitSourceFile(const godot::SourceFileNode &node);
+	void visitSourceFile(const godot::SourceFileNode &node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
@@ -38,7 +44,7 @@ private:
 
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);
 
-	bool resolveExpression(godot::Variant &root_variant, const godot::ExpressionNode &expr_node, godot::Variant &value);
+	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
 };
 
 } //namespace traversal

@@ -4,6 +4,7 @@
 #include "gdml_script_language.h"
 
 #include <godot_cpp/classes/file_access.hpp>
+#include <godot_cpp/classes/resource.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
 
@@ -35,7 +36,12 @@ bool GdmlScriptResourceFormatLoader::_exists(const String &p_path) const {
 
 Variant GdmlScriptResourceFormatLoader::_load(const String &p_path, const String &p_original_path, bool p_use_sub_threads, int32_t p_cache_mode) const {
 	Ref<GdmlScript> script(GdmlScriptLanguage::get_singleton()->_create_script());
-	script->set_path(p_original_path);
+
+	if (script.is_null()) {
+		return ERR_CANT_CREATE;
+	}
+
+	//script->set_path(p_original_path);
 	script->set_source_code(FileAccess::get_file_as_string(p_path));
 	Error status = script->reload();
 	if (status == OK) {

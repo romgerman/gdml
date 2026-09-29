@@ -53,12 +53,14 @@ traversal::TreeRendererVisitor::TreeRendererVisitor() {
 	};
 }
 
-godot::Variant traversal::TreeRendererVisitor::visit(const godot::GdmlNode &root_node) {
+traversal::TreeRendererVisitorResult traversal::TreeRendererVisitor::visit(const godot::GdmlNode &root_node) {
 	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
-		return visitSourceFile((godot::SourceFileNode &)root_node);
+		traversal::TreeRendererVisitorResult result;
+		visitSourceFile((godot::SourceFileNode &)root_node, result);
+		return result;
 	} else {
 		print_error("Cannot render tree. The tree is malformed");
-		return nullptr;
+		return traversal::TreeRendererVisitorResult();
 	}
 }
 
@@ -67,16 +69,20 @@ void traversal::TreeRendererVisitor::setRendererData(const godot::Dictionary &da
 	m_context->data = data;
 }
 
-godot::Variant traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node) {
+void traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node, traversal::TreeRendererVisitorResult &result) {
 	for (const std::unique_ptr<godot::DefinitionNode> &statement : node.statements) {
 		if (statement->node && statement->node->type == godot::GdmlNodeType::NODE_DEFINITION) {
 			// Render first one
-			return visitNodeDefinition(*statement->node.get());
+			godot::Variant result_node = visitNodeDefinition(*statement->node.get());
+			result.nodes.push_back(result_node);
+		} else if (statement->variable && statement->variable->type == godot::GdmlNodeType::VARIABLE_DEFINITION) {
+			godot::Variant value;
+
+			if (resolveExpression(value, *statement->variable->value, value)) {
+				m_context->data[statement->variable->name->name] = value;
+			}
 		}
 	}
-
-	// No nodes in tree
-	return nullptr;
 }
 
 godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::NodeDefinitionNode &node) {
@@ -139,6 +145,14 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 			} else {
 				print_error("Cannot connect signal. Wrong name expression type");
 			}
+		}
+	}
+
+	for (const std::unique_ptr<godot::VariableDefinitionNode> &var : node.variables) {
+		godot::Variant value;
+
+		if (resolveExpression(value, *var, value)) {
+			m_context->data[var->name->name] = value;
 		}
 	}
 
@@ -393,22 +407,22 @@ bool traversal::TreeRendererVisitor::connectSignal(godot::Variant &root_variant,
 	return false;
 }
 
-bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_variant, const ExpressionNode &expr_node, godot::Variant &value) {
+bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_variant, ExpressionNode &expr_node, godot::Variant &value) {
 	switch (expr_node.type) {
 		case GdmlNodeType::STRING_EXPRESSION: {
-			const StringNode &node = (StringNode &)expr_node;
+			const StringNode &node = static_cast<StringNode &>(expr_node);
 			value = node.value;
 		} break;
 		case GdmlNodeType::NUMBER_EXPRESSION: {
-			const NumberNode node = (NumberNode &)expr_node;
+			const NumberNode node = static_cast<NumberNode &>(expr_node);
 			value = node.isFloat ? node.getFloat() : node.getInteger();
 		} break;
 		case GdmlNodeType::BOOLEAN_EXPRESSION: {
-			const BooleanNode &node = (BooleanNode &)expr_node;
+			const BooleanNode &node = static_cast<BooleanNode &>(expr_node);
 			value = node.value;
 		} break;
 		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
-			const IdentifierNode &node = (IdentifierNode &)expr_node;
+			const IdentifierNode &node = static_cast<IdentifierNode &>(expr_node);
 			godot::Variant out_value;
 			if (getPropertyValue(root_variant, node.name, out_value)) {
 				value = out_value;
@@ -418,7 +432,7 @@ bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_vari
 			}
 		} break;
 		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
-			const MemberExpressionNode &node = (MemberExpressionNode &)expr_node;
+			const MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);
 			godot::Variant out_value;
 			if (getDeepPropertyValue(root_variant, node.path, out_value)) {
 				value = out_value;
@@ -430,6 +444,44 @@ bool traversal::TreeRendererVisitor::resolveExpression(godot::Variant &root_vari
 				print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
 				return false;
 			}
+		} break;
+		case GdmlNodeType::RESOURCE_DEFINITION: {
+			const ResourceDefinitionNode &node = static_cast<ResourceDefinitionNode &>(expr_node);
+			godot::Variant resource_variant;
+
+			if (m_variant_type_map.count(node.name->name)) {
+				GDExtensionCallError error;
+				internal::gdextension_interface_variant_construct(
+						(GDExtensionVariantType)m_variant_type_map[node.name->name],
+						resource_variant._native_ptr(),
+						nullptr,
+						0,
+						&error);
+
+				if (error.error != GDEXTENSION_CALL_OK) {
+					print_error("Error constructing variant of type " + node.name->name);
+					return false;
+				}
+			} else {
+				if (ClassDB::class_exists(node.name->name)) {
+					resource_variant = ClassDB::instantiate(node.name->name);
+				} else {
+					print_error("Error instantiating class of type " + node.name->name);
+					return false;
+				}
+			}
+
+			for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
+				if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+					const godot::IdentifierNode *identifier = static_cast<godot::IdentifierNode *>(property->name.get());
+					setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
+				} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+					const godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
+					setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
+				}
+			}
+
+			value = resource_variant;
 		} break;
 	}
 

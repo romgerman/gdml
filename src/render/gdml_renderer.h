@@ -13,6 +13,21 @@
 
 namespace godot {
 
+class GDMLResult : public RefCounted {
+	GDCLASS(GDMLResult, RefCounted)
+
+protected:
+	static void _bind_methods();
+
+public:
+	godot::Array nodes;
+	godot::Dictionary variables;
+
+	godot::Array get_nodes();
+
+	godot::Dictionary get_variables();
+};
+
 class GdmlRenderer : public RefCounted {
 	GDCLASS(GdmlRenderer, RefCounted)
 
@@ -23,8 +38,8 @@ protected:
 
 public:
 	GdmlRenderer();
-	Variant renderString(const String &source, const godot::Dictionary &data);
-	Variant renderScript(GdmlScript *script, const godot::Dictionary &data);
+	Ref<GDMLResult> renderString(const String &source, const godot::Dictionary &data);
+	Ref<GDMLResult> renderMarkup(GdmlScript *script, const godot::Dictionary &data);
 };
 
 } //namespace godot

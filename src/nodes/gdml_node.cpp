@@ -27,8 +27,10 @@ GDMLNode::~GDMLNode() {
 
 void godot::GDMLNode::_ready() {
 	if (_markup.is_valid()) {
-		Variant out = _renderer->renderScript(_markup.ptr(), Dictionary());
-		add_child(cast_to<Control>(out));
+		_renderer_result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
+		for (godot::Variant item : _renderer_result->nodes) {
+			add_child(cast_to<Control>(item));
+		}
 	}
 }
 
