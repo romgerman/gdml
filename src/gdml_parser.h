@@ -142,19 +142,20 @@ struct ResourceDefinitionNode : public StatementNode {
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
 };
 
+struct VariableDefinitionNode : public StatementNode {
+	std::unique_ptr<IdentifierNode> name;
+	std::unique_ptr<ExpressionNode> value;
+};
+
 struct NodeDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
 	std::vector<std::unique_ptr<NodeDefinitionNode>> children;
+	std::vector<std::unique_ptr<VariableDefinitionNode>> variables;
 };
 
 struct SignalDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
-};
-
-struct VariableDefinitionNode : public StatementNode {
-	std::unique_ptr<IdentifierNode> name;
-	std::unique_ptr<ExpressionNode> value;
 };
 
 struct DefinitionNode : public StatementNode {
@@ -179,6 +180,8 @@ public:
 	std::vector<parser::GdmlParseError> &getParseErrors();
 
 private:
+	void collectSyntaxErrors(ts::Node node);
+
 	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, const String &text);
 	std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, const String &text);
 	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, const String &text);

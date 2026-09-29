@@ -1,5 +1,3 @@
-let text = "Hello world!"
-
 Label {
-	text: text
+	text: "Hello world!"
 }

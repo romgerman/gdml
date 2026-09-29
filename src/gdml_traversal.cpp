@@ -12,97 +12,105 @@ String GdmlPrinterVisitor::visit(const GdmlNode &root_node) {
 String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 	switch (node.type) {
 		case GdmlNodeType::SOURCE_FILE: {
-			SourceFileNode &self = (SourceFileNode &)node;
+			const SourceFileNode &self = static_cast<const SourceFileNode &>(node);
 			String out;
 			for (const std::unique_ptr<DefinitionNode> &statement : self.statements) {
-				out += visitNode(*statement.get(), depth + 1);
+				out += visitNode(*statement, depth + 1);
 			}
 			return out;
 		} break;
 		case GdmlNodeType::DEFINITION: {
-			DefinitionNode &self = (DefinitionNode &)node;
-			return visitNode(*self.node.get(), depth);
+			const DefinitionNode &self = static_cast<const DefinitionNode &>(node);
+			return visitNode(*self.node, depth);
 		} break;
 		case GdmlNodeType::NODE_DEFINITION: {
-			NodeDefinitionNode &self = (NodeDefinitionNode &)node;
+			const NodeDefinitionNode &self = static_cast<const NodeDefinitionNode &>(node);
 			String out = self.name->name + " {\n";
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
-				out += visitNode(*prop.get(), depth + 1) + "\n";
+				out += visitNode(*prop, depth + 1) + "\n";
 			}
 			for (const std::unique_ptr<NodeDefinitionNode> &child : self.children) {
-				out += visitNode(*child.get(), depth + 1) + "\n";
+				out += visitNode(*child, depth + 1) + "\n";
 			}
 			return out + "}";
 		} break;
 		case GdmlNodeType::PROPERTY_DEFINITION: {
-			PropertyDefinitionNode &self = (PropertyDefinitionNode &)node;
-			String out = visitNode(*self.name.get(), depth) + " : " + visitNode(*self.value.get(), depth);
-			return out.lpad(out.length() + depth);
+			const PropertyDefinitionNode &self = static_cast<const PropertyDefinitionNode &>(node);
+			String out = visitNode(*self.name, depth) + " : " + visitNode(*self.value, depth);
+			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::RESOURCE_DEFINITION: {
-			ResourceDefinitionNode &self = (ResourceDefinitionNode &)node;
+			const ResourceDefinitionNode &self = static_cast<const ResourceDefinitionNode &>(node);
 			String out = self.name->name + " {\n";
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
-				out += visitNode(*prop.get(), depth + 1) + "\n";
+				out += visitNode(*prop, depth + 1) + "\n";
 			}
 			return out + "}";
 		} break;
 		case GdmlNodeType::SIGNAL_DEFINITION: {
-			SignalDefinitionNode &self = (SignalDefinitionNode &)node;
+			const SignalDefinitionNode &self = static_cast<const SignalDefinitionNode &>(node);
 			String out = "signal " + self.name->name + "\n";
 			return out;
 		} break;
+		case GdmlNodeType::VARIABLE_DEFINITION: {
+			const VariableDefinitionNode &self = static_cast<const VariableDefinitionNode &>(node);
+			String out = "let " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
+			return out;
+		} break;
 		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
-			IdentifierNode &self = (IdentifierNode &)node;
+			const IdentifierNode &self = static_cast<const IdentifierNode &>(node);
 			return self.name;
 		} break;
 		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
-			MemberExpressionNode &self = (MemberExpressionNode &)node;
+			const MemberExpressionNode &self = static_cast<const MemberExpressionNode &>(node);
 			godot::PackedStringArray arr;
-			for (const std::unique_ptr<godot::IdentifierNode> &part : self.path) {
+			for (const std::unique_ptr<IdentifierNode> &part : self.path) {
 				arr.append(part->name);
 			}
 			return String(".").join(arr);
 		} break;
 		case GdmlNodeType::STRING_EXPRESSION: {
-			StringNode &self = (StringNode &)node;
-			return "\"" + self.value + "\"";
+			const StringNode &self = static_cast<const StringNode &>(node);
+			return "\"" + self.value.c_escape() + "\"";
 		} break;
 		case GdmlNodeType::NUMBER_EXPRESSION: {
-			NumberNode &self = (NumberNode &)node;
+			const NumberNode &self = static_cast<const NumberNode &>(node);
 			return self.value;
 		} break;
 		case GdmlNodeType::BOOLEAN_EXPRESSION: {
-			BooleanNode &self = (BooleanNode &)node;
+			const BooleanNode &self = static_cast<const BooleanNode &>(node);
 			return String(self.value ? "true" : "false");
 		} break;
 		case GdmlNodeType::ARRAY_EXPRESSION: {
-			ArrayExpressionNode &self = (ArrayExpressionNode &)node;
+			const ArrayExpressionNode &self = static_cast<const ArrayExpressionNode &>(node);
 			String out = "[";
-			for (const std::unique_ptr<godot::ExpressionNode> &expr : self.values) {
-				out += visitNode(*expr.get(), depth) + ", ";
+			for (const std::unique_ptr<ExpressionNode> &expr : self.values) {
+				out += visitNode(*expr, depth) + ", ";
 			}
 			return out + "]";
 		} break;
 		case GdmlNodeType::DICTIONARY_EXPRESSION: {
-			DictionaryExpressionNode &self = (DictionaryExpressionNode &)node;
+			const DictionaryExpressionNode &self = static_cast<const DictionaryExpressionNode &>(node);
 			String out = "{\n";
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.values) {
-				out += visitNode(*prop.get(), depth + 1) + "\n";
+				out += visitNode(*prop, depth + 1) + "\n";
 			}
 			return out + "}";
 		} break;
 		case GdmlNodeType::SIGNAL_EXPRESSION: {
-			SignalExpressionNode& self = (SignalExpressionNode&)node;
-			return "@" + visitNode(*self.name.get(), depth);
+			const SignalExpressionNode& self = static_cast<const SignalExpressionNode&>(node);
+			return "@" + visitNode(*self.name, depth);
 		} break;
 		case GdmlNodeType::FUNCTION_CALL: {
-			FunctionCallExpressionNode& self = (FunctionCallExpressionNode&)node;
-			String out = visitNode(*self.name.get(), 0) + "(";
+			const FunctionCallExpressionNode& self = static_cast<const FunctionCallExpressionNode &>(node);
+			String out = visitNode(*self.name, 0) + "(";
 			for (const std::unique_ptr<ExpressionNode> &expr: self.arguments) {
-				out += visitNode(*expr.get(), 0) + ", ";
+				out += visitNode(*expr, 0) + ", ";
 			}
 			return out + ")";
+		} break;
+		case GdmlNodeType::UNKNOWN: {
+			return String("(Unknown node)");
 		} break;
 		default:
 			return String("(node not implemented)");

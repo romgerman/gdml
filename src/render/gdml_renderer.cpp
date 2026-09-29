@@ -23,7 +23,7 @@ GdmlRenderer::GdmlRenderer() :
 Variant GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 
-	//print_line(traversal::GdmlPrinterVisitor().visit(*result.get()));
+	print_line(traversal::GdmlPrinterVisitor().visit(*result));
 
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());

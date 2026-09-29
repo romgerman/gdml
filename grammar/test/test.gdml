@@ -1,5 +1,7 @@
 # @reference: main_menu.gd
 
+let hello = "world"
+
 VBoxContainer {
 	alignment: 1
 	anchor_left: 0.0
