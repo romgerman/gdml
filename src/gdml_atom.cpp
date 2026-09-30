@@ -1,10 +1,14 @@
 #include "gdml_atom.h"
 
 #include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/classes/node.hpp>
 
 using namespace godot;
 
-void reactive::GDMLAtom::_bind_methods() {
+namespace reactive {
+
+void GDMLAtom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_value"), &GDMLAtom::get_value);
 	ClassDB::bind_method(D_METHOD("set_value", "_value"), &GDMLAtom::set_value);
 
@@ -19,20 +23,52 @@ void reactive::GDMLAtom::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_name"), &GDMLAtom::get_name);
 }
 
-void reactive::GDMLAtom::create(godot::StringName p_name, godot::Variant p_initial_value) {
+void GDMLAtom::create(StringName p_name, Variant p_initial_value) {
 	m_name = p_name;
 	m_value = p_initial_value;
 }
 
-void reactive::GDMLAtom::set_value(godot::Variant p_value) {
+void GDMLAtom::add_dependency(Variant &p_variant, StringName p_prop) {
+	Object *object = Object::cast_to<Object>(p_variant);
+	ObjectID object_id = (ObjectID)object->get_instance_id();
+
+	if (m_dependencies.find(object_id) == m_dependencies.end()) {
+		m_dependencies[object_id] = std::set<StringName>();
+	}
+
+	m_dependencies[object_id].insert(p_prop);
+}
+
+void GDMLAtom::remove_dependency(Variant &p_variant, StringName p_prop) {
+	Object *object = Object::cast_to<Object>(p_variant);
+	ObjectID object_id = (ObjectID)object->get_instance_id();
+
+	if (m_dependencies.find(object_id) != m_dependencies.end()) {
+		m_dependencies[object_id].erase(p_prop);
+	} else {
+		m_dependencies.erase(object_id);
+	}
+}
+
+void GDMLAtom::set_value(Variant p_value) {
 	m_value = p_value;
+
+	for (std::pair<ObjectID, std::set<StringName>> pair : m_dependencies) {
+		Object *object = ObjectDB::get_instance(pair.first);
+		for (StringName prop : pair.second) {
+			object->set(prop, p_value);
+		}
+	}
+
 	emit_signal("changed");
 }
 
-godot::Variant reactive::GDMLAtom::get_value() {
+Variant GDMLAtom::get_value() {
 	return m_value;
 }
 
-godot::StringName reactive::GDMLAtom::get_name() {
+StringName GDMLAtom::get_name() {
 	return m_name;
+}
+
 }

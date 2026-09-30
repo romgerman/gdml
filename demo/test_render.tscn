@@ -10,7 +10,21 @@ script/source = "extends GDMLNode
 
 func _ready() -> void:
 	var item_count := get_variable(\"item_count\")
-	print(\"ITEM_COUNT: \", item_count.value)
+	#item_count.value = 3
+	
+	var item_color := get_variable(\"item_color\")
+	#item_color.value = Color.BLACK
+	
+	connect(\"hover\", _hovered)
+	connect(\"unhover\", _unhovered)
+
+func _hovered() -> void:
+	var item_color := get_variable(\"item_color\")
+	item_color.value = Color.BLACK
+
+func _unhovered() -> void:
+	var item_color := get_variable(\"item_color\")
+	item_color.value = Color.YELLOW
 "
 
 [node name="TestRender" type="Node2D" unique_id=43238584]
@@ -43,8 +57,3 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_4tb28")
-
-[node name="GridContainer" type="GridContainer" parent="CanvasLayer" unique_id=1624816800]
-anchors_preset = -1
-offset_right = 40.0
-offset_bottom = 40.0

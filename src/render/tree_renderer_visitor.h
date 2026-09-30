@@ -7,6 +7,7 @@
 #include "gdml_atom.h"
 
 #include <map>
+#include <set>
 #include <memory>
 #include <vector>
 
@@ -17,8 +18,12 @@
 namespace traversal {
 
 struct TreeRendererVisitorContext {
+	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
+
 	godot::Dictionary m_data;
 	godot::Dictionary m_variables;
+	// signal definition name <-> [signal target <-> [signal names]]
+	std::map<godot::String, SignalTarget> m_signals;
 
 	void set_variable(godot::String &p_name, godot::Variant p_value);
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
@@ -28,6 +33,7 @@ struct TreeRendererVisitorContext {
 struct TreeRendererVisitorResult {
 	std::vector<godot::Variant> nodes;
 	godot::Dictionary variables;
+	std::map<godot::String, TreeRendererVisitorContext::SignalTarget> signals;
 };
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
@@ -42,8 +48,9 @@ private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
+	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 
-	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
+	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node);
 	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);
 	bool getPropertyValue(godot::Variant &variant, godot::String &prop_key, godot::Variant &value);
 	bool getDeepPropertyValue(godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::Variant &value);
@@ -51,6 +58,8 @@ private:
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);
 
 	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
+
+	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
 };
 
 } //namespace traversal

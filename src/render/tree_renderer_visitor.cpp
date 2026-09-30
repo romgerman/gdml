@@ -16,6 +16,8 @@ using namespace parser;
 
 namespace traversal {
 
+// Context
+
 void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
 	if (m_variables.has(p_name)) {
 		Ref<reactive::GDMLAtom> atom = m_variables[p_name];
@@ -38,6 +40,8 @@ Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_variable(String &p_name)
 bool TreeRendererVisitorContext::has_variable(String &p_name) {
 	return m_variables.has(p_name);
 }
+
+// Renderer
 
 TreeRendererVisitor::TreeRendererVisitor() {
 	m_variant_type_map = {
@@ -86,6 +90,7 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 		TreeRendererVisitorResult result;
 		visitSourceFile((SourceFileNode &)root_node, result);
 		result.variables = m_context->m_variables;
+		result.signals = m_context->m_signals;
 		return result;
 	} else {
 		print_error("Cannot render tree. The tree is malformed");
@@ -111,6 +116,9 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		} else if (definition->statement->type == GdmlNodeType::FOR_STATEMENT) {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			visitForStatement(*statement, result.nodes);
+		} else if (definition->statement->type == GdmlNodeType::SIGNAL_DEFINITION) {
+			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
+			visitSignalDefinition(*def);
 		}
 	}
 }
@@ -154,7 +162,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 		if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-			const IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+			IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 			setVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
 		} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 			const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
@@ -243,7 +251,11 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 	}
 }
 
-bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, const String &prop_key, const ExpressionNode &value_node) {
+void TreeRendererVisitor::visitSignalDefinition(godot::SignalDefinitionNode &definition) {
+	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
+}
+
+bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
 	bool is_valid = false;
 
 	if (value_node.type == GdmlNodeType::STRING_EXPRESSION) {
@@ -261,6 +273,11 @@ bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &var
 		variant.set(prop_key, node.value, &is_valid);
 	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
 		IdentifierNode &node = (IdentifierNode &)value_node;
+
+		if (m_context->has_variable(node.name)) {
+			subscribeToVariable(node.name, prop_key, variant);
+		}
+
 		Variant out_value;
 		if (getPropertyValue(root_variant, node.name, out_value)) {
 			variant.set(prop_key, out_value, &is_valid);
@@ -307,7 +324,7 @@ bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &var
 
 		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-				const IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
@@ -368,7 +385,7 @@ bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant 
 		}
 	}
 
-	const String &variant_property = path.back()->name;
+	String &variant_property = path.back()->name;
 	if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
 		const String &previous_property = (path.end() - 2)->get()->name;
 		previous_variant.set(previous_property, current_variant, &is_valid);
@@ -446,6 +463,16 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &variant, const std::vect
 
 bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, const String &callable_name) {
 	Object *obj = variant.get_validated_object();
+	
+	if (m_context->m_signals.find(callable_name) != m_context->m_signals.end()) {
+
+		if (m_context->m_signals[callable_name].find((ObjectID)obj->get_instance_id()) == m_context->m_signals[callable_name].end()) {
+			m_context->m_signals[callable_name][(ObjectID)obj->get_instance_id()] = std::set<StringName>();
+		}
+
+		m_context->m_signals[callable_name][(ObjectID)obj->get_instance_id()].insert(signal_name);
+		return true;
+	}
 
 	if (obj) {
 		const Variant name_or_callable = m_context->m_data.get(callable_name, Variant(nullptr));
@@ -533,7 +560,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 
 			for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 				if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-					const IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 					setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
 				} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 					const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
@@ -550,6 +577,11 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 	}
 
 	return true;
+}
+
+void TreeRendererVisitor::subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant) {
+	Ref<reactive::GDMLAtom> atom = m_context->get_variable(p_variable);
+	atom->add_dependency(variant, p_prop);
 }
 
 }

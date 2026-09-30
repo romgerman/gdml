@@ -11,6 +11,9 @@ let item_color = Color {
 
 let item_count = 5
 
+signal hover
+signal unhover
+
 GridContainer {
 	columns: 5
 	anchor_left: 0.0
@@ -22,6 +25,8 @@ GridContainer {
 		ColorRect {
 			custom_minimum_size: item_size
 			color: item_color
+			@mouse_entered: hover
+			@mouse_exited: unhover
 		}
 	}
 }

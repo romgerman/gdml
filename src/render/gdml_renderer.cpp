@@ -12,10 +12,30 @@
 using namespace godot;
 using namespace parser;
 
+namespace godot {
+
 void godot::GDMLResult::_bind_methods() {
+	
 	ClassDB::bind_method(D_METHOD("get_nodes"), &GDMLResult::get_nodes);
 	ClassDB::bind_method(D_METHOD("get_variable_list"), &GDMLResult::get_variable_list);
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLResult::get_variable);
+	
+	ClassDB::bind_method(D_METHOD("get_signals"), &GDMLResult::get_signals);
+}
+
+void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName target_signal) {
+	Object *target_object = ObjectDB::get_instance(target);
+
+	if (target_object) {
+		target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal).bind(signal_name));
+		if (!has_user_signal(signal_name)) {
+			add_user_signal(signal_name);
+		}
+	}
+}
+
+void GDMLResult::on_defined_signal(String signal_name) {
+	emit_signal(signal_name);
 }
 
 godot::Array godot::GDMLResult::get_nodes() {
@@ -32,6 +52,10 @@ godot::Ref<reactive::GDMLAtom> godot::GDMLResult::get_variable(godot::String p_n
 	} else {
 		return nullptr;
 	}
+}
+
+godot::Array GDMLResult::get_signals() {
+	return signals;
 }
 
 void GDMLRenderer::_bind_methods() {
@@ -60,9 +84,21 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 
 	out->variables = visitor_result.variables;
 
+	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : visitor_result.signals) {
+		for (std::pair<Variant, std::set<godot::StringName>> target_pair : pair.second) {
+			for (godot::StringName target_signal : target_pair.second) {
+				out->connect_signal(pair.first, target_pair.first, target_signal);
+			}
+		}
+
+		out->signals.push_back(pair.first);
+	}
+
 	return out;
 }
 
 Ref<GDMLResult> godot::GDMLRenderer::renderMarkup(GdmlScript *script) {
 	return renderString(script->get_source_code());
+}
+
 }

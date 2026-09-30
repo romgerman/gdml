@@ -59,12 +59,22 @@ void godot::GDMLNode::_notification(int p_what) {
 					Control *child = cast_to<Control>(item);
 					add_child(child);
 					child->set_owner(get_owner() ? get_owner() : nullptr);
+				}
 
+				for (godot::Variant signal_name : _renderer_result->get_signals()) {
+					_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal).bind(signal_name));
+					if (!has_user_signal(signal_name)) {
+						add_user_signal(signal_name);
+					}
 				}
 			}
 		}
 	} break;
 	}
+}
+
+void godot::GDMLNode::on_bubble_signal(String signal_name) {
+	emit_signal(signal_name);
 }
 
 void GDMLNode::set_markup(const Ref<GdmlScript> &p_markup) {
