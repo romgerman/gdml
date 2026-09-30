@@ -2,12 +2,11 @@
 
 #include <tree_sitter/api.h>
 
-namespace godot {
-class String;
-}
+#include <godot_cpp/variant/string.hpp>
 
 namespace ts {
 
+// Just a wapper for TSNode. Lifetime is not handled
 class Node {
 	TSNode m_node;
 
@@ -19,16 +18,18 @@ public:
 	bool isType(const char *typeName) const;
 	bool isNull() const;
 	bool isError() const;
+	bool isMissing() const;
+	bool hasError() const;
 	uint32_t getChildCount() const;
 	uint32_t getNamedChildCount() const;
 	Node getChild(uint32_t index) const;
 	Node getNamedChild(uint32_t index) const;
-	Node getChildByFieldName(const godot::String &fieldName) const;
+	Node getChildByFieldName(const godot::CharString &fieldName) const;
 	uint32_t getStartByte() const;
 	uint32_t getEndByte() const;
 	TSPoint getStartPoint() const;
 	TSPoint getEndPoint() const;
-	godot::String getText(const godot::String &sourceText) const;
+	godot::String getText(const godot::CharString &sourceText) const;
 
 	static Node getRootNode(const TSTree *tree);
 };
@@ -39,6 +40,9 @@ class Cursor {
 public:
 	Cursor(TSNode start_node);
 	Cursor(Node &start_node);
+	~Cursor();
+	Cursor(const Cursor &) = delete;
+	Cursor &operator=(const Cursor &) = delete;
 
 	Node getCurrentNode() const;
 	bool gotoFirstChild();

@@ -3,12 +3,7 @@ extends CanvasLayer
 @export var ui_script: GdmlScript
 
 func _ready() -> void:
-	var result = GdmlRenderer.new().renderMarkup(ui_script, {
-		"game_name": "My Super Cool Game!",
-		"continue_pressed": _continue_pressed,
-		"load": _load_res,
-		"test_raw_fn": _raw_fn
-	})
+	var result = GDMLRenderer.new().renderMarkup(ui_script)
 	for n in result.get_nodes():
 		add_child(n)
 

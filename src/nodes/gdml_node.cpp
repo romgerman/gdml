@@ -45,7 +45,7 @@ void godot::GDMLNode::_notification(int p_what) {
 	case NOTIFICATION_ENTER_TREE: {
 		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
 			if (_markup.is_valid()) {
-				godot::Ref<godot::GDMLResult> result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
+				godot::Ref<godot::GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
 				for (godot::Variant item : result->nodes) {
 					add_child(cast_to<Control>(item));
 				}
@@ -54,7 +54,7 @@ void godot::GDMLNode::_notification(int p_what) {
 
 		if (!Engine::get_singleton()->is_editor_hint()) {
 			if (_markup.is_valid()) {
-				_renderer_result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
+				_renderer_result = _renderer->renderMarkup(_markup.ptr());
 				for (godot::Variant item : _renderer_result->nodes) {
 					Control *child = cast_to<Control>(item);
 					add_child(child);
@@ -83,6 +83,6 @@ bool godot::GDMLNode::get_render_in_editor() {
 	return m_render_in_editor;
 }
 
-godot::Ref<reactive::GDMLAtom> godot::GDMLNode::get_variable(godot::StringName p_name) {
-	return godot::Ref<reactive::GDMLAtom>(memnew(reactive::GDMLAtom()));
+godot::Ref<reactive::GDMLAtom> godot::GDMLNode::get_variable(String p_name) {
+	return _renderer_result->get_variable(p_name);
 }

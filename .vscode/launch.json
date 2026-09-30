@@ -3,7 +3,8 @@
   "configurations": [
     {
       "name": "(Windows) Debug GDExtension",
-      "type": "cppvsdbg",
+    //   "type": "lldb",
+	  "type": "cppvsdbg",
       "request": "launch",
       "console": "integratedTerminal",
       "cwd": "${workspaceRoot}/demo",
@@ -14,6 +15,7 @@
       ],
       "stopAtEntry": false,
       "environment": [],
+	//   "stdio": null,
       "preLaunchTask": "build-scons"
     },
     {

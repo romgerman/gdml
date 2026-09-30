@@ -36,7 +36,7 @@ public:
 	void set_render_in_editor(bool p_enabled);
 	bool get_render_in_editor();
 
-	godot::Ref<reactive::GDMLAtom> get_variable(godot::StringName p_name);
+	godot::Ref<reactive::GDMLAtom> get_variable(String p_name);
 };
 
 }

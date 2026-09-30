@@ -4,6 +4,7 @@
 #include "gdml_script.h"
 #include "gdml_script_language.h"
 #include "gdml_traversal.h"
+#include "gdml_atom.h"
 
 #include <map>
 #include <memory>
@@ -16,12 +17,17 @@
 namespace traversal {
 
 struct TreeRendererVisitorContext {
-	godot::Dictionary data;
+	godot::Dictionary m_data;
+	godot::Dictionary m_variables;
+
+	void set_variable(godot::String &p_name, godot::Variant p_value);
+	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
+	bool has_variable(godot::String &p_name);
 };
 
 struct TreeRendererVisitorResult {
 	std::vector<godot::Variant> nodes;
-	std::map<godot::String, godot::Variant> variables;
+	godot::Dictionary variables;
 };
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
@@ -33,13 +39,13 @@ public:
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:
-	void visitSourceFile(const godot::SourceFileNode &node, TreeRendererVisitorResult &result);
+	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
 	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);
-	bool getPropertyValue(godot::Variant &variant, const godot::String &prop_key, godot::Variant &value);
+	bool getPropertyValue(godot::Variant &variant, godot::String &prop_key, godot::Variant &value);
 	bool getDeepPropertyValue(godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::Variant &value);
 
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);

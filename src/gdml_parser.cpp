@@ -42,16 +42,16 @@ godot::GdmlParser::GdmlParser() :
 	}
 }
 
-std::unique_ptr<const TSTree, TSTreeDeleter> godot::GdmlParser::rawParse(const String &text) const {
-	const godot::CharString char_text = text.utf8();
+std::unique_ptr<const TSTree, TSTreeDeleter> godot::GdmlParser::rawParse(const CharString &text) const {
 	return std::unique_ptr<const TSTree, TSTreeDeleter>(
-			ts_parser_parse_string(m_parser.get(), nullptr, char_text.get_data(), char_text.length()),
+			ts_parser_parse_string(m_parser.get(), nullptr, text.get_data(), text.length()),
 			TSTreeDeleter());
 }
 
 std::unique_ptr<SourceFileNode> godot::GdmlParser::parse(const String &text) {
 	parse_errors.clear();
-	auto tree = rawParse(text);
+	CharString source = text.utf8();
+	auto tree = rawParse(source);
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
 	collectSyntaxErrors(root_node);
 
@@ -62,7 +62,7 @@ std::unique_ptr<SourceFileNode> godot::GdmlParser::parse(const String &text) {
 		ts::Node child_node = root_node.getNamedChild(i);
 
 		if (child_node.isType("definition")) {
-			std::unique_ptr<DefinitionNode> def = visitDefinition(child_node, text);
+			std::unique_ptr<DefinitionNode> def = visitDefinition(child_node, source);
 			out->statements.push_back(std::move(def));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
@@ -75,16 +75,16 @@ std::unique_ptr<SourceFileNode> godot::GdmlParser::parse(const String &text) {
 }
 
 void godot::GdmlParser::collectSyntaxErrors(ts::Node node) {
-	if (!ts_node_has_error(node.raw())){
+	if (!node.hasError()){
 		return;
 	}
 
-	if (ts_node_is_missing(node.raw())) {
+	if (node.isMissing()) {
 		pushError("Missing '" + String(node.getType()) + "'", node);
 		return;
 	}
 
-	if (ts_node_is_error(node.raw())) {
+	if (node.isError()) {
 		pushError("Unexpected syntax", node);
 		return;
 	}
@@ -94,7 +94,7 @@ void godot::GdmlParser::collectSyntaxErrors(ts::Node node) {
 	}
 }
 
-std::unique_ptr<DefinitionNode> godot::GdmlParser::visitDefinition(ts::Node node, const String &text) {
+std::unique_ptr<DefinitionNode> godot::GdmlParser::visitDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<DefinitionNode> out = std::make_unique<DefinitionNode>();
 	out->type = GdmlNodeType::DEFINITION;
 
@@ -119,7 +119,7 @@ std::unique_ptr<DefinitionNode> godot::GdmlParser::visitDefinition(ts::Node node
 	return out;
 }
 
-std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::Node node, const String &text) {
+std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<NodeDefinitionNode> out = std::make_unique<NodeDefinitionNode>();
 	out->type = GdmlNodeType::NODE_DEFINITION;
 
@@ -150,7 +150,7 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 	return out;
 }
 
-std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Node node, const String &text) {
+std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Node node, CharString &text) {
 	std::unique_ptr<PropertyDefinitionNode> out = std::make_unique<PropertyDefinitionNode>();
 	out->type = GdmlNodeType::PROPERTY_DEFINITION;
 
@@ -177,7 +177,7 @@ std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Nod
 	return out;
 }
 
-std::unique_ptr<ResourceDefinitionNode> godot::GdmlParser::visitResource(ts::Node node, const String &text) {
+std::unique_ptr<ResourceDefinitionNode> godot::GdmlParser::visitResource(ts::Node node, CharString &text) {
 	std::unique_ptr<ResourceDefinitionNode> out = std::make_unique<ResourceDefinitionNode>();
 	out->type = GdmlNodeType::RESOURCE_DEFINITION;
 
@@ -199,7 +199,7 @@ std::unique_ptr<ResourceDefinitionNode> godot::GdmlParser::visitResource(ts::Nod
 	return out;
 }
 
-std::unique_ptr<SignalDefinitionNode> godot::GdmlParser::visitSignalDefinition(ts::Node node, const String &text) {
+std::unique_ptr<SignalDefinitionNode> godot::GdmlParser::visitSignalDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<SignalDefinitionNode> out = std::make_unique<SignalDefinitionNode>();
 	out->type = GdmlNodeType::SIGNAL_DEFINITION;
 
@@ -216,7 +216,7 @@ std::unique_ptr<SignalDefinitionNode> godot::GdmlParser::visitSignalDefinition(t
 	return out;
 }
 
-std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefinition(ts::Node node, const String &text) {
+std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<VariableDefinitionNode> out = std::make_unique<VariableDefinitionNode>();
 	out->type = GdmlNodeType::VARIABLE_DEFINITION;
 
@@ -237,7 +237,7 @@ std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefiniti
 	return out;
 }
 
-std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node node, const String &text) {
+std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node node, CharString &text) {
 	std::unique_ptr<ForStatementNode> out = std::make_unique<ForStatementNode>();
 	out->type = GdmlNodeType::FOR_STATEMENT;
 
@@ -270,7 +270,7 @@ std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node 
 	return out;
 }
 
-std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node, const String &text) {
+std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
 	out->type = GdmlNodeType::UNKNOWN;
 
@@ -278,21 +278,21 @@ std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("identifier")) {
-			out = visitIdentifier(child_node, text);
+			return visitIdentifier(child_node, text);
 		} else if (child_node.isType("number")) {
-			out = visitNumber(child_node, text);
+			return visitNumber(child_node, text);
 		} else if (child_node.isType("boolean")) {
-			out = visitBoolean(child_node, text);
+			return visitBoolean(child_node, text);
 		} else if (child_node.isType("string")) {
-			out = visitString(child_node, text);
+			return visitString(child_node, text);
 		} else if (child_node.isType("array_expression")) {
-			out = visitArrayExpression(child_node, text);
+			return visitArrayExpression(child_node, text);
 		} else if (child_node.isType("dictionary_expression")) {
-			out = visitDictionaryExpression(child_node, text);
+			return visitDictionaryExpression(child_node, text);
 		} else if (child_node.isType("member_expression")) {
-			out = visitMemberExpression(child_node, text);
+			return visitMemberExpression(child_node, text);
 		} else if (child_node.isType("function_call")) {
-			out = visitFunctionCallExpression(child_node, text);
+			return visitFunctionCallExpression(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -303,7 +303,7 @@ std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node
 	return out;
 }
 
-std::unique_ptr<MemberExpressionNode> godot::GdmlParser::visitMemberExpression(ts::Node node, const String &text) {
+std::unique_ptr<MemberExpressionNode> godot::GdmlParser::visitMemberExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<MemberExpressionNode> out = std::make_unique<MemberExpressionNode>();
 	out->type = GdmlNodeType::MEMBER_ACCESS_EXPRESSION;
 
@@ -322,7 +322,7 @@ std::unique_ptr<MemberExpressionNode> godot::GdmlParser::visitMemberExpression(t
 	return out;
 }
 
-std::unique_ptr<ArrayExpressionNode> godot::GdmlParser::visitArrayExpression(ts::Node node, const String &text) {
+std::unique_ptr<ArrayExpressionNode> godot::GdmlParser::visitArrayExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<ArrayExpressionNode> out = std::make_unique<ArrayExpressionNode>();
 	out->type = GdmlNodeType::ARRAY_EXPRESSION;
 
@@ -342,7 +342,7 @@ std::unique_ptr<ArrayExpressionNode> godot::GdmlParser::visitArrayExpression(ts:
 	return out;
 }
 
-std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpression(ts::Node node, const String &text) {
+std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<DictionaryExpressionNode> out = std::make_unique<DictionaryExpressionNode>();
 	out->type = GdmlNodeType::DICTIONARY_EXPRESSION;
 
@@ -362,7 +362,7 @@ std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpr
 	return out;
 }
 
-std::unique_ptr<SignalExpressionNode> godot::GdmlParser::visitSignalExpression(ts::Node node, const String &text) {
+std::unique_ptr<SignalExpressionNode> godot::GdmlParser::visitSignalExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<SignalExpressionNode> out = std::make_unique<SignalExpressionNode>();
 	out->type = GdmlNodeType::SIGNAL_EXPRESSION;
 
@@ -379,7 +379,7 @@ std::unique_ptr<SignalExpressionNode> godot::GdmlParser::visitSignalExpression(t
 	return out;
 }
 
-std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCallExpression(ts::Node node, const String &text) {
+std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCallExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<FunctionCallExpressionNode> out = std::make_unique<FunctionCallExpressionNode>();
 	out->type = GdmlNodeType::FUNCTION_CALL;
 
@@ -409,7 +409,7 @@ std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCall
 	return out;
 }
 
-std::unique_ptr<IdentifierNode> godot::GdmlParser::visitIdentifier(ts::Node node, const String &text) {
+std::unique_ptr<IdentifierNode> godot::GdmlParser::visitIdentifier(ts::Node node, CharString &text) {
 	std::unique_ptr<IdentifierNode> out = std::make_unique<IdentifierNode>();
 	out->type = GdmlNodeType::IDENTIFIER_EXPRESSION;
 	out->name = node.getText(text);
@@ -417,7 +417,7 @@ std::unique_ptr<IdentifierNode> godot::GdmlParser::visitIdentifier(ts::Node node
 	return out;
 }
 
-std::unique_ptr<NumberNode> godot::GdmlParser::visitNumber(ts::Node node, const String &text) {
+std::unique_ptr<NumberNode> godot::GdmlParser::visitNumber(ts::Node node, CharString &text) {
 	std::unique_ptr<NumberNode> out = std::make_unique<NumberNode>();
 	out->type = GdmlNodeType::NUMBER_EXPRESSION;
 	out->value = node.getText(text);
@@ -426,7 +426,7 @@ std::unique_ptr<NumberNode> godot::GdmlParser::visitNumber(ts::Node node, const 
 	return out;
 }
 
-std::unique_ptr<BooleanNode> godot::GdmlParser::visitBoolean(ts::Node node, const String &text) {
+std::unique_ptr<BooleanNode> godot::GdmlParser::visitBoolean(ts::Node node, CharString &text) {
 	std::unique_ptr<BooleanNode> out = std::make_unique<BooleanNode>();
 	out->type = GdmlNodeType::BOOLEAN_EXPRESSION;
 
@@ -436,7 +436,7 @@ std::unique_ptr<BooleanNode> godot::GdmlParser::visitBoolean(ts::Node node, cons
 	return out;
 }
 
-std::unique_ptr<StringNode> godot::GdmlParser::visitString(ts::Node node, const String &text) {
+std::unique_ptr<StringNode> godot::GdmlParser::visitString(ts::Node node, CharString &text) {
 	std::unique_ptr<StringNode> out = std::make_unique<StringNode>();
 	out->type = GdmlNodeType::STRING_EXPRESSION;
 	out->value = String();

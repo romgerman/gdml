@@ -15,6 +15,8 @@ void reactive::GDMLAtom::_bind_methods() {
 	);
 
 	ADD_SIGNAL(MethodInfo("changed"));
+
+	ClassDB::bind_method(D_METHOD("get_name"), &GDMLAtom::get_name);
 }
 
 void reactive::GDMLAtom::create(godot::StringName p_name, godot::Variant p_initial_value) {

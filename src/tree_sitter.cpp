@@ -1,8 +1,10 @@
 #include "tree_sitter.h"
 
+#include <cstring>
+
 #include <godot_cpp/variant/string.hpp>
 
-using namespace ts;
+namespace ts {
 
 Node::Node(TSNode node) :
 		m_node(node) {}
@@ -12,19 +14,27 @@ TSNode Node::raw() const {
 }
 
 const char *Node::getType() const {
-	return ts_node_type(m_node);
+	return isNull() ? "" : ts_node_type(m_node);
 }
 
 bool Node::isType(const char *typeName) const {
-	return strcmp(getType(), typeName) == 0;
+	return !isNull() && strcmp(getType(), typeName) == 0;
 }
 
 bool Node::isNull() const {
 	return ts_node_is_null(m_node);
 }
 
-bool ts::Node::isError() const {
+bool Node::isError() const {
 	return ts_node_is_error(m_node);
+}
+
+bool Node::isMissing() const {
+	return ts_node_is_missing(m_node);
+}
+
+bool Node::hasError() const {
+	return ts_node_has_error(m_node);
 }
 
 uint32_t Node::getChildCount() const {
@@ -43,8 +53,8 @@ Node Node::getNamedChild(uint32_t index) const {
 	return Node(ts_node_named_child(m_node, index));
 }
 
-Node Node::getChildByFieldName(const godot::String &fieldName) const {
-	return Node(ts_node_child_by_field_name(m_node, fieldName.utf8().get_data(), fieldName.utf8().length()));
+Node Node::getChildByFieldName(const godot::CharString &fieldName) const {
+	return Node(ts_node_child_by_field_name(m_node, fieldName.get_data(), fieldName.length()));
 }
 
 uint32_t Node::getStartByte() const {
@@ -63,10 +73,10 @@ TSPoint Node::getEndPoint() const {
 	return ts_node_end_point(m_node);
 }
 
-godot::String Node::getText(const godot::String &sourceText) const {
+godot::String Node::getText(const godot::CharString &sourceText) const {
 	uint32_t start = getStartByte();
 	uint32_t end = getEndByte();
-	return sourceText.substr(start, end - start);
+	return godot::String::utf8(sourceText.get_data() + start, end - start);
 }
 
 Node Node::getRootNode(const TSTree *tree) {
@@ -81,6 +91,10 @@ Cursor::Cursor(Node &start_node) {
 	m_cursor = ts_tree_cursor_new(start_node.raw());
 }
 
+Cursor::~Cursor() {
+	ts_tree_cursor_delete(&m_cursor);
+}
+
 Node Cursor::getCurrentNode() const {
 	return ts_tree_cursor_current_node(&m_cursor);
 }
@@ -91,4 +105,6 @@ bool Cursor::gotoFirstChild() {
 
 bool Cursor::gotoNextSibling() {
 	return ts_tree_cursor_goto_next_sibling(&m_cursor);
+}
+
 }

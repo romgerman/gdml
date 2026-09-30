@@ -12,6 +12,10 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
+namespace traversal {
+class TreeRendererVisitor;
+}
+
 namespace godot {
 
 class GDMLResult : public RefCounted {
@@ -26,22 +30,23 @@ public:
 
 	godot::Array get_nodes();
 
-	godot::Dictionary get_variable_list();
-	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
+	godot::Array get_variable_list();
+	godot::Ref<reactive::GDMLAtom> get_variable(godot::String p_name);
 };
 
 class GDMLRenderer : public RefCounted {
 	GDCLASS(GDMLRenderer, RefCounted)
 
 	std::unique_ptr<GdmlParser> m_parser;
+	std::unique_ptr<traversal::TreeRendererVisitor> m_visitor;
 
 protected:
 	static void _bind_methods();
 
 public:
 	GDMLRenderer();
-	Ref<GDMLResult> renderString(const String &source, const godot::Dictionary &data);
-	Ref<GDMLResult> renderMarkup(GdmlScript *script, const godot::Dictionary &data);
+	Ref<GDMLResult> renderString(const String &source);
+	Ref<GDMLResult> renderMarkup(GdmlScript *script);
 };
 
 } //namespace godot

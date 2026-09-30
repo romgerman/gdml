@@ -22,7 +22,8 @@ Dictionary godot::GdmlSyntaxHighlighter::_get_line_syntax_highlighting(int32_t p
 Dictionary godot::GdmlSyntaxHighlighter::get_syntax_highlighting(const godot::String &p_text, int32_t p_line) const {
 	godot::Dictionary out;
 
-	auto tree = _parser.rawParse(p_text);
+	CharString source = p_text.utf8();
+	auto tree = _parser.rawParse(source);
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
 	std::vector<std::tuple<ts::Node, godot::String, bool>> node_on_line = find_nodes_on_line(root_node, p_line);
 

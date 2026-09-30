@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bdx6bec07ctvh"]
 
 [ext_resource type="Script" uid="uid://50ej1ovsonsw" path="res://new_script.gd" id="1_dxa44"]
-[ext_resource type="Script" uid="uid://cyoy82e6plgv7" path="res://new_script.gdml" id="2_v0t4i"]
 [ext_resource type="Script" uid="uid://crd36fuo3eoj4" path="res://my_cool_button.gd" id="3_mirat"]
 [ext_resource type="Script" uid="uid://cjkstodorsick" path="res://ui_examples/inventory.gdml" id="4_hn3h5"]
 
@@ -9,12 +8,9 @@
 resource_name = "inventory"
 script/source = "extends GDMLNode
 
-var item_count := gdml.atom(&\"item_count\")
-
 func _ready() -> void:
-	gdml.use_effect(func ():
-		print(\"value changed\")
-	)
+	var item_count := get_variable(\"item_count\")
+	print(\"ITEM_COUNT: \", item_count.value)
 "
 
 [node name="TestRender" type="Node2D" unique_id=43238584]
@@ -23,7 +19,7 @@ func _ready() -> void:
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dxa44")
-what = ExtResource("2_v0t4i")
+what = ExtResource("4_hn3h5")
 
 [node name="Control" type="Control" parent="." unique_id=991579122]
 layout_mode = 3

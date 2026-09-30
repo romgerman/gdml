@@ -187,7 +187,7 @@ class GdmlParser {
 
 public:
 	GdmlParser();
-	std::unique_ptr<const TSTree, TSTreeDeleter> rawParse(const String &text) const;
+	std::unique_ptr<const TSTree, TSTreeDeleter> rawParse(const CharString &text) const;
 	std::unique_ptr<SourceFileNode> parse(const String &text);
 
 	std::vector<parser::GdmlParseError> &getParseErrors();
@@ -195,25 +195,25 @@ public:
 private:
 	void collectSyntaxErrors(ts::Node node);
 
-	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, const String &text);
-	std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, const String &text);
-	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, const String &text);
-	std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, const String &text);
-	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, const String &text);
-	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, const String &text);
-	std::unique_ptr<ForStatementNode> visitForStatement(ts::Node node, const String &text);
+	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, CharString &text);
+	std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, CharString &text);
+	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, CharString &text);
+	std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, CharString &text);
+	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, CharString &text);
+	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, CharString &text);
+	std::unique_ptr<ForStatementNode> visitForStatement(ts::Node node, CharString &text);
 
-	std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, const String &text);
-	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, const String &text);
-	std::unique_ptr<ArrayExpressionNode> visitArrayExpression(ts::Node node, const String &text);
-	std::unique_ptr<DictionaryExpressionNode> visitDictionaryExpression(ts::Node node, const String &text);
-	std::unique_ptr<SignalExpressionNode> visitSignalExpression(ts::Node node, const String &text);
-	std::unique_ptr<FunctionCallExpressionNode> visitFunctionCallExpression(ts::Node node, const String &text);
+	std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, CharString &text);
+	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, CharString &text);
+	std::unique_ptr<ArrayExpressionNode> visitArrayExpression(ts::Node node, CharString &text);
+	std::unique_ptr<DictionaryExpressionNode> visitDictionaryExpression(ts::Node node, CharString &text);
+	std::unique_ptr<SignalExpressionNode> visitSignalExpression(ts::Node node, CharString &text);
+	std::unique_ptr<FunctionCallExpressionNode> visitFunctionCallExpression(ts::Node node, CharString &text);
 
-	std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, const String &text);
-	std::unique_ptr<NumberNode> visitNumber(ts::Node node, const String &text);
-	std::unique_ptr<BooleanNode> visitBoolean(ts::Node node, const String &text);
-	std::unique_ptr<StringNode> visitString(ts::Node node, const String &text);
+	std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, CharString &text);
+	std::unique_ptr<NumberNode> visitNumber(ts::Node node, CharString &text);
+	std::unique_ptr<BooleanNode> visitBoolean(ts::Node node, CharString &text);
+	std::unique_ptr<StringNode> visitString(ts::Node node, CharString &text);
 
 	void pushError(const String &error, const ts::Node &node);
 };
