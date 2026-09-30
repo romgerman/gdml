@@ -16,7 +16,7 @@ class GDMLNode : public Control {
 private:
 	Ref<GdmlScript> _markup;
 	Ref<GDMLRenderer> _renderer;
-	Ref<godot::GDMLResult> _renderer_result;
+	Ref<GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
 
 protected:
@@ -38,7 +38,7 @@ public:
 	void set_render_in_editor(bool p_enabled);
 	bool get_render_in_editor();
 
-	godot::Ref<reactive::GDMLAtom> get_variable(String p_name);
+	Ref<reactive::GDMLAtom> get_variable(String p_name);
 };
 
 }

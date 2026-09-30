@@ -8,6 +8,8 @@
 
 using namespace godot;
 
+namespace godot {
+
 void GDMLNode::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_markup", "p_markup"), &GDMLNode::set_markup);
 	ClassDB::bind_method(D_METHOD("get_markup"), &GDMLNode::get_markup);
@@ -37,16 +39,16 @@ GDMLNode::GDMLNode() {
 GDMLNode::~GDMLNode() {
 }
 
-void godot::GDMLNode::_ready() {}
+void GDMLNode::_ready() {}
 
-void godot::GDMLNode::_notification(int p_what) {
+void GDMLNode::_notification(int p_what) {
 	switch (p_what)
 	{
 	case NOTIFICATION_ENTER_TREE: {
 		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
 			if (_markup.is_valid()) {
-				godot::Ref<godot::GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
-				for (godot::Variant item : result->nodes) {
+				Ref<GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
+				for (Variant item : result->nodes) {
 					add_child(cast_to<Control>(item));
 				}
 			}
@@ -55,13 +57,13 @@ void godot::GDMLNode::_notification(int p_what) {
 		if (!Engine::get_singleton()->is_editor_hint()) {
 			if (_markup.is_valid()) {
 				_renderer_result = _renderer->renderMarkup(_markup.ptr());
-				for (godot::Variant item : _renderer_result->nodes) {
+				for (Variant item : _renderer_result->nodes) {
 					Control *child = cast_to<Control>(item);
 					add_child(child);
 					child->set_owner(get_owner() ? get_owner() : nullptr);
 				}
 
-				for (godot::Variant signal_name : _renderer_result->get_signals()) {
+				for (Variant signal_name : _renderer_result->get_signals()) {
 					_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal).bind(signal_name));
 					if (!has_user_signal(signal_name)) {
 						add_user_signal(signal_name);
@@ -73,7 +75,7 @@ void godot::GDMLNode::_notification(int p_what) {
 	}
 }
 
-void godot::GDMLNode::on_bubble_signal(String signal_name) {
+void GDMLNode::on_bubble_signal(String signal_name) {
 	emit_signal(signal_name);
 }
 
@@ -85,14 +87,16 @@ Ref<GdmlScript> GDMLNode::get_markup() {
 	return _markup;
 }
 
-void godot::GDMLNode::set_render_in_editor(bool p_enabled) {
+void GDMLNode::set_render_in_editor(bool p_enabled) {
 	m_render_in_editor = p_enabled;
 }
 
-bool godot::GDMLNode::get_render_in_editor() {
+bool GDMLNode::get_render_in_editor() {
 	return m_render_in_editor;
 }
 
-godot::Ref<reactive::GDMLAtom> godot::GDMLNode::get_variable(String p_name) {
+Ref<reactive::GDMLAtom> GDMLNode::get_variable(String p_name) {
 	return _renderer_result->get_variable(p_name);
+}
+
 }

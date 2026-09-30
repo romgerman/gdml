@@ -14,7 +14,7 @@ using namespace parser;
 
 namespace godot {
 
-void godot::GDMLResult::_bind_methods() {
+void GDMLResult::_bind_methods() {
 	
 	ClassDB::bind_method(D_METHOD("get_nodes"), &GDMLResult::get_nodes);
 	ClassDB::bind_method(D_METHOD("get_variable_list"), &GDMLResult::get_variable_list);
@@ -38,15 +38,15 @@ void GDMLResult::on_defined_signal(String signal_name) {
 	emit_signal(signal_name);
 }
 
-godot::Array godot::GDMLResult::get_nodes() {
+Array GDMLResult::get_nodes() {
 	return nodes;
 }
 
-godot::Array godot::GDMLResult::get_variable_list() {
+Array GDMLResult::get_variable_list() {
 	return variables.keys();
 }
 
-godot::Ref<reactive::GDMLAtom> godot::GDMLResult::get_variable(godot::String p_name) {
+Ref<reactive::GDMLAtom> GDMLResult::get_variable(String p_name) {
 	if (variables.has(p_name)) {
 		return variables[p_name];
 	} else {
@@ -54,7 +54,7 @@ godot::Ref<reactive::GDMLAtom> godot::GDMLResult::get_variable(godot::String p_n
 	}
 }
 
-godot::Array GDMLResult::get_signals() {
+Array GDMLResult::get_signals() {
 	return signals;
 }
 
@@ -67,7 +67,7 @@ GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()), m_visitor(std::make_unique<traversal::TreeRendererVisitor>()) {}
 
 Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
-	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
+	std::unique_ptr<SourceFileNode> result = m_parser->parse(source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
 
@@ -78,15 +78,15 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
 
-	for (godot::Variant node : visitor_result.nodes) {
+	for (Variant node : visitor_result.nodes) {
 		out->nodes.push_back(node);
 	}
 
 	out->variables = visitor_result.variables;
 
 	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : visitor_result.signals) {
-		for (std::pair<Variant, std::set<godot::StringName>> target_pair : pair.second) {
-			for (godot::StringName target_signal : target_pair.second) {
+		for (std::pair<Variant, std::set<StringName>> target_pair : pair.second) {
+			for (StringName target_signal : target_pair.second) {
 				out->connect_signal(pair.first, target_pair.first, target_signal);
 			}
 		}
@@ -97,7 +97,7 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	return out;
 }
 
-Ref<GDMLResult> godot::GDMLRenderer::renderMarkup(GdmlScript *script) {
+Ref<GDMLResult> GDMLRenderer::renderMarkup(GdmlScript *script) {
 	return renderString(script->get_source_code());
 }
 

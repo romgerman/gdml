@@ -25,19 +25,19 @@ protected:
 	static void _bind_methods();
 
 public:
-	godot::Array nodes;
-	godot::Dictionary variables;
-	godot::Array signals;
+	Array nodes;
+	Dictionary variables;
+	Array signals;
 
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
 	void on_defined_signal(String signal_name);
 
-	godot::Array get_nodes();
+	Array get_nodes();
 
-	godot::Array get_variable_list();
-	godot::Ref<reactive::GDMLAtom> get_variable(godot::String p_name);
+	Array get_variable_list();
+	Ref<reactive::GDMLAtom> get_variable(String p_name);
 	
-	godot::Array get_signals();
+	Array get_signals();
 };
 
 class GDMLRenderer : public RefCounted {

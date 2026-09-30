@@ -7,6 +7,8 @@
 
 using namespace godot;
 
+namespace godot {
+
 void GdmlEditorPlugin::_bind_methods() {}
 
 void GdmlEditorPlugin::_enter_tree() {
@@ -26,4 +28,6 @@ void GdmlEditorPlugin::_exit_tree() {
 		get_editor_interface()->get_script_editor()->unregister_syntax_highlighter(m_highlighter);
 		m_highlighter.unref();
 	}
+}
+
 }

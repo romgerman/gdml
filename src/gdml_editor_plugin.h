@@ -5,8 +5,8 @@
 
 namespace godot {
 
-class GdmlEditorPlugin : public godot::EditorPlugin {
-	GDCLASS(GdmlEditorPlugin, godot::EditorPlugin);
+class GdmlEditorPlugin : public EditorPlugin {
+	GDCLASS(GdmlEditorPlugin, EditorPlugin);
 
 	Ref<EditorSyntaxHighlighter> m_highlighter;
 
