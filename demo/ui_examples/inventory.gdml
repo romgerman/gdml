@@ -9,12 +9,19 @@ let item_color = Color {
 	b: 0
 }
 
+let item_count = 5
+
 GridContainer {
 	columns: 5
 	anchor_left: 0.0
 	anchor_right: 1.0
 	anchor_top: 0.0
 	anchor_bottom: 1.0
+	
+	ColorRect {
+		custom_minimum_size: item_size
+		color: item_color
+	}
 	
 	ColorRect {
 		custom_minimum_size: item_size

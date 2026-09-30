@@ -3,6 +3,7 @@
 #include "gdml_script.h"
 #include "gdml_script_language.h"
 #include "gdml_traversal.h"
+#include "gdml_atom.h"
 
 #include <map>
 #include <memory>
@@ -25,7 +26,8 @@ public:
 
 	godot::Array get_nodes();
 
-	godot::Dictionary get_variables();
+	godot::Dictionary get_variable_list();
+	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
 };
 
 class GdmlRenderer : public RefCounted {

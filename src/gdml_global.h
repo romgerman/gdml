@@ -3,6 +3,7 @@
 #include "gdml_atom.h"
 
 #include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/variant/callable.hpp>
 
 namespace global {
 
@@ -13,7 +14,8 @@ protected:
 	static void _bind_methods();
 
 public:
-	static reactive::GdmlAtom *create_atom();
+	static reactive::GDMLAtom *create_atom(godot::StringName p_name, godot::Variant p_initial_value = godot::Variant());
+	static void use_effect(godot::Callable fn);
 };
 
 } //namespace global

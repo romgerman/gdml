@@ -29,12 +29,12 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(GdmlScriptResourceFormatSaver);
 			GDREGISTER_CLASS(GdmlSyntaxHighlighter);
 
-			GDREGISTER_CLASS(reactive::GdmlAtom);
+			GDREGISTER_CLASS(reactive::GDMLAtom);
 			GDREGISTER_CLASS(GDMLResult);
 			GDREGISTER_CLASS(GdmlRenderer);
 			GDREGISTER_CLASS(global::gdml);
 
-			GDREGISTER_RUNTIME_CLASS(GDMLNode);
+			GDREGISTER_CLASS(GDMLNode);
 
 			GdmlScriptLanguage::get_or_create_singleton();
 			GdmlScriptResourceFormatLoader::register_in_godot();
