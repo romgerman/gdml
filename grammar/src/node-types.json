@@ -233,6 +233,10 @@
         "required": false,
         "types": [
           {
+            "type": "for_statement",
+            "named": true
+          },
+          {
             "type": "node_definition",
             "named": true
           }

@@ -31,12 +31,11 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 public:
 	TreeRendererVisitor();
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
-	void setRendererData(const godot::Dictionary &data);
 
 private:
 	void visitSourceFile(const godot::SourceFileNode &node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
-	void visitForStatement(godot::ForStatementNode &statement, traversal::TreeRendererVisitorResult &result);
+	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node);
 	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, const godot::ExpressionNode &value_node);

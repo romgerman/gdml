@@ -29,7 +29,7 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
 				out += visitNode(*prop, depth + 1) + "\n";
 			}
-			for (const std::unique_ptr<NodeDefinitionNode> &child : self.children) {
+			for (const std::unique_ptr<StatementNode> &child : self.statements) {
 				out += visitNode(*child, depth + 1) + "\n";
 			}
 			out += "}";

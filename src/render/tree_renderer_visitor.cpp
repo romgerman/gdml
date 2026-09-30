@@ -7,6 +7,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
+#include <godot_cpp/core/object.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/print_string.hpp>
 
@@ -64,11 +65,6 @@ traversal::TreeRendererVisitorResult traversal::TreeRendererVisitor::visit(const
 	}
 }
 
-void traversal::TreeRendererVisitor::setRendererData(const godot::Dictionary &data) {
-	m_context = std::make_unique<TreeRendererVisitorContext>();
-	m_context->data = data;
-}
-
 void traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node, traversal::TreeRendererVisitorResult &result) {
 	for (const std::unique_ptr<DefinitionNode> &definition : node.statements) {
 		if (definition->statement->type == GdmlNodeType::NODE_DEFINITION) {
@@ -86,7 +82,7 @@ void traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode
 			}
 		} else if (definition->statement->type == GdmlNodeType::FOR_STATEMENT) {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
-			visitForStatement(*statement, result);
+			visitForStatement(*statement, result.nodes);
 		}
 	}
 }
@@ -175,15 +171,26 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 		assert(obj);
 		godot::Node *obj_as_node = static_cast<godot::Node *>(obj);
 		assert(obj_as_node);
-		for (const std::unique_ptr<godot::NodeDefinitionNode> &child : node.children) {
-			godot::Variant child_variant = visitNodeDefinition(*child.get());
+		for (const std::unique_ptr<godot::StatementNode> &statement : node.statements) {
+			if (statement->type == GdmlNodeType::NODE_DEFINITION) {
+				const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
+				godot::Variant child_variant = visitNodeDefinition(*child);
+	
+				if (child_variant.get_type() != godot::Variant::Type::NIL) {
+					godot::Object *child_obj = child_variant.get_validated_object();
+					assert(child_obj);
+					godot::Node *child_node = static_cast<godot::Node *>(child_obj);
+					assert(child_node);
+					obj_as_node->add_child(child_node);
+				}
+			} else if (statement->type == GdmlNodeType::FOR_STATEMENT) {
+				ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
+				std::vector<Variant> nodes;
+				visitForStatement(*for_node, nodes);
 
-			if (child_variant.get_type() != godot::Variant::Type::NIL) {
-				godot::Object *child_obj = child_variant.get_validated_object();
-				assert(child_obj);
-				godot::Node *child_node = static_cast<godot::Node *>(child_obj);
-				assert(child_node);
-				obj_as_node->add_child(child_node);
+				for (Variant &item : nodes) {
+					obj_as_node->add_child(Object::cast_to<Node>(item));
+				}
 			}
 		}
 	} else {
@@ -193,14 +200,14 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 	return root_variant;
 }
 
-void traversal::TreeRendererVisitor::visitForStatement(godot::ForStatementNode &statement, traversal::TreeRendererVisitorResult &result) {
+void traversal::TreeRendererVisitor::visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes) {
 	godot::Variant range_variant;
 
 	if (resolveExpression(range_variant, *statement.range, range_variant)) {
 		for (uint32_t i = 0; i < (int32_t)range_variant; i++) {
 			for (std::unique_ptr<godot::NodeDefinitionNode> &item : statement.statements) {
 				godot::Variant result_node = visitNodeDefinition(*item);
-				result.nodes.push_back(result_node);
+				out_nodes.push_back(result_node);
 			}
 		}
 	} else {

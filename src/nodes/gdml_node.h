@@ -7,7 +7,7 @@
 namespace godot {
 
 class GdmlScript;
-class GdmlRenderer;
+class GDMLRenderer;
 class GDMLResult;
 
 class GDMLNode : public Control {
@@ -15,7 +15,7 @@ class GDMLNode : public Control {
 
 private:
 	Ref<GdmlScript> _markup;
-	Ref<GdmlRenderer> _renderer;
+	Ref<GDMLRenderer> _renderer;
 	Ref<godot::GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
 

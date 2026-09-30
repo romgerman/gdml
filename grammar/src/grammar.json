@@ -74,8 +74,17 @@
           "content": {
             "type": "REPEAT",
             "content": {
-              "type": "SYMBOL",
-              "name": "node_definition"
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "node_definition"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "for_statement"
+                }
+              ]
             }
           }
         },

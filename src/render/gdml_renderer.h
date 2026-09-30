@@ -30,8 +30,8 @@ public:
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
 };
 
-class GdmlRenderer : public RefCounted {
-	GDCLASS(GdmlRenderer, RefCounted)
+class GDMLRenderer : public RefCounted {
+	GDCLASS(GDMLRenderer, RefCounted)
 
 	std::unique_ptr<GdmlParser> m_parser;
 
@@ -39,7 +39,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	GdmlRenderer();
+	GDMLRenderer();
 	Ref<GDMLResult> renderString(const String &source, const godot::Dictionary &data);
 	Ref<GDMLResult> renderMarkup(GdmlScript *script, const godot::Dictionary &data);
 };

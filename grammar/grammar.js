@@ -29,7 +29,9 @@ module.exports = grammar({
       '{',
       field('variables', repeat($.variable_definition)),
       field('properties', repeat($.property_definition)),
-      field('statements', repeat($.node_definition)),
+      field('statements', repeat(
+        choice($.node_definition, $.for_statement)
+      )),
       '}'
     ),
     resource_definition: $ => seq(

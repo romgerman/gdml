@@ -29,15 +29,15 @@ godot::Ref<reactive::GDMLAtom> godot::GDMLResult::get_variable(godot::String &p_
 	return godot::Ref<reactive::GDMLAtom>(memnew(reactive::GDMLAtom()));
 }
 
-void GdmlRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "source", "data"), &GdmlRenderer::renderString, DEFVAL(godot::Dictionary()));
-	ClassDB::bind_method(D_METHOD("renderMarkup", "markup_script", "data"), &GdmlRenderer::renderMarkup, DEFVAL(godot::Dictionary()));
+void GDMLRenderer::_bind_methods() {
+	ClassDB::bind_method(D_METHOD("renderString", "source", "data"), &GDMLRenderer::renderString, DEFVAL(godot::Dictionary()));
+	ClassDB::bind_method(D_METHOD("renderMarkup", "markup_script", "data"), &GDMLRenderer::renderMarkup, DEFVAL(godot::Dictionary()));
 }
 
-GdmlRenderer::GdmlRenderer() :
+GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Ref<GDMLResult> GdmlRenderer::renderString(const String &source, const godot::Dictionary &data) {
+Ref<GDMLResult> GDMLRenderer::renderString(const String &source, const godot::Dictionary &data) {
 	std::unique_ptr<godot::SourceFileNode> result = m_parser->parse(source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
@@ -46,7 +46,6 @@ Ref<GDMLResult> GdmlRenderer::renderString(const String &source, const godot::Di
 		print_error(err.toString());
 	}
 	traversal::TreeRendererVisitor visitor;
-	visitor.setRendererData(data);
 	traversal::TreeRendererVisitorResult visitor_result = visitor.visit(*result);
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
@@ -62,6 +61,6 @@ Ref<GDMLResult> GdmlRenderer::renderString(const String &source, const godot::Di
 	return out;
 }
 
-Ref<GDMLResult> godot::GdmlRenderer::renderMarkup(GdmlScript *script, const godot::Dictionary &data) {
+Ref<GDMLResult> godot::GDMLRenderer::renderMarkup(GdmlScript *script, const godot::Dictionary &data) {
 	return renderString(script->get_source_code(), data);
 }

@@ -31,7 +31,7 @@ void GDMLNode::_bind_methods() {
 }
 
 GDMLNode::GDMLNode() {
-	_renderer = Ref<GdmlRenderer>(memnew(GdmlRenderer));
+	_renderer = Ref<GDMLRenderer>(memnew(GDMLRenderer));
 }
 
 GDMLNode::~GDMLNode() {
@@ -56,9 +56,11 @@ void godot::GDMLNode::_notification(int p_what) {
 			if (_markup.is_valid()) {
 				_renderer_result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
 				for (godot::Variant item : _renderer_result->nodes) {
-					add_child(cast_to<Control>(item));
+					Control *child = cast_to<Control>(item);
+					add_child(child);
+					child->set_owner(get_owner() ? get_owner() : nullptr);
+
 				}
-				print_line("RUNNING IN THE GAME");
 			}
 		}
 	} break;

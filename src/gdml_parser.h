@@ -163,7 +163,7 @@ struct ResourceDefinitionNode : public StatementNode {
 struct NodeDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
-	std::vector<std::unique_ptr<NodeDefinitionNode>> children;
+	std::vector<std::unique_ptr<StatementNode>> statements;
 	std::vector<std::unique_ptr<VariableDefinitionNode>> variables;
 };
 
