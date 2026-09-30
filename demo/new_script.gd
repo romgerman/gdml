@@ -15,8 +15,8 @@ enum Named {
 
 func render() -> void:
 	var renderer = GdmlRenderer.new()
-	var scriptResult = renderer.renderScript(what)
-	print("rendered script ", scriptResult)
+	var scriptResult = renderer.renderMarkup(what)
+	print("rendered script ", scriptResult.get_nodes())
 
 #func _ready() -> void:
 #	var renderer = GdmlRenderer.new()

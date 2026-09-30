@@ -1,5 +1,11 @@
 signal hello
 
+let count = 2
+
+@for i in count {
+	ColorRect {}
+}
+
 Control {
 	visible: true
 	size.x: 50.0

@@ -102,11 +102,13 @@ std::unique_ptr<DefinitionNode> godot::GdmlParser::visitDefinition(ts::Node node
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("node_definition")) {
-			out->node = std::move(visitNodeDefinition(child_node, text));
+			out->statement = std::move(visitNodeDefinition(child_node, text));
 		} else if (child_node.isType("signal_definition")) {
-			out->signal = std::move(visitSignalDefinition(child_node, text));
+			out->statement = std::move(visitSignalDefinition(child_node, text));
 		} else if (child_node.isType("variable_definition")) {
-			out->variable = std::move(visitVariableDefinition(child_node, text));
+			out->statement = std::move(visitVariableDefinition(child_node, text));
+		} else if (child_node.isType("for_statement")) {
+			out->statement = visitForStatement(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -226,6 +228,39 @@ std::unique_ptr<VariableDefinitionNode> godot::GdmlParser::visitVariableDefiniti
 			out->value = visitResource(child_node, text);
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing variable definition", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node node, const String &text) {
+	std::unique_ptr<ForStatementNode> out = std::make_unique<ForStatementNode>();
+	out->type = GdmlNodeType::FOR_STATEMENT;
+
+	ts::Node iter_node = node.getChildByFieldName("iter_name");
+	if (!iter_node.isNull()) {
+		if (iter_node.isType("identifier")) {
+			out->iter_name = visitIdentifier(iter_node, text);
+		}
+	}
+
+	ts::Node range_node = node.getChildByFieldName("range");
+	if (!range_node.isNull()) {
+		if (range_node.isType("identifier")) {
+			out->range = visitIdentifier(range_node, text);
+		} else if (range_node.isType("member_expression")) {
+			out->range = visitMemberExpression(range_node, text);
+		}
+	}
+
+	for (uint32_t i = 0; i < node.getChildCount(); i++) {
+		ts::Node child_node = node.getChild(i);
+
+		if (child_node.isType("node_definition")) {
+			out->statements.push_back(visitNodeDefinition(child_node, text));
+		} else if (child_node.isType("comment") || child_node.isError()) {
+			continue;
 		}
 	}
 

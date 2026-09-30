@@ -21,13 +21,7 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GdmlNodeType::DEFINITION: {
 			const DefinitionNode &self = static_cast<const DefinitionNode &>(node);
-			if (self.signal) {
-				return visitNode(*self.signal, depth);
-			} else if (self.variable) {
-				return visitNode(*self.variable, depth);
-			} else {
-				return visitNode(*self.node, depth);
-			}
+			return visitNode(*self.statement, depth);
 		} break;
 		case GdmlNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode &self = static_cast<const NodeDefinitionNode &>(node);
@@ -63,6 +57,15 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		case GdmlNodeType::VARIABLE_DEFINITION: {
 			const VariableDefinitionNode &self = static_cast<const VariableDefinitionNode &>(node);
 			String out = "let " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
+			return depthPad(out, depth);
+		} break;
+		case GdmlNodeType::FOR_STATEMENT: {
+			const ForStatementNode &self = static_cast<const ForStatementNode &>(node); 
+			String out = "@for " + visitNode(*self.iter_name, depth) + " in " + visitNode(*self.range, depth) + "{\n";
+			for (auto &s : self.statements) {
+				out += visitNode(*s, depth);
+			}
+			out += "\n}";
 			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::IDENTIFIER_EXPRESSION: {

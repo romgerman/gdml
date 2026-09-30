@@ -33,6 +33,16 @@ Control {
         {}
     ]
 
+    PanelContainer {
+        MarginContainer {
+            VBoxContainer {
+                @for item in my_items {
+                    
+                }
+            }
+        }
+    }
+
     # @if true {
     #     TextureRect {
     #         texture: "res://icon.svg"

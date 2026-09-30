@@ -24,6 +24,10 @@
         {
           "type": "SYMBOL",
           "name": "node_definition"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "for_statement"
         }
       ]
     },
@@ -66,7 +70,7 @@
         },
         {
           "type": "FIELD",
-          "name": "children",
+          "name": "statements",
           "content": {
             "type": "REPEAT",
             "content": {
@@ -264,6 +268,59 @@
               "value": ";"
             }
           ]
+        }
+      ]
+    },
+    "for_statement": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "@for"
+        },
+        {
+          "type": "FIELD",
+          "name": "iter_name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "in"
+        },
+        {
+          "type": "FIELD",
+          "name": "range",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "identifier"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "member_expression"
+              }
+            ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "{"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "node_definition"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "}"
         }
       ]
     },

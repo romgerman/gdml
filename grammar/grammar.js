@@ -19,7 +19,8 @@ module.exports = grammar({
     definition: $ => choice(
       $.signal_definition,
       $.variable_definition,
-      $.node_definition
+      $.node_definition,
+      $.for_statement
     ),
 
     // Statements
@@ -28,7 +29,7 @@ module.exports = grammar({
       '{',
       field('variables', repeat($.variable_definition)),
       field('properties', repeat($.property_definition)),
-      field('children', repeat($.node_definition)),
+      field('statements', repeat($.node_definition)),
       '}'
     ),
     resource_definition: $ => seq(
@@ -52,6 +53,15 @@ module.exports = grammar({
         choice($.expression, $.resource_definition)
       ))),
       choice('\n', ';')
+    ),
+    for_statement: $ => seq(
+      "@for",
+      field("iter_name", $.identifier),
+      "in",
+      field("range", choice($.identifier, $.member_expression)),
+      '{',
+      repeat($.node_definition),
+      '}'
     ),
 
     // Expressions

@@ -70,17 +70,23 @@ void traversal::TreeRendererVisitor::setRendererData(const godot::Dictionary &da
 }
 
 void traversal::TreeRendererVisitor::visitSourceFile(const godot::SourceFileNode &node, traversal::TreeRendererVisitorResult &result) {
-	for (const std::unique_ptr<godot::DefinitionNode> &statement : node.statements) {
-		if (statement->node && statement->node->type == godot::GdmlNodeType::NODE_DEFINITION) {
-			// Render first one
-			godot::Variant result_node = visitNodeDefinition(*statement->node.get());
+	for (const std::unique_ptr<DefinitionNode> &definition : node.statements) {
+		if (definition->statement->type == GdmlNodeType::NODE_DEFINITION) {
+			const NodeDefinitionNode *node = static_cast<const NodeDefinitionNode *>(definition->statement.get());
+			godot::Variant result_node = visitNodeDefinition(*node);
 			result.nodes.push_back(result_node);
-		} else if (statement->variable && statement->variable->type == godot::GdmlNodeType::VARIABLE_DEFINITION) {
+		} else if (definition->statement->type == GdmlNodeType::VARIABLE_DEFINITION) {
 			godot::Variant value;
+			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
 
-			if (resolveExpression(value, *statement->variable->value, value)) {
-				m_context->data[statement->variable->name->name] = value;
+			if (resolveExpression(value, *var->value, value)) {
+				m_context->data[var->name->name] = value;
+			} else {
+				print_error("Couldn't resolve variable expression");
 			}
+		} else if (definition->statement->type == GdmlNodeType::FOR_STATEMENT) {
+			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
+			visitForStatement(*statement, result);
 		}
 	}
 }
@@ -185,6 +191,21 @@ godot::Variant traversal::TreeRendererVisitor::visitNodeDefinition(const godot::
 	}
 
 	return root_variant;
+}
+
+void traversal::TreeRendererVisitor::visitForStatement(godot::ForStatementNode &statement, traversal::TreeRendererVisitorResult &result) {
+	godot::Variant range_variant;
+
+	if (resolveExpression(range_variant, *statement.range, range_variant)) {
+		for (uint32_t i = 0; i < (int32_t)range_variant; i++) {
+			for (std::unique_ptr<godot::NodeDefinitionNode> &item : statement.statements) {
+				godot::Variant result_node = visitNodeDefinition(*item);
+				result.nodes.push_back(result_node);
+			}
+		}
+	} else {
+		print_error("Couldn't resolve range expression of the for-statement");
+	}
 }
 
 bool traversal::TreeRendererVisitor::setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, const godot::String &prop_key, const godot::ExpressionNode &value_node) {

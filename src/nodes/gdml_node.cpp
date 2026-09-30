@@ -37,26 +37,28 @@ GDMLNode::GDMLNode() {
 GDMLNode::~GDMLNode() {
 }
 
-void godot::GDMLNode::_ready() {
-	if (_markup.is_valid()) {
-		_renderer_result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
-		for (godot::Variant item : _renderer_result->nodes) {
-			add_child(cast_to<Control>(item));
-		}
-	}
-}
+void godot::GDMLNode::_ready() {}
 
 void godot::GDMLNode::_notification(int p_what) {
 	switch (p_what)
 	{
 	case NOTIFICATION_ENTER_TREE: {
 		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
-			print_line("RUNNING THIS IN THE EDITOR");
 			if (_markup.is_valid()) {
 				godot::Ref<godot::GDMLResult> result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
 				for (godot::Variant item : result->nodes) {
 					add_child(cast_to<Control>(item));
 				}
+			}
+		}
+
+		if (!Engine::get_singleton()->is_editor_hint()) {
+			if (_markup.is_valid()) {
+				_renderer_result = _renderer->renderMarkup(_markup.ptr(), Dictionary());
+				for (godot::Variant item : _renderer_result->nodes) {
+					add_child(cast_to<Control>(item));
+				}
+				print_line("RUNNING IN THE GAME");
 			}
 		}
 	} break;
