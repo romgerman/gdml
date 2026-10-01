@@ -25,7 +25,7 @@ namespace traversal {
 
 // Context
 
-void TreeRendererVisitorContext::set_data(godot::String &p_name, godot::Variant p_value) {
+void TreeRendererVisitorContext::set_data(const godot::String &p_name, godot::Variant p_value) {
 	m_data[p_name] = p_value;
 }
 
@@ -154,7 +154,9 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 
 	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
+		m_context->push_active_context();
 		visitSourceFile((SourceFileNode &)root_node, result);
+		m_context->pop_active_context();
 		result.variables = m_context->m_variables;
 		result.signals = m_context->m_signals;
 		return result;
@@ -168,16 +170,22 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 	for (const std::unique_ptr<DefinitionNode> &definition : source_node.statements) {
 		if (definition->statement->type == GdmlNodeType::NODE_DEFINITION) {
 			const NodeDefinitionNode *node_def = static_cast<const NodeDefinitionNode *>(definition->statement.get());
+			m_context->push_active_context();
 			Variant result_node = visitNodeDefinition(*node_def);
+			m_context->pop_active_context();
 			result.nodes.push_back(result_node);
 		} else if (definition->statement->type == GdmlNodeType::VARIABLE_DEFINITION) {
 			Variant value;
 			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
 
-			if (resolveExpression(value, *var->value, value)) {
-				m_context->set_variable(var->name->name, value);
+			if (var->value) {
+				if (resolveExpression(value, *var->value, value)) {
+					m_context->set_variable(var->name->name, value);
+				} else {
+					print_error("Couldn't resolve variable expression");
+				}
 			} else {
-				print_error("Couldn't resolve variable expression");
+				m_context->set_variable(var->name->name, Variant());
 			}
 		} else if (definition->statement->type == GdmlNodeType::FOR_STATEMENT) {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
@@ -234,8 +242,6 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			is_node = true;
 		}
 	}
-
-	m_context->push_active_context();
 
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 		if (property->is_theme_override) {
@@ -314,8 +320,6 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		print_error("Cannot have children on non-Node class");
 	}
 
-	m_context->pop_active_context();
-
 	return root_variant;
 }
 
@@ -330,34 +334,40 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 		print_error("Cannot use non-identifier expressions in for-statement iterator");
 		return;
 	}
-
+	
 	if (resolveExpression(range_variant, *statement.range, range_variant)) {
 		if (range_variant.get_type() == Variant::ARRAY) {
 			Array arr = range_variant;
 			for (Variant item : arr) {
 				m_context->set_data(iter_name, item);
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
+					m_context->pop_active_context();
 					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
 				}
 			}
+			m_context->set_data(iter_name, Variant());
 		} else {
 			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
 				m_context->set_data(iter_name, i);
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
+					m_context->pop_active_context();
 					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
 				}
 			}
+			m_context->set_data(iter_name, Variant());
 		}
 	} else {
 		print_error("Couldn't resolve range expression of for-statement");
 		return;
 	}
 
-	std::function<void()> render_callback = [nodes, &statement, this]() {
+	std::function<void()> render_callback = [nodes, &statement, this, iter_name]() {
 		if (nodes->size() == 0) {
 			return;
 		}
@@ -379,16 +389,41 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 
 		Variant range_variant;
 		if (resolveExpression(range_variant, *statement.range, range_variant)) {
-			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-					Variant result = visitNodeDefinition(*item);
-					Node *node = Object::cast_to<Node>(result);
-					if (node) {
-						parent->add_child(node);
-						node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-						nodes->push_back(result);
+			if (range_variant.get_type() == Variant::ARRAY) {
+				Array arr = range_variant;
+				for (Variant item : arr) {
+					m_context->set_data(iter_name, item);
+					for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+						m_context->push_active_context();
+						Variant result_node = visitNodeDefinition(*item);
+						m_context->pop_active_context();
+
+						Node *node = Object::cast_to<Node>(result_node);
+						if (node) {
+							parent->add_child(node);
+							node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+							nodes->push_back(result_node);
+						}
 					}
 				}
+				m_context->set_data(iter_name, Variant());
+			} else {
+				for (int32_t i = 0; i < (int32_t)range_variant; i++) {
+					m_context->set_data(iter_name, i);
+					for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+						m_context->push_active_context();
+						Variant result_node = visitNodeDefinition(*item);
+						m_context->pop_active_context();
+
+						Node *node = Object::cast_to<Node>(result_node);
+						if (node) {
+							parent->add_child(node);
+							node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+							nodes->push_back(result_node);
+						}
+					}
+				}
+				m_context->set_data(iter_name, Variant());
 			}
 		} else {
 			print_error("Couldn't resolve range expression of for-statement");
@@ -410,7 +445,7 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 			}
 
 			for (ObjectID id : to_remove) {
-				pair.second.erase(id);
+				m_context->m_signals[pair.first].erase(id);
 			}
 		}
 	};

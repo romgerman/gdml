@@ -81,7 +81,7 @@ GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
 Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
-	std::unique_ptr<SourceFileNode> result = m_parser->parse(source);
+	std::shared_ptr<SourceFileNode> result = m_parser->parse(source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
 

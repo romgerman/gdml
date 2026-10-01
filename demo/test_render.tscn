@@ -8,21 +8,26 @@
 resource_name = "inventory"
 script/source = "extends GDMLNode
 
+@export var items: Array[String] = []
+
 func _ready() -> void:
-	#connect(\"hover\", _hovered)
-	#connect(\"unhover\", _unhovered)
+	pass
+	get_variable(\"items\").value = items
 	
-	await get_tree().create_timer(2.0).timeout
-	var item_count := get_variable(\"item_count\")
-	item_count.value = 3
+	connect(\"hover\", _hovered)
+	connect(\"unhover\", _unhovered)
+	
+	#await get_tree().create_timer(2.0).timeout
+	#var item_count := get_variable(\"item_count\")
+	#item_count.value = 3
 
 func _hovered() -> void:
-	var item_color := get_variable(\"item_color\")
-	item_color.value = Color.BLACK
+	var item_color := get_variable(\"stylebox\")
+	item_color.value.bg_color = Color.YELLOW
 
 func _unhovered() -> void:
-	var item_color := get_variable(\"item_color\")
-	item_color.value = Color.YELLOW
+	var item_color := get_variable(\"stylebox\")
+	item_color.value.bg_color = Color.BLACK
 "
 
 [node name="TestRender" type="Node2D" unique_id=43238584]
@@ -55,3 +60,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = SubResource("GDScript_4tb28")
+items = Array[String](["Sword", "Shield", "Bow", "Staff"])
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=566126210]
+offset_right = 40.0
+offset_bottom = 23.0

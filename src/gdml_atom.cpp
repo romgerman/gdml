@@ -39,6 +39,17 @@ void GDMLAtom::add_dependency(Variant &p_variant, StringName p_prop) {
 	m_dependencies[object_id].insert(p_prop);
 }
 
+bool GDMLAtom::has_dependency(godot::Variant &p_variant, godot::StringName p_prop) {
+	Object *object = Object::cast_to<Object>(p_variant);
+	ObjectID object_id = (ObjectID)object->get_instance_id();
+
+	if (m_dependencies.find(object_id) == m_dependencies.end()) {
+		return m_dependencies[object_id].count(p_prop);
+	}
+	
+	return false;
+}
+
 void GDMLAtom::remove_dependency(Variant &p_variant, StringName p_prop) {
 	Object *object = Object::cast_to<Object>(p_variant);
 	ObjectID object_id = (ObjectID)object->get_instance_id();

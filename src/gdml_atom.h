@@ -25,6 +25,7 @@ protected:
 public:
 	void create(godot::StringName p_name, godot::Variant p_initial_value);
 	void add_dependency(godot::Variant &p_variant, godot::StringName p_prop);
+	bool has_dependency(godot::Variant &p_variant, godot::StringName p_prop);
 	void remove_dependency(godot::Variant &p_variant, godot::StringName p_prop);
 
 	void add_callback(std::function<void()> p_callback);

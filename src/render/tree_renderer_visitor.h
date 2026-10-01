@@ -31,7 +31,7 @@ struct TreeRendererVisitorContext {
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
 
-	void set_data(godot::String &p_name, godot::Variant p_value);
+	void set_data(const godot::String &p_name, godot::Variant p_value);
 	bool has_data(godot::String &p_name);
 	godot::Variant get_data(godot::String &p_name);
 

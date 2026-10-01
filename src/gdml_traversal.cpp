@@ -56,7 +56,12 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GdmlNodeType::VARIABLE_DEFINITION: {
 			const VariableDefinitionNode &self = static_cast<const VariableDefinitionNode &>(node);
-			String out = "let " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
+			String out;
+			if (self.value) {
+				out = "let " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
+			} else {
+				out = "let " + self.name->name + "\n";
+			}
 			return depthPad(out, depth);
 		} break;
 		case GdmlNodeType::FOR_STATEMENT: {
