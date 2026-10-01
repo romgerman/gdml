@@ -418,8 +418,7 @@ std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCall
 			ts::Node child_node = arguments_node.getNamedChild(i);
 
 			if (child_node.isType("expression")) {
-				std::unique_ptr<ExpressionNode> expr = visitExpression(child_node, text);
-				out->arguments.push_back(std::move(expr));
+				out->arguments.push_back(visitExpression(child_node, text));
 			} else {
 				pushError("Unknown node " + String(child_node.getType()) + " while parsing function call expression", child_node);
 			}

@@ -566,6 +566,52 @@ bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &var
 					print_error("Cannot call non-Callable");
 				}
 			}
+		} else if (node.name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+			MemberExpressionNode *name_node = static_cast<MemberExpressionNode *>(node.name.get());
+
+			if (name_node->path.size() < 2) {
+				print_error("Invalid member access expression");
+				return false;
+			}
+
+			String method_name = name_node->path.back()->name;
+			Variant current_variant = root_variant;
+
+			for (size_t i = 0; i < name_node->path.size() - 1; i++) {
+				String &segment_name = name_node->path[i]->name;
+				bool is_valid = false;
+
+				// Check local variables inside statements
+				if (m_context->has_data(segment_name)) {
+					current_variant = m_context->get_data(segment_name);
+					continue;
+				}
+
+				// We have a value go check next
+				Variant next_value = current_variant.get(segment_name, &is_valid);
+
+				if (is_valid) {
+					current_variant = next_value;
+					continue;
+				}
+			}
+
+			if (current_variant.has_method(method_name)) {
+				Callable callable = current_variant.get(method_name);
+				Array args;
+	
+				for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+					Variant arg_value;
+					if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+						args.push_back(arg_value);
+					} else {
+						print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->path.back()->name + "\"");
+					}
+				}
+	
+				const Variant result = callable.callv(args);
+				variant.set(prop_key, result, &is_valid);
+			}
 		} else {
 			print_error("Other types of expressions are not implemented for a function call");
 		}
@@ -1022,6 +1068,85 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			}
 
 			value = resource_variant;
+		} break;
+		case GdmlNodeType::FUNCTION_CALL: {
+			const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)expr_node;
+
+			// if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			// 	IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
+
+			// 	if (m_context->has_variable(name_node->name)) {
+			// 		Ref<reactive::GDMLAtom> atom = m_context->get_variable(name_node->name);
+			// 		Variant value = atom->get_value();
+
+			// 		if (value.get_type() == Variant::Type::CALLABLE) {
+			// 			Callable callable = value;
+			// 			Array args;
+
+			// 			for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+			// 				Variant arg_value;
+			// 				if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+			// 					args.push_back(arg_value);
+			// 				} else {
+			// 					print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
+			// 				}
+			// 			}
+
+			// 			const Variant result = callable.callv(args);
+			// 			variant.set(prop_key, result, &is_valid);
+			// 		} else {
+			// 			print_error("Cannot call non-Callable");
+			// 		}
+			// 	}
+			// } else 
+			if (node.name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+				MemberExpressionNode *name_node = static_cast<MemberExpressionNode *>(node.name.get());
+
+				if (name_node->path.size() < 2) {
+					print_error("Invalid member access expression");
+					return false;
+				}
+
+				String method_name = name_node->path.back()->name;
+				Variant current_variant = root_variant;
+
+				for (size_t i = 0; i < name_node->path.size() - 1; i++) {
+					String &segment_name = name_node->path[i]->name;
+					bool is_valid = false;
+
+					// Check local variables inside statements
+					if (m_context->has_data(segment_name)) {
+						current_variant = m_context->get_data(segment_name);
+						continue;
+					}
+
+					// We have a value go check next
+					Variant next_value = current_variant.get(segment_name, &is_valid);
+
+					if (is_valid) {
+						current_variant = next_value;
+						continue;
+					}
+				}
+
+				if (current_variant.has_method(method_name)) {
+					Callable callable = current_variant.get(method_name);
+					Array args;
+		
+					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+						Variant arg_value;
+						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+							args.push_back(arg_value);
+						} else {
+							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->path.back()->name + "\"");
+						}
+					}
+
+					value = callable.callv(args);
+				}
+			} else {
+				print_error("Other types of expressions are not implemented for a function call");
+			}
 		} break;
 		default: {
 			print_error("Cannot resolve unknown expression type");

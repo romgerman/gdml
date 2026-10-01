@@ -14,9 +14,8 @@ let ItemComponent = Control {
 	anchor_bottom: 1.0
 }
 
-#let item_count = 10
 let items = [
-	{ item_name: "Test Item"; }
+	{ item_name: "Test Item"; item_icon: MyCoolButton.load_res("res://icon.svg"); }
 ]
 
 signal hover
@@ -38,6 +37,13 @@ GridContainer {
 			
 			TextureRect {
 				texture: item_info.item_icon
+			}
+			
+			ColorRect {
+				color: Color {
+					r: 0; g: 0; b: 0;
+					a: 0.5;
+				}
 			}
 			
 			Button {

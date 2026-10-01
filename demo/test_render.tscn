@@ -14,6 +14,11 @@ extends GDMLNode
 @export var items: Array[InventoryItem] = []
 
 func _ready() -> void:
+	if markup:
+		markup.changed.connect(func ():
+			get_variable(\"items\").value = items
+		)
+	
 	get_variable(\"items\").value = items
 	
 	if not Engine.is_editor_hint():
