@@ -654,27 +654,41 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std:
 			continue;
 		}
 
-		// Check if it's an object and not a basic Variant type
-		if (!m_variant_type_map.count(segment_name) && current_variant.get_type() == Variant::OBJECT) {
-			Object *obj = current_variant.get_validated_object();
-			if (obj) {
-				const String class_name = obj->get_class();
-
-				if (ClassDB::class_has_integer_constant(class_name, segment_name)) {
-					current_variant = ClassDB::class_get_integer_constant(class_name, segment_name);
+		// Check if it's a constant of a basic Variant type
+		if (m_variant_type_map.count(segment_name)) {
+			if (i + 1 < path.size()) {
+				const StringName value_name = path[++i]->name;
+				Variant ret;
+				internal::gdextension_interface_variant_get_constant_value(
+						(GDExtensionVariantType)m_variant_type_map[segment_name],
+						value_name._native_ptr(),
+						&ret);
+				if (ret.get_type() != Variant::NIL) {
+					current_variant = ret;
 					continue;
 				}
 			}
-		// Check if it's a constant
-		} else if (i + 1 < path.size()) {
-			const StringName value_name = path[++i]->name;
-			Variant ret;
-			internal::gdextension_interface_variant_get_constant_value(
-					(GDExtensionVariantType)m_variant_type_map[segment_name],
-					value_name._native_ptr(),
-					&ret);
-			if (ret.get_type() != Variant::NIL) {
-				current_variant = ret;
+		}
+
+		// Check if it's a class and has the next path segment as a constant
+		if (ClassDB::class_exists(segment_name)) {
+			if (i + 1 < path.size()) {
+				const StringName const_name = path[i + 1]->name;
+	
+				if (ClassDB::class_has_integer_constant(segment_name, const_name)) {
+					current_variant = ClassDB::class_get_integer_constant(segment_name, const_name);
+					i++;
+					continue;
+				}
+			}
+		}
+
+		Object *obj = current_variant.get_validated_object();
+		if (obj) {
+			const String class_name = obj->get_class();
+
+			if (ClassDB::class_has_integer_constant(class_name, segment_name)) {
+				current_variant = ClassDB::class_get_integer_constant(class_name, segment_name);
 				continue;
 			}
 		}
