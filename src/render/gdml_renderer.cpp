@@ -23,11 +23,25 @@ void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_signals"), &GDMLResult::get_signals);
 }
 
+void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
+	m_variables[p_name] = atom;
+	atom->connect(StringName("changed"), callable_mp(this, &GDMLResult::on_variable_changed));
+}
+
+void GDMLResult::on_variable_changed() {
+
+}
+
 void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName target_signal) {
 	Object *target_object = ObjectDB::get_instance(target);
 
 	if (target_object) {
+		if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal))) {
+			return;
+		}
+
 		target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal).bind(signal_name));
+		
 		if (!has_user_signal(signal_name)) {
 			add_user_signal(signal_name);
 		}
@@ -39,23 +53,23 @@ void GDMLResult::on_defined_signal(String signal_name) {
 }
 
 Array GDMLResult::get_nodes() {
-	return nodes;
+	return m_nodes;
 }
 
 Array GDMLResult::get_variable_list() {
-	return variables.keys();
+	return m_variables.keys();
 }
 
 Ref<reactive::GDMLAtom> GDMLResult::get_variable(String p_name) {
-	if (variables.has(p_name)) {
-		return variables[p_name];
+	if (m_variables.has(p_name)) {
+		return m_variables[p_name];
 	} else {
 		return nullptr;
 	}
 }
 
 Array GDMLResult::get_signals() {
-	return signals;
+	return m_signals;
 }
 
 void GDMLRenderer::_bind_methods() {
@@ -64,7 +78,7 @@ void GDMLRenderer::_bind_methods() {
 }
 
 GDMLRenderer::GDMLRenderer() :
-		m_parser(std::make_unique<GdmlParser>()), m_visitor(std::make_unique<traversal::TreeRendererVisitor>()) {}
+		m_parser(std::make_unique<GdmlParser>()) {}
 
 Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	std::unique_ptr<SourceFileNode> result = m_parser->parse(source);
@@ -74,24 +88,27 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());
 	}
-	traversal::TreeRendererVisitorResult visitor_result = m_visitor->visit(*result);
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
+	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out);
+	traversal::TreeRendererVisitorResult visitor_result = m_visitor->visit(*result);
 
 	for (Variant node : visitor_result.nodes) {
-		out->nodes.push_back(node);
+		out->m_nodes.push_back(node);
 	}
 
-	out->variables = visitor_result.variables;
+	for (std::pair<String, Ref<reactive::GDMLAtom>> pair : visitor_result.variables) {
+		out->add_variable(pair.first, pair.second);
+	}
 
 	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : visitor_result.signals) {
-		for (std::pair<Variant, std::set<StringName>> target_pair : pair.second) {
+		for (std::pair<godot::ObjectID, std::set<StringName>> target_pair : pair.second) {
 			for (StringName target_signal : target_pair.second) {
 				out->connect_signal(pair.first, target_pair.first, target_signal);
 			}
 		}
 
-		out->signals.push_back(pair.first);
+		out->m_signals.push_back(pair.first);
 	}
 
 	return out;

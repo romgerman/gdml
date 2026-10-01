@@ -48,7 +48,7 @@ void GDMLNode::_notification(int p_what) {
 		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
 			if (_markup.is_valid()) {
 				Ref<GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
-				for (Variant item : result->nodes) {
+				for (Variant item : result->get_nodes()) {
 					add_child(cast_to<Control>(item));
 				}
 			}
@@ -57,7 +57,7 @@ void GDMLNode::_notification(int p_what) {
 		if (!Engine::get_singleton()->is_editor_hint()) {
 			if (_markup.is_valid()) {
 				_renderer_result = _renderer->renderMarkup(_markup.ptr());
-				for (Variant item : _renderer_result->nodes) {
+				for (Variant item : _renderer_result->get_nodes()) {
 					Control *child = cast_to<Control>(item);
 					add_child(child);
 					child->set_owner(get_owner() ? get_owner() : nullptr);

@@ -1,6 +1,8 @@
 #include "tree_renderer_visitor.h"
+#include "gdml_renderer.h"
 
 #include <assert.h>
+#include <functional>
 
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/object.hpp>
@@ -19,7 +21,7 @@ namespace traversal {
 // Context
 
 void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
-	if (m_variables.has(p_name)) {
+	if (m_variables.find(p_name) != m_variables.end()) {
 		Ref<reactive::GDMLAtom> atom = m_variables[p_name];
 		atom->set_value(p_value);
 	} else {
@@ -30,7 +32,7 @@ void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
 }
 
 Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_variable(String &p_name) {
-	if (m_variables.has(p_name)) {
+	if (m_variables.find(p_name) != m_variables.end()) {
 		return m_variables[p_name];
 	} else {
 		return nullptr;
@@ -38,12 +40,55 @@ Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_variable(String &p_name)
 }
 
 bool TreeRendererVisitorContext::has_variable(String &p_name) {
-	return m_variables.has(p_name);
+	return m_variables.find(p_name) != m_variables.end();
+}
+
+void TreeRendererVisitorContext::push_active_context() {
+	m_active_variables.push_back(std::map<godot::String, bool>());
+	m_active_context_index++;
+}
+
+void TreeRendererVisitorContext::pop_active_context() {
+	m_active_variables.pop_back();
+	m_active_context_index--;
+}
+
+void TreeRendererVisitorContext::set_active_variable(godot::String &p_name) {
+	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
+		return;
+	}
+
+	m_active_variables[m_active_context_index][p_name] = true;
+}
+
+std::vector<godot::Ref<reactive::GDMLAtom>> TreeRendererVisitorContext::get_active_variables() {
+	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
+		return std::vector<godot::Ref<reactive::GDMLAtom>>();
+	}
+	
+	std::vector<godot::Ref<reactive::GDMLAtom>> out;
+
+	for (std::pair<String, bool> pair : m_active_variables[m_active_context_index]) {
+		if (pair.second) {
+			out.push_back(get_variable(pair.first));
+		}
+	}
+
+	return out;
+}
+
+void TreeRendererVisitorContext::reset_active_variable(godot::String &p_name) {
+	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
+		return;
+	}
+
+	m_active_variables[m_active_context_index][p_name] = false;
 }
 
 // Renderer
 
-TreeRendererVisitor::TreeRendererVisitor() {
+TreeRendererVisitor::TreeRendererVisitor(godot::Ref<godot::GDMLResult> result) {
+	m_result = result;
 	m_variant_type_map = {
 		{ "Vector2", Variant::Type::VECTOR2 },
 		{ "Vector2i", Variant::Type::VECTOR2I },
@@ -160,6 +205,8 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		root_variant = ClassDB::instantiate(node.name->name);
 	}
 
+	m_context->push_active_context();
+
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 		if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
@@ -233,21 +280,88 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		print_error("Cannot have children on non-Node class");
 	}
 
+	m_context->pop_active_context();
+
 	return root_variant;
 }
 
 void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
 	Variant range_variant;
+	std::shared_ptr<std::vector<godot::Variant>> nodes = std::make_shared<std::vector<Variant>>();
 
 	if (resolveExpression(range_variant, *statement.range, range_variant)) {
 		for (int32_t i = 0; i < (int32_t)range_variant; i++) {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
 				Variant result_node = visitNodeDefinition(*item);
 				out_nodes.push_back(result_node);
+				nodes->push_back(result_node);
 			}
 		}
 	} else {
-		print_error("Couldn't resolve range expression of the for-statement");
+		print_error("Couldn't resolve range expression of for-statement");
+		return;
+	}
+
+	std::function<void()> render_callback = [nodes, &statement, this]() {
+		if (nodes->size() == 0) {
+			return;
+		}
+
+		Node* parent = Object::cast_to<Node>((*nodes)[0])->get_parent();
+
+		if (!parent) {
+			return;
+		}
+
+		for (Variant item : *nodes) {
+			Node *node = Object::cast_to<Node>(item);
+			if (node) {
+				node->queue_free();
+			}
+		}
+
+		nodes->clear();
+
+		Variant range_variant;
+		if (resolveExpression(range_variant, *statement.range, range_variant)) {
+			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					Variant result = visitNodeDefinition(*item);
+					Node *node = Object::cast_to<Node>(result);
+					if (node) {
+						parent->add_child(node);
+						node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+						nodes->push_back(result);
+					}
+				}
+			}
+		} else {
+			print_error("Couldn't resolve range expression of for-statement");
+		}
+
+		for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
+			std::vector<godot::ObjectID> to_remove;
+
+			for (std::pair<godot::ObjectID, std::set<StringName>> target_pair : pair.second) {
+				Object *target_obj = ObjectDB::get_instance(target_pair.first);
+
+				if (target_obj) {
+					for (StringName target_signal : target_pair.second) {
+						m_result->connect_signal(pair.first, target_pair.first, target_signal);
+					}
+				} else {
+					to_remove.push_back(target_pair.first);
+				}
+			}
+
+			for (ObjectID id : to_remove) {
+				pair.second.erase(id);
+			}
+		}
+	};
+
+	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
+		atom->add_callback(render_callback);
 	}
 }
 
@@ -409,6 +523,7 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 			Ref<reactive::GDMLAtom> atom = m_context->get_variable(prop_key);
 			value = atom->get_value();
 			is_valid = true;
+			m_context->set_active_variable(prop_key);
 		}
 	}
 

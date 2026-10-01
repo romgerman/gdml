@@ -15,33 +15,47 @@
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
+namespace godot {
+	class GDMLResult;
+}
+
 namespace traversal {
 
 struct TreeRendererVisitorContext {
 	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
 
 	godot::Dictionary m_data;
-	godot::Dictionary m_variables;
+	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
+	std::vector<std::map<godot::String, bool>> m_active_variables;
+	uint32_t m_active_context_index = -1;
 
 	void set_variable(godot::String &p_name, godot::Variant p_value);
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
 	bool has_variable(godot::String &p_name);
+
+	void push_active_context();
+	void pop_active_context();
+	void set_active_variable(godot::String &p_name);
+	std::vector<godot::Ref<reactive::GDMLAtom>> get_active_variables();
+	void reset_active_variable(godot::String &p_name);
 };
 
 struct TreeRendererVisitorResult {
 	std::vector<godot::Variant> nodes;
-	godot::Dictionary variables;
+	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> variables;
 	std::map<godot::String, TreeRendererVisitorContext::SignalTarget> signals;
 };
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
+	godot::Ref<godot::GDMLResult> m_result;
 
 public:
-	TreeRendererVisitor();
+
+	TreeRendererVisitor(godot::Ref<godot::GDMLResult> result);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:

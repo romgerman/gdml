@@ -7,6 +7,7 @@
 
 #include <map>
 #include <memory>
+#include <functional>
 
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/variant/string.hpp>
@@ -19,15 +20,19 @@ class TreeRendererVisitor;
 namespace godot {
 
 class GDMLResult : public RefCounted {
+	friend class GDMLRenderer;
 	GDCLASS(GDMLResult, RefCounted)
 
 protected:
+	Array m_nodes;
+	Dictionary m_variables;
+	Array m_signals;
+
 	static void _bind_methods();
 
 public:
-	Array nodes;
-	Dictionary variables;
-	Array signals;
+	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
+	void on_variable_changed();
 
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
 	void on_defined_signal(String signal_name);

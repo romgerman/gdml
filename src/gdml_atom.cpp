@@ -50,14 +50,24 @@ void GDMLAtom::remove_dependency(Variant &p_variant, StringName p_prop) {
 	}
 }
 
+void GDMLAtom::add_callback(std::function<void()> p_callback) {
+	m_callbacks.push_back(p_callback);
+}
+
 void GDMLAtom::set_value(Variant p_value) {
 	m_value = p_value;
 
 	for (std::pair<ObjectID, std::set<StringName>> pair : m_dependencies) {
 		Object *object = ObjectDB::get_instance(pair.first);
-		for (StringName prop : pair.second) {
-			object->set(prop, p_value);
+		if (object) {
+			for (StringName prop : pair.second) {
+				object->set(prop, p_value);
+			}
 		}
+	}
+
+	for (std::function<void()> fn : m_callbacks) {
+		fn();
 	}
 
 	emit_signal("changed");
