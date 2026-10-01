@@ -46,12 +46,7 @@ void GDMLNode::_notification(int p_what) {
 	{
 	case NOTIFICATION_ENTER_TREE: {
 		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
-			if (_markup.is_valid()) {
-				Ref<GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
-				for (Variant item : result->get_nodes()) {
-					add_child(cast_to<Control>(item));
-				}
-			}
+			render_in_editor();
 		}
 
 		if (!Engine::get_singleton()->is_editor_hint()) {
@@ -75,12 +70,32 @@ void GDMLNode::_notification(int p_what) {
 	}
 }
 
+void GDMLNode::render_in_editor() {
+	if (_markup.is_valid()) {
+		for (Variant item : get_children()) {
+			cast_to<Node>(item)->queue_free();
+		}
+
+		Ref<GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
+		for (Variant item : result->get_nodes()) {
+			add_child(cast_to<Control>(item));
+		}
+	}
+}
+
+void GDMLNode::on_markup_changed() {
+	if (Engine::get_singleton()->is_editor_hint()) {
+		render_in_editor();
+	}
+}
+
 void GDMLNode::on_bubble_signal(String signal_name) {
 	emit_signal(signal_name);
 }
 
 void GDMLNode::set_markup(const Ref<GdmlScript> &p_markup) {
 	_markup = p_markup;
+	_markup->connect("changed", callable_mp(this, &GDMLNode::on_markup_changed));
 }
 
 Ref<GdmlScript> GDMLNode::get_markup() {

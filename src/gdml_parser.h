@@ -153,6 +153,7 @@ struct SignalDefinitionNode : public StatementNode {
 struct PropertyDefinitionNode : public StatementNode {
 	std::unique_ptr<ExpressionNode> name;
 	std::unique_ptr<ExpressionNode> value;
+	bool is_theme_override;
 };
 
 struct ResourceDefinitionNode : public StatementNode {
@@ -197,7 +198,7 @@ private:
 
 	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, CharString &text);
-	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, CharString &text);
+	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, CharString &text, bool is_theme_property);
 	std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, CharString &text);
 	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, CharString &text);

@@ -30,6 +30,8 @@ public:
 
 	void _notification(int p_what);
 
+	void render_in_editor();
+	void on_markup_changed();
 	void on_bubble_signal(String signal_name);
 
 	void set_markup(const Ref<GdmlScript> &p_markup);

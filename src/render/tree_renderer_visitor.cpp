@@ -5,6 +5,11 @@
 #include <functional>
 
 #include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/font.hpp>
+#include <godot_cpp/classes/style_box.hpp>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
@@ -205,30 +210,51 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		root_variant = ClassDB::instantiate(node.name->name);
 	}
 
+	bool is_node = false;
+
+	if (root_variant.get_type() == Variant::Type::OBJECT) {
+		Node *obj = Object::cast_to<Node>(root_variant);
+		if (obj) {
+			is_node = true;
+		}
+	}
+
 	m_context->push_active_context();
 
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-		if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-			IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-			setVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
-		} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-			const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-			setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
-		} else if (property->name->type == GdmlNodeType::SIGNAL_EXPRESSION) {
-			const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
-			if (signal_expression->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-				const String signal_name = static_cast<IdentifierNode *>(signal_expression->name.get())->name;
-				if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION || property->value->type == GdmlNodeType::STRING_EXPRESSION) {
-					if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-						connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
-					} else if (property->value->type == GdmlNodeType::STRING_EXPRESSION) {
-						connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
-					}
-				} else {
-					print_error("Cannot connect signal. Callable name should be an identifier or a string");
+		if (property->is_theme_override) {
+			Control *control = Object::cast_to<Control>(root_variant);
+			if (control) {
+				if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+					setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
 				}
 			} else {
-				print_error("Cannot connect signal. Wrong name expression type");
+				print_error("Trying to set theme override on a non-Control node");
+			}
+		} else {
+			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+				setVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
+			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
+				setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
+			} else if (property->name->type == GdmlNodeType::SIGNAL_EXPRESSION) {
+				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
+				if (signal_expression->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+					const String signal_name = static_cast<IdentifierNode *>(signal_expression->name.get())->name;
+					if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION || property->value->type == GdmlNodeType::STRING_EXPRESSION) {
+						if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+							connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
+						} else if (property->value->type == GdmlNodeType::STRING_EXPRESSION) {
+							connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
+						}
+					} else {
+						print_error("Cannot connect signal. Callable name should be an identifier or a string");
+					}
+				} else {
+					print_error("Cannot connect signal. Wrong name expression type");
+				}
 			}
 		}
 	}
@@ -239,14 +265,6 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		if (resolveExpression(value, *var, value)) {
 			m_context->set_variable(var->name->name, value);
 		}
-	}
-
-	bool is_node = false;
-
-	if (root_variant.get_type() == Variant::Type::OBJECT) {
-		Object *obj = root_variant.get_validated_object();
-		assert(obj);
-		is_node = obj->is_class("Node");
 	}
 
 	if (is_node) {
@@ -537,43 +555,235 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 	return is_valid;
 }
 
-bool TreeRendererVisitor::getDeepPropertyValue(Variant &variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, Variant &value) {
-	Variant previous_variant;
-	Variant current_variant = variant;
+bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, Variant &value) {
+	if (path.empty()) {
+		return false;
+	}
+	
+	// Variant previous_variant;
+	Variant current_variant = root_variant;
 
-	bool is_valid = false;
-	for (auto it = path.begin(); it != path.end() - 1; ++it) {
-		previous_variant = current_variant;
-		current_variant = current_variant.get(it->get()->name, &is_valid);
+	for (size_t i = 0; i < path.size(); i++) {
+		String &segment_name = path[i]->name;
+		bool is_valid = false;
+		
+		// We have a value go check next
+		Variant next_value = current_variant.get(segment_name, &is_valid);
 
-		if (!is_valid) {
-			const String class_name = variant.get_validated_object()->get_class();
-			if (ClassDB::class_has_enum(class_name, it->get()->name)) {
-				if (it == path.end()) {
-					PackedStringArray arr;
-					for (const std::unique_ptr<IdentifierNode> &idendifier : path) {
-						arr.append(idendifier->name);
-					}
-					print_error("No path parts left. Cannot get enum constant in path \"" + String(".").join(arr) + "\"");
-					return false;
+		if (is_valid) {
+			current_variant = next_value;
+			continue;
+		}
+
+		// Check if it's an object and not a basic Variant type
+		if (!m_variant_type_map.count(segment_name) && current_variant.get_type() == Variant::OBJECT) {
+			Object *obj = current_variant.get_validated_object();
+			if (obj) {
+				const String class_name = obj->get_class();
+
+				if (ClassDB::class_has_integer_constant(class_name, segment_name)) {
+					current_variant = ClassDB::class_get_integer_constant(class_name, segment_name);
+					continue;
 				}
-
-				const String &enum_const_name = (++it)->get()->name;
-				const int64_t enum_value = ClassDB::class_get_integer_constant(class_name, enum_const_name);
-				value = enum_value;
-				return true;
 			}
+		// Check if it's a constant
+		} else if (i + 1 < path.size()) {
+			const StringName value_name = path[++i]->name;
+			Variant ret;
+			internal::gdextension_interface_variant_get_constant_value(
+					(GDExtensionVariantType)m_variant_type_map[segment_name],
+					value_name._native_ptr(),
+					&ret);
+			if (ret.get_type() != Variant::NIL) {
+				current_variant = ret;
+				continue;
+			}
+		}
 
-			print_error("Cannot get property " + it->get()->name + " in path");
-			return false;
+		return false;
+	}
+
+	value = current_variant;
+	return true;
+}
+
+void TreeRendererVisitor::setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node) {
+	Control *control = Object::cast_to<Control>(variant);
+
+	// Ref<godot::Theme> control_theme = control->get_theme();
+	// StringName theme_type = control->get_theme_type_variation();
+
+	// if (control_theme.is_null()) {
+	// 	control_theme = ThemeDB::get_singleton()->get_project_theme();
+		
+	// }
+
+	// if (control_theme.is_null()) {
+	// 	control_theme = ThemeDB::get_singleton()->get_default_theme();
+	// }
+
+	if (value_node.type == GdmlNodeType::NUMBER_EXPRESSION) {
+		NumberNode node = (NumberNode &)value_node;
+
+		if (control->has_theme_constant(prop_key)) {
+			control->add_theme_constant_override(prop_key, node.getFloat());
+		} else if (control->has_theme_font_size(prop_key)) {
+			control->add_theme_font_size_override(prop_key, node.getFloat());
+		}
+	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode &node = (IdentifierNode &)value_node;
+
+		if (m_context->has_variable(node.name)) {
+			subscribeToVariable(node.name, prop_key, variant);
+		}
+
+		Variant out_value;
+		if (getPropertyValue(root_variant, node.name, out_value)) {
+			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
+				if (control->has_theme_constant(prop_key)) {
+					control->add_theme_constant_override(prop_key, out_value);
+				} else if (control->has_theme_font_size(prop_key)) {
+					control->add_theme_font_size_override(prop_key, out_value);
+				}
+			} else if (out_value.get_type() == Variant::COLOR) {
+				if (control->has_theme_color(prop_key)) {
+					control->add_theme_color_override(prop_key, out_value);
+				}
+			} else {
+				if (control->has_theme_icon(prop_key)) {
+					control->add_theme_icon_override(prop_key, out_value);
+				} else if (control->has_theme_stylebox(prop_key)) {
+					control->add_theme_stylebox_override(prop_key, out_value);
+				} else if (control->has_theme_font(prop_key)) {
+					control->add_theme_font_override(prop_key, out_value);
+				}
+			}
+		}
+	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+		const MemberExpressionNode &node = (MemberExpressionNode &)value_node;
+		Variant out_value;
+		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
+			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
+				if (control->has_theme_constant(prop_key)) {
+					control->add_theme_constant_override(prop_key, out_value);
+				} else if (control->has_theme_font_size(prop_key)) {
+					control->add_theme_font_size_override(prop_key, out_value);
+				}
+			} else if (out_value.get_type() == Variant::COLOR) {
+				if (control->has_theme_color(prop_key)) {
+					control->add_theme_color_override(prop_key, out_value);
+				}
+			} else {
+				if (control->has_theme_icon(prop_key)) {
+					control->add_theme_icon_override(prop_key, out_value);
+				} else if (control->has_theme_stylebox(prop_key)) {
+					control->add_theme_stylebox_override(prop_key, out_value);
+				} else if (control->has_theme_font(prop_key)) {
+					control->add_theme_font_override(prop_key, out_value);
+				}
+			}
+		} else {
+			PackedStringArray arr;
+			for (const std::unique_ptr<IdentifierNode> &idendifier : node.path) {
+				arr.append(idendifier->name);
+			}
+			print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
+		}
+	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
+		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
+		Variant resource_variant;
+
+		if (m_variant_type_map.count(node.name->name)) {
+			GDExtensionCallError error;
+			internal::gdextension_interface_variant_construct(
+					(GDExtensionVariantType)m_variant_type_map[node.name->name],
+					resource_variant._native_ptr(),
+					nullptr,
+					0,
+					&error);
+
+			if (error.error != GDEXTENSION_CALL_OK) {
+				print_error("Error constructing variant of type " + node.name->name);
+				return;
+			}
+		} else {
+			if (ClassDB::class_exists(node.name->name)) {
+				resource_variant = ClassDB::instantiate(node.name->name);
+			} else {
+				print_error("Error instantiating class of type " + node.name->name);
+				return;
+			}
+		}
+
+		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
+			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
+			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
+				setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
+			}
+		}
+
+		if (control->has_theme_icon(prop_key)) {
+			control->add_theme_icon_override(prop_key, resource_variant);
+		} else if (control->has_theme_stylebox(prop_key)) {
+			control->add_theme_stylebox_override(prop_key, resource_variant);
+		} else if (control->has_theme_font(prop_key)) {
+			control->add_theme_font_override(prop_key, resource_variant);
+		}
+	} else if (value_node.type == GdmlNodeType::FUNCTION_CALL) {
+		const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)value_node;
+
+		if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
+
+			if (m_context->has_variable(name_node->name)) {
+				Ref<reactive::GDMLAtom> atom = m_context->get_variable(name_node->name);
+				Variant value = atom->get_value();
+
+				if (value.get_type() == Variant::Type::CALLABLE) {
+					Callable callable = value;
+					Array args;
+
+					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+						Variant arg_value;
+						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+							args.push_back(arg_value);
+						} else {
+							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
+						}
+					}
+
+					const Variant result = callable.callv(args);
+
+					if (result.get_type() == Variant::INT || result.get_type() == Variant::FLOAT) {
+						if (control->has_theme_constant(prop_key)) {
+							control->add_theme_constant_override(prop_key, result);
+						} else if (control->has_theme_font_size(prop_key)) {
+							control->add_theme_font_size_override(prop_key, result);
+						}
+					} else if (result.get_type() == Variant::COLOR) {
+						if (control->has_theme_color(prop_key)) {
+							control->add_theme_color_override(prop_key, result);
+						}
+					} else {
+						if (control->has_theme_icon(prop_key)) {
+							control->add_theme_icon_override(prop_key, result);
+						} else if (control->has_theme_stylebox(prop_key)) {
+							control->add_theme_stylebox_override(prop_key, result);
+						} else if (control->has_theme_font(prop_key)) {
+							control->add_theme_font_override(prop_key, result);
+						}
+					}
+				} else {
+					print_error("Cannot call non-Callable");
+				}
+			}
+		} else {
+			print_error("Other types of expressions are not implemented for a function call");
 		}
 	}
-
-	if (is_valid) {
-		value = current_variant;
-	}
-
-	return is_valid;
 }
 
 bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, const String &callable_name) {

@@ -42,6 +42,7 @@ String GdmlScript::_get_source_code() const {
 
 void GdmlScript::_set_source_code(const String &p_code) {
 	source_code = p_code;
+	emit_signal(StringName("changed"));
 }
 
 bool GdmlScript::_has_source_code() const {

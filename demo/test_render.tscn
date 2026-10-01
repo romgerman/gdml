@@ -9,8 +9,8 @@ resource_name = "inventory"
 script/source = "extends GDMLNode
 
 func _ready() -> void:
-	connect(\"hover\", _hovered)
-	connect(\"unhover\", _unhovered)
+	#connect(\"hover\", _hovered)
+	#connect(\"unhover\", _unhovered)
 	
 	await get_tree().create_timer(2.0).timeout
 	var item_count := get_variable(\"item_count\")

@@ -28,7 +28,7 @@ module.exports = grammar({
       field('name', $.identifier),
       '{',
       field('variables', repeat($.variable_definition)),
-      field('properties', repeat($.property_definition)),
+      field('properties', repeat(choice($.property_definition, $.theme_property_definition))),
       field('statements', repeat(
         choice($.node_definition, $.for_statement)
       )),
@@ -41,6 +41,13 @@ module.exports = grammar({
       '}'
     ),
     property_definition: $ => seq(
+      field("name", choice($.signal_expression, $.identifier, $.member_expression)),
+      ':',
+      field("value", choice($.expression, $.resource_definition)),
+      choice('\n', ';')
+    ),
+    theme_property_definition: $ => seq(
+      '$',
       field("name", choice($.signal_expression, $.identifier, $.member_expression)),
       ':',
       field("value", choice($.expression, $.resource_definition)),

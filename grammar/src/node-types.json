@@ -225,6 +225,10 @@
           {
             "type": "property_definition",
             "named": true
+          },
+          {
+            "type": "theme_property_definition",
+            "named": true
           }
         ]
       },
@@ -385,6 +389,44 @@
     }
   },
   {
+    "type": "theme_property_definition",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "member_expression",
+            "named": true
+          },
+          {
+            "type": "signal_expression",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "expression",
+            "named": true
+          },
+          {
+            "type": "resource_definition",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "variable_definition",
     "named": true,
     "fields": {
@@ -424,6 +466,10 @@
   },
   {
     "type": "\"",
+    "named": false
+  },
+  {
+    "type": "$",
     "named": false
   },
   {

@@ -128,8 +128,8 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 
 		if (child_node.isType("identifier")) {
 			out->name = visitIdentifier(child_node, text);
-		} else if (child_node.isType("property_definition")) {
-			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
+		} else if (child_node.isType("property_definition") || child_node.isType("theme_property_definition")) {
+			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text, child_node.isType("theme_property_definition"));
 			out->properties.push_back(std::move(def));
 		} else if (child_node.isType("node_definition")) {
 			std::unique_ptr<NodeDefinitionNode> def = visitNodeDefinition(child_node, text);
@@ -150,9 +150,10 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 	return out;
 }
 
-std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Node node, CharString &text) {
+std::unique_ptr<PropertyDefinitionNode> godot::GdmlParser::visitProperty(ts::Node node, CharString &text, bool is_theme_property) {
 	std::unique_ptr<PropertyDefinitionNode> out = std::make_unique<PropertyDefinitionNode>();
 	out->type = GdmlNodeType::PROPERTY_DEFINITION;
+	out->is_theme_override = is_theme_property;
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
 		ts::Node child_node = node.getNamedChild(i);
@@ -187,7 +188,7 @@ std::unique_ptr<ResourceDefinitionNode> godot::GdmlParser::visitResource(ts::Nod
 		if (child_node.isType("identifier")) {
 			out->name = visitIdentifier(child_node, text);
 		} else if (child_node.isType("property_definition")) {
-			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
+			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text, false);
 			out->properties.push_back(std::move(def));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
@@ -350,7 +351,7 @@ std::unique_ptr<DictionaryExpressionNode> godot::GdmlParser::visitDictionaryExpr
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("property_definition")) {
-			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text);
+			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text, false);
 			out->values.push_back(std::move(def));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;

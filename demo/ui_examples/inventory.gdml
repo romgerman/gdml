@@ -3,13 +3,11 @@ let item_size = Vector2 {
 	y: 100
 }
 
-let item_color = Color {
-	r: 255
-	g: 255
-	b: 0
+let stylebox = StyleBoxFlat {
+	bg_color: Color.WHITE
 }
 
-let item_count = 5
+let item_count = 10
 
 signal hover
 signal unhover
@@ -22,9 +20,9 @@ GridContainer {
 	anchor_bottom: 1.0
 	
 	@for i in item_count {
-		ColorRect {
+		Panel {
 			custom_minimum_size: item_size
-			color: item_color
+			$panel: stylebox
 			@mouse_entered: hover
 			@mouse_exited: unhover
 		}
