@@ -66,11 +66,11 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code,
 	Array options;
 
 	// Dictionary complete_option;
-	// complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_FUNCTION;
+	// complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
 	// complete_option["display"] = String("display");
 	// complete_option["insert_text"] = String("insert_text");
 	// complete_option["default_value"] = Variant();
-	// complete_option["location"] = CodeCompletionLocation::LOCATION_OTHER;
+	// complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
 
 	// options.push_back(complete_option);
 

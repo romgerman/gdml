@@ -8,6 +8,7 @@ let stylebox = StyleBoxFlat {
 }
 
 let item_count = 10
+let items = [Color.WHITE, Color.BLACK]
 
 signal hover
 signal unhover
@@ -19,12 +20,16 @@ GridContainer {
 	anchor_top: 0.0
 	anchor_bottom: 1.0
 	
-	@for i in item_count {
-		Panel {
+	@for color in items {
+		ColorRect {
 			custom_minimum_size: item_size
-			$panel: stylebox
-			@mouse_entered: hover
-			@mouse_exited: unhover
+			color: color
 		}
+		#Panel {
+		#	custom_minimum_size: item_size
+		#	$panel: stylebox
+		#	@mouse_entered: hover
+		#	@mouse_exited: unhover
+		#}
 	}
 }

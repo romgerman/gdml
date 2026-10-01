@@ -24,12 +24,16 @@ namespace traversal {
 struct TreeRendererVisitorContext {
 	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
 
-	godot::Dictionary m_data;
+	std::map<godot::String, godot::Variant> m_data;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
+
+	void set_data(godot::String &p_name, godot::Variant p_value);
+	bool has_data(godot::String &p_name);
+	godot::Variant get_data(godot::String &p_name);
 
 	void set_variable(godot::String &p_name, godot::Variant p_value);
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);

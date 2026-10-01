@@ -253,6 +253,10 @@ std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node 
 	if (!range_node.isNull()) {
 		if (range_node.isType("identifier")) {
 			out->range = visitIdentifier(range_node, text);
+		} else if (range_node.isType("number")) {
+			out->range = visitNumber(range_node, text);
+		} else if (range_node.isType("array_expression")) {
+			out->range = visitArrayExpression(range_node, text);
 		} else if (range_node.isType("member_expression")) {
 			out->range = visitMemberExpression(range_node, text);
 		}
@@ -331,8 +335,7 @@ std::unique_ptr<ArrayExpressionNode> godot::GdmlParser::visitArrayExpression(ts:
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("expression")) {
-			std::unique_ptr<ExpressionNode> expr = visitExpression(child_node, text);
-			out->values.push_back(std::move(expr));
+			out->values.push_back(visitExpression(child_node, text));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {

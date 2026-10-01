@@ -25,6 +25,22 @@ namespace traversal {
 
 // Context
 
+void TreeRendererVisitorContext::set_data(godot::String &p_name, godot::Variant p_value) {
+	m_data[p_name] = p_value;
+}
+
+bool TreeRendererVisitorContext::has_data(godot::String &p_name) {
+	return m_data.find(p_name) != m_data.end();
+}
+
+godot::Variant TreeRendererVisitorContext::get_data(godot::String &p_name) {
+	if (m_data.find(p_name) != m_data.end()) {
+		return m_data[p_name];
+	} else {
+		return nullptr;
+	}
+}
+
 void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
 	if (m_variables.find(p_name) != m_variables.end()) {
 		Ref<reactive::GDMLAtom> atom = m_variables[p_name];
@@ -306,13 +322,34 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
 	Variant range_variant;
 	std::shared_ptr<std::vector<godot::Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	String iter_name;
+
+	if (statement.iter_name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		iter_name = static_cast<IdentifierNode &>(*statement.iter_name).name;
+	} else {
+		print_error("Cannot use non-identifier expressions in for-statement iterator");
+		return;
+	}
 
 	if (resolveExpression(range_variant, *statement.range, range_variant)) {
-		for (int32_t i = 0; i < (int32_t)range_variant; i++) {
-			for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-				Variant result_node = visitNodeDefinition(*item);
-				out_nodes.push_back(result_node);
-				nodes->push_back(result_node);
+		if (range_variant.get_type() == Variant::ARRAY) {
+			Array arr = range_variant;
+			for (Variant item : arr) {
+				m_context->set_data(iter_name, item);
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					Variant result_node = visitNodeDefinition(*item);
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
+			}
+		} else {
+			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
+				m_context->set_data(iter_name, i);
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					Variant result_node = visitNodeDefinition(*item);
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
 			}
 		}
 	} else {
@@ -535,6 +572,13 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 	*/
 
 	bool is_valid = false;
+
+	if (!is_valid) {
+		if (m_context->has_data(prop_key)) {
+			value = m_context->get_data(prop_key);
+			is_valid = true;
+		}
+	}
 
 	if (!is_valid) {
 		if (m_context->has_variable(prop_key)) {
@@ -800,7 +844,7 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 	}
 
 	if (obj) {
-		const Variant name_or_callable = m_context->m_data.get(callable_name, Variant(nullptr));
+		const Variant name_or_callable = m_context->m_data[callable_name];
 		if (name_or_callable) {
 			if (name_or_callable.get_type() == Variant::STRING) {
 				obj->connect(signal_name, Callable(root_variant, name_or_callable));
@@ -842,6 +886,19 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				print_error("Couldn't access property \"" + node.name + "\" to get value");
 				return false;
 			}
+		} break;
+		case GdmlNodeType::ARRAY_EXPRESSION: {
+			ArrayExpressionNode &node = static_cast<ArrayExpressionNode &>(expr_node);
+			Array out_arr;
+
+			for (const std::unique_ptr<ExpressionNode> &item_node : node.values) {
+				Variant out_value;
+				if (resolveExpression(root_variant, *item_node, out_value)) {
+					out_arr.push_back(out_value);
+				}
+			}
+
+			value = out_arr;
 		} break;
 		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
 			MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);

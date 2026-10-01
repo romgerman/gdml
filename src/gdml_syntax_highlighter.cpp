@@ -109,6 +109,7 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	//Color user_type_color = editor_settings->get_setting("text_editor/theme/highlighting/user_type_color");
 	Color error_color = editor_settings->get_setting("text_editor/theme/highlighting/error_underline_color");
 	Color control_flow_color = editor_settings->get_setting("text_editor/theme/highlighting/control_flow_keyword_color");
+	//Color base_type_color = editor_settings->get_setting("text_editor/theme/highlighting/base_type_color");
 
 	if (isError) {
 		return error_color;
@@ -116,7 +117,9 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 		return comment_color;
 	} else if (type == "for_statement") {
 		return control_flow_color;
-	} else if (type == "signal_expression" || type == "signal_definition" || type == "variable_definition") {
+	} else if (type == "signal_definition" || type == "variable_definition") {
+		return keyword_color;
+	} else if (type == "signal_expression" || type == "theme_property_definition") {
 		return keyword_color;
 	} else if (type == "identifier") {
 		if (possible_parent.find(std::get<godot::String>(pair)) != possible_parent.end()) {

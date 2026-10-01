@@ -67,7 +67,7 @@ module.exports = grammar({
       "@for",
       field("iter_name", $.identifier),
       "in",
-      field("range", choice($.identifier, $.member_expression)),
+      field("range", choice($.identifier, $.number, $.array_expression, $.member_expression)),
       '{',
       repeat($.node_definition),
       '}'
@@ -129,7 +129,7 @@ module.exports = grammar({
 
     // Primitives
     identifier: $ => /[A-Za-z_]+[A-Za-z_0-9]*/,
-    number: $ => /\d+(.\d+)?/,
+    number: $ => /\d+(\.\d+)?/,
     boolean: $ => choice(token('true'), token('false')),
     string: $ => seq(
       '"',

@@ -384,6 +384,14 @@
               },
               {
                 "type": "SYMBOL",
+                "name": "number"
+              },
+              {
+                "type": "SYMBOL",
+                "name": "array_expression"
+              },
+              {
+                "type": "SYMBOL",
                 "name": "member_expression"
               }
             ]
