@@ -645,6 +645,12 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std:
 	for (size_t i = 0; i < path.size(); i++) {
 		String &segment_name = path[i]->name;
 		bool is_valid = false;
+
+		// Check local variables inside statements
+		if (m_context->has_data(segment_name)) {
+			current_variant = m_context->get_data(segment_name);
+			continue;
+		}
 		
 		// We have a value go check next
 		Variant next_value = current_variant.get(segment_name, &is_valid);
@@ -948,6 +954,22 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			}
 
 			value = out_arr;
+		} break;
+		case GdmlNodeType::DICTIONARY_EXPRESSION: {
+			DictionaryExpressionNode &node = static_cast<DictionaryExpressionNode &>(expr_node);
+			Dictionary out_dict;
+
+			for (const std::unique_ptr<PropertyDefinitionNode> &item_node : node.values) {
+				if (item_node->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+					String &name = static_cast<IdentifierNode *>(item_node->name.get())->name;
+					Variant out_value;
+					if (resolveExpression(root_variant, *item_node->value.get(), out_value)) {
+						out_dict[name] = out_value;
+					}
+				}
+			}
+
+			value = out_dict;
 		} break;
 		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
 			MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);

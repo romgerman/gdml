@@ -1,8 +1,12 @@
 #include "gdml_script_language.h"
 
 #include "gdml_script.h"
+#include "gdml_parser.h"
+
+#include <vector>
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
 
@@ -59,25 +63,68 @@ ScriptLanguage::ScriptNameCasing GdmlScriptLanguage::_preferred_file_name_casing
 	return SCRIPT_NAME_CASING_AUTO;
 }
 
-Dictionary GdmlScriptLanguage::_complete_code(const String &p_code,
-		const String &p_path,
-		Object *p_owner) const {
+Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String &p_path, Object *p_owner) const {
+	int64_t cursor_pos = p_code.find(String::chr(char32_t(0xFFFF)));
+	
+	GdmlParser parser;
+	std::unique_ptr<godot::SourceFileNode> root_node = parser.parse(p_code);
+
+	godot::GdmlNode *context_node = nullptr;
+	std::vector<godot::GdmlNode *> node_stack;
+	node_stack.push_back(root_node.get());
+	
+	while (!node_stack.empty()) {
+		godot::GdmlNode *current_node = node_stack.back();
+		node_stack.pop_back();
+
+		if (current_node->text_span.start > cursor_pos || current_node->text_span.end < cursor_pos) {
+			break;
+		}
+
+		if (current_node->type == godot::GdmlNodeType::SOURCE_FILE) {
+			godot::SourceFileNode *node = (godot::SourceFileNode *)current_node;
+			for (const std::unique_ptr<godot::DefinitionNode> &statement : node->statements) {
+				node_stack.push_back(statement.get());
+			}
+			context_node = current_node;
+		} else if (current_node->type == godot::GdmlNodeType::DEFINITION) {
+			godot::DefinitionNode *node = (godot::DefinitionNode *)current_node;
+			node_stack.push_back(node->statement.get());
+			context_node = current_node;
+		}
+	}
+	
 	Dictionary out;
 	Array options;
 
-	// Dictionary complete_option;
-	// complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
-	// complete_option["display"] = String("display");
-	// complete_option["insert_text"] = String("insert_text");
-	// complete_option["default_value"] = Variant();
-	// complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+	if (context_node) {
+		if (context_node->type == godot::GdmlNodeType::DEFINITION) {
+			godot::DefinitionNode *def_node = (godot::DefinitionNode *)context_node;
+			
+			if (def_node->statement->type == godot::GdmlNodeType::NODE_DEFINITION) {
+				godot::NodeDefinitionNode *node = (godot::NodeDefinitionNode *)def_node->statement.get();
+				godot::String node_name = node->name->name;
+		
+				if (ClassDB::class_exists(node_name)) {
+					godot::TypedArray<godot::Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+		
+					for (godot::Dictionary prop_info : props) {
+						Dictionary complete_option;
+						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
+						complete_option["display"] = prop_info.get("name", "");
+						complete_option["insert_text"] = prop_info.get("name", "");
+						complete_option["default_value"] = Variant();
+						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+					
+						options.push_back(complete_option);
+					}
+				}
 
-	// options.push_back(complete_option);
+			}
+		}
+	}
 
 	out["options"] = options;
-
-	int64_t pos = p_code.find(String::chr(char32_t(0xFFFF)));
-
 	out["result"] = Error::OK;
 	out["force"] = Variant(false);
 	out["call_hint"] = String();

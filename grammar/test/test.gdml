@@ -1,43 +1,45 @@
-# @reference: main_menu.gd
-
-let hello = "world"
-let size = Vector2 {
-	x: 10
-	y: 10
+let item_size = Vector2 {
+	x: 100
+	y: 100
 }
 
-let count = 15
-
-@for i in count {
-	Control {
-		test: 0
-	}
+let stylebox = StyleBoxFlat {
+	bg_color: Color.BLACK
 }
 
-VBoxContainer {
-	alignment: 1
+let ItemComponent = Control {
 	anchor_left: 0.0
-	anchor_top: 0.0
 	anchor_right: 1.0
+	anchor_top: 0.0
 	anchor_bottom: 1.0
-	grow_horizontal: GrowDirection.GROW_DIRECTION_END
-	grow_vertical: GrowDirection.GROW_DIRECTION_END
+}
+
+#let item_count = 10
+let items = [
+	{ item_name: "Test Item"; }
+]
+
+signal hover
+signal unhover
+
+GridContainer {
+	columns: 5
+	anchor_left: 0.0
+	anchor_right: 1.0
+	anchor_top: 0.0
+	anchor_bottom: 1.0
 	
-	Label {
-		text: game_name
-		label_settings: LabelSettings {
-			font_size: 32
+	@for item_info in items {
+		PanelContainer {
+			custom_minimum_size: item_size
+			$panel: stylebox
+			@mouse_entered: hover
+			@mouse_exited: unhover
+			
+			Button {
+				#text: item_info.item_name
+				$normal: StyleBoxEmpty {}
+			}
 		}
 	}
-	
-	Button {
-		text: "Continue"
-		theme: load("res://ui/button.tres")
-		@pressed: button_pressed
-	}
-	
-	Button { text: "New Game"; }
-	Button { text: "Settings"; }
-	Button { text: "Authors"; }
-	Button { text: "Quit"; }
 }

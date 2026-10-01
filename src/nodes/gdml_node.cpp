@@ -76,8 +76,8 @@ void GDMLNode::render_in_editor() {
 			cast_to<Node>(item)->queue_free();
 		}
 
-		Ref<GDMLResult> result = _renderer->renderMarkup(_markup.ptr());
-		for (Variant item : result->get_nodes()) {
+		_renderer_result = _renderer->renderMarkup(_markup.ptr());
+		for (Variant item : _renderer_result->get_nodes()) {
 			add_child(cast_to<Control>(item));
 		}
 	}
