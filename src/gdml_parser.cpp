@@ -138,14 +138,13 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text, child_node.isType("theme_property_definition"));
 			out->properties.push_back(std::move(def));
 		} else if (child_node.isType("node_definition")) {
-			std::unique_ptr<NodeDefinitionNode> def = visitNodeDefinition(child_node, text);
-			out->statements.push_back(std::move(def));
+			out->statements.push_back(visitNodeDefinition(child_node, text));
 		} else if (child_node.isType("for_statement")) {
-			std::unique_ptr<ForStatementNode> def = visitForStatement(child_node, text);
-			out->statements.push_back(std::move(def));
+			out->statements.push_back(visitForStatement(child_node, text));
 		} else if (child_node.isType("variable_definition")) {
-			std::unique_ptr<VariableDefinitionNode> def = visitVariableDefinition(child_node, text);
-			out->variables.push_back(std::move(def));
+			out->variables.push_back(visitVariableDefinition(child_node, text));
+		} else if (child_node.isType("function_call")) {
+			out->decorators.push_back(visitFunctionCallExpression(child_node, text));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {

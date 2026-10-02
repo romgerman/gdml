@@ -167,6 +167,7 @@ struct NodeDefinitionNode : public StatementNode {
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
 	std::vector<std::unique_ptr<StatementNode>> statements;
 	std::vector<std::unique_ptr<VariableDefinitionNode>> variables;
+	std::vector<std::unique_ptr<FunctionCallExpressionNode>> decorators;
 };
 
 struct DefinitionNode : public StatementNode {

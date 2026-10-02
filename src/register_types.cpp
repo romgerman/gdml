@@ -9,6 +9,7 @@
 
 #include "gdml_atom.h"
 #include "gdml_global.h"
+#include "gdml_decorator.h"
 
 #include "render/gdml_renderer.h"
 
@@ -35,6 +36,7 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(global::gdml);
 
 			GDREGISTER_CLASS(GDMLNode);
+			GDREGISTER_CLASS(gdml::GDMLDecorator);
 
 			GdmlScriptLanguage::get_or_create_singleton();
 			GdmlScriptResourceFormatLoader::register_in_godot();

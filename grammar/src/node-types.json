@@ -272,6 +272,16 @@
           }
         ]
       }
+    },
+    "children": {
+      "multiple": true,
+      "required": false,
+      "types": [
+        {
+          "type": "function_call",
+          "named": true
+        }
+      ]
     }
   },
   {

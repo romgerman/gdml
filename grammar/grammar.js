@@ -26,9 +26,17 @@ module.exports = grammar({
     // Statements
     node_definition: $ => seq(
       field('name', $.identifier),
+      optional(seq(
+        '(',
+        optional(seq($.function_call, repeat(seq(',', $.function_call)))),
+        ')'
+      )),
       '{',
       field('variables', repeat($.variable_definition)),
-      field('properties', repeat(choice($.property_definition, $.theme_property_definition))),
+      field('properties', repeat(choice(
+        $.property_definition,
+        $.theme_property_definition
+      ))),
       field('statements', repeat(
         choice($.node_definition, $.for_statement)
       )),

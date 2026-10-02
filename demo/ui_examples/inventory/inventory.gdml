@@ -35,21 +35,26 @@ GridContainer {
 			@mouse_entered: hover
 			@mouse_exited: unhover
 			
-			TextureRect {
-				texture: item_info.item_icon
-			}
-			  
-			ColorRect {
-				color: Color {
-					r: 0; g: 0; b: 0;
-					a: 0.5;
+			DropTarget {
+				TextureRect(anchors(0, 0, 1, 1)) {
+					texture: item_info.item_icon
+					expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
 				}
-			}
-			
-			Button {
-				text: self.name
-				#text: item_info.item_name
-				$normal: StyleBoxEmpty {}
+				
+				ColorRect {
+					color: Color {
+						r: 0; g: 0; b: 0;
+						a: 0.5;
+					}
+				}
+				
+				Button(anchors(0, 0, 1, 1)) {
+					$normal: StyleBoxEmpty {}
+					
+					Label {
+						text: item_info.item_name
+					}
+				}
 			}
 		}
 	}

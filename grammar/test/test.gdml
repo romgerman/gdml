@@ -14,16 +14,16 @@ let ItemComponent = Control {
 	anchor_bottom: 1.0
 }
 
-#let item_count = 10
 let items = [
-	{ item_name: "Test Item"; }
+	{ item_name: "Test Item"; item_icon: MyCoolButton.load_res("res://icon.svg"); }
 ]
 
 signal hover
 signal unhover
 
-GridContainer {
+GridContainer(anchors('full_rect'), theme('basic')) {
 	columns: 5
+	# does stuff below
 	anchor_left: 0.0
 	anchor_right: 1.0
 	anchor_top: 0.0
@@ -36,9 +36,23 @@ GridContainer {
 			@mouse_entered: hover
 			@mouse_exited: unhover
 			
-			Button {
-				#text: item_info.item_name
-				$normal: StyleBoxEmpty {}
+			DropTarget {
+				TextureRect {
+					texture: item_info.item_icon
+				}
+				  
+				ColorRect {
+					color: Color {
+						r: 0; g: 0; b: 0;
+						a: 0.5;
+					}
+				}
+				
+				Button {
+					#text: self.name
+					text: item_info.item_name
+					$normal: StyleBoxEmpty {}
+				}
 			}
 		}
 	}
