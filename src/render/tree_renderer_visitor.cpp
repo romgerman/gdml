@@ -471,168 +471,17 @@ void TreeRendererVisitor::visitSignalDefinition(godot::SignalDefinitionNode &def
 	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
 }
 
-bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
-	bool is_valid = false;
-
-	if (value_node.type == GdmlNodeType::STRING_EXPRESSION) {
-		const StringNode &node = (StringNode &)value_node;
-		variant.set(prop_key, node.value, &is_valid);
-	} else if (value_node.type == GdmlNodeType::NUMBER_EXPRESSION) {
-		NumberNode node = (NumberNode &)value_node;
-		if (node.isFloat) {
-			variant.set(prop_key, node.getFloat(), &is_valid);
-		} else {
-			variant.set(prop_key, node.getInteger(), &is_valid);
-		}
-	} else if (value_node.type == GdmlNodeType::BOOLEAN_EXPRESSION) {
-		const BooleanNode &node = (BooleanNode &)value_node;
-		variant.set(prop_key, node.value, &is_valid);
-	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &node = (IdentifierNode &)value_node;
-
-		if (m_context->has_variable(node.name)) {
-			subscribeToVariable(node.name, prop_key, variant);
-		}
-
-		Variant out_value;
-		if (getPropertyValue(root_variant, node.name, out_value)) {
-			variant.set(prop_key, out_value, &is_valid);
-		} else {
-			print_error("Couldn't access property \"" + node.name + "\" to get value");
-		}
-	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-		const MemberExpressionNode &node = (MemberExpressionNode &)value_node;
-		Variant out_value;
-		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
-			variant.set(prop_key, out_value, &is_valid);
-		} else {
-			PackedStringArray arr;
-			for (const std::unique_ptr<IdentifierNode> &idendifier : node.path) {
-				arr.append(idendifier->name);
-			}
-			print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
-		}
-	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
-		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
-		Variant resource_variant;
-
-		if (m_variant_type_map.count(node.name->name)) {
-			GDExtensionCallError error;
-			internal::gdextension_interface_variant_construct(
-					(GDExtensionVariantType)m_variant_type_map[node.name->name],
-					resource_variant._native_ptr(),
-					nullptr,
-					0,
-					&error);
-
-			if (error.error != GDEXTENSION_CALL_OK) {
-				print_error("Error constructing variant of type " + node.name->name);
-				return false;
-			}
-		} else {
-			if (ClassDB::class_exists(node.name->name)) {
-				resource_variant = ClassDB::instantiate(node.name->name);
-			} else {
-				print_error("Error instantiating class of type " + node.name->name);
-				return false;
-			}
-		}
-
-		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
-			}
-		}
-
-		variant.set(prop_key, resource_variant, &is_valid);
-	} else if (value_node.type == GdmlNodeType::FUNCTION_CALL) {
-		const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)value_node;
-
-		if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-			IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
-
-			if (m_context->has_variable(name_node->name)) {
-				Ref<reactive::GDMLAtom> atom = m_context->get_variable(name_node->name);
-				Variant value = atom->get_value();
-
-				if (value.get_type() == Variant::Type::CALLABLE) {
-					Callable callable = value;
-					Array args;
-
-					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-						Variant arg_value;
-						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
-							args.push_back(arg_value);
-						} else {
-							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
-						}
-					}
-
-					const Variant result = callable.callv(args);
-					variant.set(prop_key, result, &is_valid);
-				} else {
-					print_error("Cannot call non-Callable");
-				}
-			}
-		} else if (node.name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
-			MemberExpressionNode *name_node = static_cast<MemberExpressionNode *>(node.name.get());
-
-			if (name_node->path.size() < 2) {
-				print_error("Invalid member access expression");
-				return false;
-			}
-
-			String method_name = name_node->path.back()->name;
-			Variant current_variant = root_variant;
-
-			for (size_t i = 0; i < name_node->path.size() - 1; i++) {
-				String &segment_name = name_node->path[i]->name;
-				bool is_valid = false;
-
-				// Check local variables inside statements
-				if (m_context->has_data(segment_name)) {
-					current_variant = m_context->get_data(segment_name);
-					continue;
-				}
-
-				// We have a value go check next
-				Variant next_value = current_variant.get(segment_name, &is_valid);
-
-				if (is_valid) {
-					current_variant = next_value;
-					continue;
-				}
-			}
-
-			if (current_variant.has_method(method_name)) {
-				Callable callable = current_variant.get(method_name);
-				Array args;
-	
-				for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-					Variant arg_value;
-					if (resolveExpression(root_variant, *expr.get(), arg_value)) {
-						args.push_back(arg_value);
-					} else {
-						print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->path.back()->name + "\"");
-					}
-				}
-	
-				const Variant result = callable.callv(args);
-				variant.set(prop_key, result, &is_valid);
-			}
-		} else {
-			print_error("Other types of expressions are not implemented for a function call");
-		}
+bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
+	Variant out_value;
+	if (resolveExpression(root_variant, value_node, out_value)) {
+		variant.set(prop_key, out_value);
+		return true;
+	} else {
+		return false;
 	}
-
-	return is_valid;
 }
 
-bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant &variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, const ExpressionNode &value_node) {
+bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant &variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, ExpressionNode &value_node) {
 	Variant previous_variant;
 	Variant current_variant = variant;
 

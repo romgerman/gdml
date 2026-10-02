@@ -73,7 +73,8 @@ extends GDMLNode
 @export var items: Array[AudioStream] = []
 
 func _ready() -> void:
-	get_variable(\"items\").value = items
+	pass
+	#get_variable(\"items\").value = items
 "
 
 [node name="TestRender" type="Node2D" unique_id=43238584]
