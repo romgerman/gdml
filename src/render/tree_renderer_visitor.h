@@ -80,6 +80,8 @@ private:
 	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
+
+	void printError(const godot::String p_error, const godot::GdmlNode &node);
 };
 
 } //namespace traversal

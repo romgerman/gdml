@@ -47,7 +47,8 @@ GridContainer {
 			}
 			
 			Button {
-				text: item_info.item_name
+				#text: item_info.item_name
+				text: self.get_parent()
 				$normal: StyleBoxEmpty {}
 			}
 		}

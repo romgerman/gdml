@@ -76,6 +76,7 @@ module.exports = grammar({
     // Expressions
     expression: $ => choice(
       $.identifier,
+      $.self,
       $.number,
       $.boolean,
       $.string,
@@ -85,7 +86,7 @@ module.exports = grammar({
       $.function_call
     ),
     member_expression: $ => seq(
-      $.identifier,
+      choice($.self, $.identifier),
       repeat1(seq('.', $.identifier))
     ),
     array_expression: $ => seq(
@@ -131,6 +132,7 @@ module.exports = grammar({
     identifier: $ => /[A-Za-z_]+[A-Za-z_0-9]*/,
     number: $ => /\d+(\.\d+)?/,
     boolean: $ => choice(token('true'), token('false')),
+    self: $ => token('self'),
     string: $ => seq(
       '"',
       repeat(choice(

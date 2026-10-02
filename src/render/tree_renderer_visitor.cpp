@@ -23,7 +23,7 @@ using namespace parser;
 
 namespace traversal {
 
-// Context
+#pragma region Context
 
 void TreeRendererVisitorContext::set_data(const godot::String &p_name, godot::Variant p_value) {
 	m_data[p_name] = p_value;
@@ -106,7 +106,9 @@ void TreeRendererVisitorContext::reset_active_variable(godot::String &p_name) {
 	m_active_variables[m_active_context_index][p_name] = false;
 }
 
-// Renderer
+#pragma endregion
+
+#pragma region Renderer
 
 TreeRendererVisitor::TreeRendererVisitor(godot::Ref<godot::GDMLResult> result) {
 	m_result = result;
@@ -155,26 +157,36 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
 		m_context->push_active_context();
-		visitSourceFile((SourceFileNode &)root_node, result);
+		{
+			visitSourceFile((SourceFileNode &)root_node, result);
+			result.variables = m_context->m_variables;
+			result.signals = m_context->m_signals;
+		}
 		m_context->pop_active_context();
-		result.variables = m_context->m_variables;
-		result.signals = m_context->m_signals;
 		return result;
-	} else {
-		print_error("Cannot render tree. The tree is malformed");
-		return TreeRendererVisitorResult();
 	}
+
+	printError("Cannot render tree. The tree is malformed", root_node);
+	return TreeRendererVisitorResult();
 }
 
 void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, TreeRendererVisitorResult &result) {
 	for (const std::unique_ptr<DefinitionNode> &definition : source_node.statements) {
-		if (definition->statement->type == GdmlNodeType::NODE_DEFINITION) {
+		switch (definition->statement->type)
+		{
+		case GdmlNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode *node_def = static_cast<const NodeDefinitionNode *>(definition->statement.get());
+
 			m_context->push_active_context();
-			Variant result_node = visitNodeDefinition(*node_def);
+			{
+				Variant result_node = visitNodeDefinition(*node_def);
+				if (result_node) {
+					result.nodes.push_back(result_node);
+				}
+			}
 			m_context->pop_active_context();
-			result.nodes.push_back(result_node);
-		} else if (definition->statement->type == GdmlNodeType::VARIABLE_DEFINITION) {
+		} break;
+		case GdmlNodeType::VARIABLE_DEFINITION: {
 			Variant value;
 			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
 
@@ -182,17 +194,20 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 				if (resolveExpression(value, *var->value, value)) {
 					m_context->set_variable(var->name->name, value);
 				} else {
-					print_error("Couldn't resolve variable expression");
+					printError("Couldn't resolve variable expression", *var);
 				}
 			} else {
 				m_context->set_variable(var->name->name, Variant());
 			}
-		} else if (definition->statement->type == GdmlNodeType::FOR_STATEMENT) {
+		} break;
+		case GdmlNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			visitForStatement(*statement, result.nodes);
-		} else if (definition->statement->type == GdmlNodeType::SIGNAL_DEFINITION) {
+		} break;
+		case GdmlNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
 			visitSignalDefinition(*def);
+		} break;
 		}
 	}
 }
@@ -211,14 +226,14 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		}
 
 		if (class_info.is_empty()) {
-			print_error("Class with name " + node.name->name + " is not found");
+			printError("Class with name '" + node.name->name + "' is not found", node);
 			return nullptr;
 		}
 
 		String path = class_info.get("path", "");
 		Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
 		if (script.is_null()) {
-			print_error("Could not load script associated with type " + node.name->name + ". Path: " + path);
+			printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
 			return nullptr;
 		}
 		root_variant = ClassDB::instantiate(script->get_instance_base_type());
@@ -227,7 +242,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		base_object->set_script(script);
 	} else {
 		if (!ClassDB::can_instantiate(node.name->name)) {
-			print_error("Cannot construct node of type " + node.name->name);
+			printError("Cannot construct node of type '" + node.name->name + "'", node);
 			return nullptr;
 		}
 
@@ -235,12 +250,18 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	}
 
 	bool is_node = false;
-
+	Node *obj_as_node;
 	if (root_variant.get_type() == Variant::Type::OBJECT) {
-		Node *obj = Object::cast_to<Node>(root_variant);
-		if (obj) {
+		obj_as_node = Object::cast_to<Node>(root_variant);
+		if (obj_as_node) {
 			is_node = true;
+		} else {
+			printError("Object is not a node", node);
+			return nullptr;
 		}
+	} else {
+		printError("Variant type is not an object", node);
+		return nullptr;
 	}
 
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
@@ -252,7 +273,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 					setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
 				}
 			} else {
-				print_error("Trying to set theme override on a non-Control node");
+				printError("Trying to set theme override on a non-Control node", *property);
 			}
 		} else {
 			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
@@ -272,10 +293,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 							connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
 						}
 					} else {
-						print_error("Cannot connect signal. Callable name should be an identifier or a string");
+						printError("Cannot connect signal. Callable name should be an identifier or a string", *property);
 					}
 				} else {
-					print_error("Cannot connect signal. Wrong name expression type");
+					printError("Cannot connect signal. Wrong name expression type", *property);
 				}
 			}
 		}
@@ -283,41 +304,32 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 	for (const std::unique_ptr<VariableDefinitionNode> &var : node.variables) {
 		Variant value;
-
 		if (resolveExpression(value, *var, value)) {
 			m_context->set_variable(var->name->name, value);
 		}
 	}
 
-	if (is_node) {
-		Object *obj = root_variant.get_validated_object();
-		assert(obj);
-		Node *obj_as_node = Object::cast_to<Node>(obj);
-		assert(obj_as_node);
-		for (const std::unique_ptr<StatementNode> &statement : node.statements) {
-			if (statement->type == GdmlNodeType::NODE_DEFINITION) {
-				const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
-				Variant child_variant = visitNodeDefinition(*child);
-	
-				if (child_variant.get_type() != Variant::Type::NIL) {
-					Object *child_obj = child_variant.get_validated_object();
-					assert(child_obj);
-					Node *child_node = Object::cast_to<Node>(child_obj);
-					assert(child_node);
-					obj_as_node->add_child(child_node);
-				}
-			} else if (statement->type == GdmlNodeType::FOR_STATEMENT) {
-				ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
-				std::vector<Variant> nodes;
-				visitForStatement(*for_node, nodes);
+	for (const std::unique_ptr<StatementNode> &statement : node.statements) {
+		if (statement->type == GdmlNodeType::NODE_DEFINITION) {
+			const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
+			Variant child_variant = visitNodeDefinition(*child);
 
-				for (Variant &item : nodes) {
-					obj_as_node->add_child(Object::cast_to<Node>(item));
-				}
+			if (child_variant.get_type() != Variant::Type::NIL) {
+				Object *child_obj = child_variant.get_validated_object();
+				assert(child_obj);
+				Node *child_node = Object::cast_to<Node>(child_obj);
+				assert(child_node);
+				obj_as_node->add_child(child_node);
+			}
+		} else if (statement->type == GdmlNodeType::FOR_STATEMENT) {
+			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
+			std::vector<Variant> nodes;
+			visitForStatement(*for_node, nodes);
+
+			for (Variant &item : nodes) {
+				obj_as_node->add_child(Object::cast_to<Node>(item));
 			}
 		}
-	} else {
-		print_error("Cannot have children on non-Node class");
 	}
 
 	return root_variant;
@@ -692,10 +704,16 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std:
 		String &segment_name = path[i]->name;
 		bool is_valid = false;
 
-		// Check local variables inside statements
-		if (m_context->has_data(segment_name)) {
-			current_variant = m_context->get_data(segment_name);
-			continue;
+		if (i == 0) {
+			if (segment_name == "self") {
+				continue;
+			} else {
+				// Check local variables inside statements
+				if (m_context->has_data(segment_name)) {
+					current_variant = m_context->get_data(segment_name);
+					continue;
+				}
+			}
 		}
 		
 		// We have a value go check next
@@ -1161,5 +1179,11 @@ void TreeRendererVisitor::subscribeToVariable(godot::String &p_variable, godot::
 	Ref<reactive::GDMLAtom> atom = m_context->get_variable(p_variable);
 	atom->add_dependency(variant, p_prop);
 }
+
+void TreeRendererVisitor::printError(const godot::String p_error, const godot::GdmlNode &node) {
+	print_error(p_error, " at ", node.location.start.line, ":", node.location.start.column);
+}
+
+#pragma endregion
 
 }

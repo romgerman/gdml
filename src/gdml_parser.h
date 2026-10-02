@@ -78,7 +78,7 @@ enum class GdmlNodeType {
 
 struct GdmlNode {
 	GdmlNodeType type = GdmlNodeType::UNKNOWN;
-	parser::GdmlTextSpan text_span;
+	parser::GdmlSourceLocation location;
 };
 struct ExpressionNode : public GdmlNode {};
 struct StatementNode : public ExpressionNode {};

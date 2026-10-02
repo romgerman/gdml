@@ -113,6 +113,10 @@
           "named": true
         },
         {
+          "type": "self",
+          "named": true
+        },
+        {
           "type": "string",
           "named": true
         }
@@ -207,6 +211,10 @@
       "types": [
         {
           "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "self",
           "named": true
         }
       ]
@@ -551,6 +559,10 @@
   },
   {
     "type": "number",
+    "named": true
+  },
+  {
+    "type": "self",
     "named": true
   },
   {

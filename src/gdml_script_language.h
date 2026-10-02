@@ -26,6 +26,7 @@ public:
 	void _thread_enter() override;
 	void _thread_exit() override;
 	void _reload_all_scripts() override;
+	void _reload_scripts(const Array &p_scripts, bool p_soft_reload) override;
 
 	String _validate_path(const String &p_path) const override;
 	Dictionary _validate(const String &p_script, const String &p_path, bool p_validate_functions, bool p_validate_errors, bool p_validate_warnings, bool p_validate_safe_lines) const override;

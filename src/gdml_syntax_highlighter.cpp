@@ -130,7 +130,7 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 		return number_color;
 	} else if (type == "string" || type == "string_fragment" || type == "escape_sequence") {
 		return string_color;
-	} else if (type == "boolean" || type == "true" || type == "false") {
+	} else if (type == "boolean" || type == "true" || type == "false" || type == "self") {
 		return keyword_color;
 	} else if (type == "{" || type == "}" || type == "[" || type == "]") {
 		return symbol_color;

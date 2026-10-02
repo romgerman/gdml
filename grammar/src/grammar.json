@@ -423,6 +423,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "self"
+        },
+        {
+          "type": "SYMBOL",
           "name": "number"
         },
         {
@@ -455,8 +459,17 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "identifier"
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "self"
+            },
+            {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          ]
         },
         {
           "type": "REPEAT1",
@@ -645,7 +658,7 @@
     },
     "number": {
       "type": "PATTERN",
-      "value": "\\d+(.\\d+)?"
+      "value": "\\d+(\\.\\d+)?"
     },
     "boolean": {
       "type": "CHOICE",
@@ -665,6 +678,13 @@
           }
         }
       ]
+    },
+    "self": {
+      "type": "TOKEN",
+      "content": {
+        "type": "STRING",
+        "value": "self"
+      }
     },
     "string": {
       "type": "SEQ",

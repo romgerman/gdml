@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dxmfo6g7luyho" path="res://ui_examples/inventory/inventory_item.gd" id="4_3dfi7"]
 [ext_resource type="Script" uid="uid://cjkstodorsick" path="res://ui_examples/inventory/inventory.gdml" id="4_hn3h5"]
 [ext_resource type="Texture2D" uid="uid://c2rhakuaqwjww" path="res://icon.svg" id="5_c4k6i"]
+[ext_resource type="AudioStream" uid="uid://dae0q5f6545bp" path="res://audio/thud-impact-sound-sfx-379990.mp3" id="6_c4k6i"]
 
 [sub_resource type="GDScript" id="GDScript_4tb28"]
 resource_name = "inventory"
@@ -62,6 +63,19 @@ item_name = "Staff"
 item_icon = ExtResource("5_c4k6i")
 metadata/_custom_type_script = "uid://dxmfo6g7luyho"
 
+[sub_resource type="GdmlScript" id="GdmlScript_3dfi7"]
+
+[sub_resource type="GDScript" id="GDScript_3dfi7"]
+resource_name = "item_list"
+script/source = "@tool
+extends GDMLNode
+
+@export var items: Array[AudioStream] = []
+
+func _ready() -> void:
+	get_variable(\"items\").value = items
+"
+
 [node name="TestRender" type="Node2D" unique_id=43238584]
 
 [node name="NodeThatRenders" type="Control" parent="." unique_id=671934518]
@@ -96,6 +110,13 @@ grow_vertical = 2
 script = SubResource("GDScript_4tb28")
 items = Array[ExtResource("4_3dfi7")]([SubResource("Resource_mirat"), SubResource("Resource_hn3h5"), SubResource("Resource_3dfi7"), SubResource("Resource_c4k6i")])
 
-[node name="Label" type="Label" parent="CanvasLayer" unique_id=566126210]
-offset_right = 40.0
-offset_bottom = 23.0
+[node name="ItemList" type="GDMLNode" parent="CanvasLayer" unique_id=2118346781]
+markup = SubResource("GdmlScript_3dfi7")
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_3dfi7")
+items = Array[AudioStream]([ExtResource("6_c4k6i")])

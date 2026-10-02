@@ -10,6 +10,8 @@
 
 using namespace godot;
 
+namespace godot {
+
 GdmlScriptLanguage *GdmlScriptLanguage::instance = nullptr;
 
 void GdmlScriptLanguage::_bind_methods() {}
@@ -42,6 +44,10 @@ void GdmlScriptLanguage::_thread_exit() {}
 
 void GdmlScriptLanguage::_reload_all_scripts() {}
 
+void GdmlScriptLanguage::_reload_scripts(const Array &p_scripts, bool p_soft_reload) {
+
+}
+
 String GdmlScriptLanguage::_validate_path(const String &p_path) const {
 	return "";
 }
@@ -67,28 +73,28 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 	int64_t cursor_pos = p_code.find(String::chr(char32_t(0xFFFF)));
 	
 	GdmlParser parser;
-	std::unique_ptr<godot::SourceFileNode> root_node = parser.parse(p_code);
+	std::unique_ptr<SourceFileNode> root_node = parser.parse(p_code);
 
-	godot::GdmlNode *context_node = nullptr;
-	std::vector<godot::GdmlNode *> node_stack;
+	GdmlNode *context_node = nullptr;
+	std::vector<GdmlNode *> node_stack;
 	node_stack.push_back(root_node.get());
 	
 	while (!node_stack.empty()) {
-		godot::GdmlNode *current_node = node_stack.back();
+		GdmlNode *current_node = node_stack.back();
 		node_stack.pop_back();
 
-		if (current_node->text_span.start > cursor_pos || current_node->text_span.end < cursor_pos) {
+		if (current_node->location.span.start > cursor_pos || current_node->location.span.end < cursor_pos) {
 			break;
 		}
 
-		if (current_node->type == godot::GdmlNodeType::SOURCE_FILE) {
-			godot::SourceFileNode *node = (godot::SourceFileNode *)current_node;
-			for (const std::unique_ptr<godot::DefinitionNode> &statement : node->statements) {
+		if (current_node->type == GdmlNodeType::SOURCE_FILE) {
+			SourceFileNode *node = (SourceFileNode *)current_node;
+			for (const std::unique_ptr<DefinitionNode> &statement : node->statements) {
 				node_stack.push_back(statement.get());
 			}
 			context_node = current_node;
-		} else if (current_node->type == godot::GdmlNodeType::DEFINITION) {
-			godot::DefinitionNode *node = (godot::DefinitionNode *)current_node;
+		} else if (current_node->type == GdmlNodeType::DEFINITION) {
+			DefinitionNode *node = (DefinitionNode *)current_node;
 			node_stack.push_back(node->statement.get());
 			context_node = current_node;
 		}
@@ -98,17 +104,17 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 	Array options;
 
 	if (context_node) {
-		if (context_node->type == godot::GdmlNodeType::DEFINITION) {
-			godot::DefinitionNode *def_node = (godot::DefinitionNode *)context_node;
+		if (context_node->type == GdmlNodeType::DEFINITION) {
+			DefinitionNode *def_node = (DefinitionNode *)context_node;
 			
-			if (def_node->statement->type == godot::GdmlNodeType::NODE_DEFINITION) {
-				godot::NodeDefinitionNode *node = (godot::NodeDefinitionNode *)def_node->statement.get();
-				godot::String node_name = node->name->name;
+			if (def_node->statement->type == GdmlNodeType::NODE_DEFINITION) {
+				NodeDefinitionNode *node = (NodeDefinitionNode *)def_node->statement.get();
+				String node_name = node->name->name;
 		
 				if (ClassDB::class_exists(node_name)) {
-					godot::TypedArray<godot::Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+					TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
 		
-					for (godot::Dictionary prop_info : props) {
+					for (Dictionary prop_info : props) {
 						Dictionary complete_option;
 						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
 						complete_option["display"] = prop_info.get("name", "");
@@ -241,4 +247,6 @@ void GdmlScriptLanguage::delete_singleton() {
 		memdelete(instance);
 		instance = nullptr;
 	}
+}
+
 }
