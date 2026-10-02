@@ -32,10 +32,11 @@ protected:
 
 public:
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
-	void on_variable_changed();
 
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
 	void on_defined_signal(String signal_name);
+
+	// API
 
 	Array get_nodes();
 

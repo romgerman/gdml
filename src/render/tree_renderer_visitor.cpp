@@ -106,6 +106,14 @@ void TreeRendererVisitorContext::reset_active_variable(godot::String &p_name) {
 	m_active_variables[m_active_context_index][p_name] = false;
 }
 
+void TreeRendererVisitorContext::flush_deferred_properties() {
+	for (std::function<void()> &fn : m_deferred_properties) {
+		fn();
+	}
+
+	m_deferred_properties.clear();
+}
+
 #pragma endregion
 
 #pragma region Renderer
@@ -159,6 +167,7 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 		m_context->push_active_context();
 		{
 			visitSourceFile((SourceFileNode &)root_node, result);
+			m_context->flush_deferred_properties();
 			result.variables = m_context->m_variables;
 			result.signals = m_context->m_signals;
 		}
@@ -278,7 +287,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		} else {
 			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-				setVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
+				trySetVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
 				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
 				setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
@@ -437,6 +446,8 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 				}
 				m_context->set_data(iter_name, Variant());
 			}
+
+			m_context->flush_deferred_properties();
 		} else {
 			print_error("Couldn't resolve range expression of for-statement");
 		}
@@ -469,6 +480,19 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 
 void TreeRendererVisitor::visitSignalDefinition(godot::SignalDefinitionNode &definition) {
 	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
+}
+
+bool TreeRendererVisitor::trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node) {
+	if (doesExpressionHaveSelf(value_node)) {
+		std::function<void()> deferred_set = [this, root_variant, variant, prop_key, &value_node]() {
+			setVariantProperty(const_cast<Variant &>(root_variant), const_cast<Variant &>(variant), const_cast<String &>(prop_key), value_node);
+		};
+
+		m_context->m_deferred_properties.push_back(deferred_set);
+		return true;
+	} else{
+		return setVariantProperty(root_variant, variant, prop_key, value_node);
+	}
 }
 
 bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
@@ -506,6 +530,11 @@ bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant 
 }
 
 bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, Variant &value) {
+	if (prop_key == "self") {
+		value = variant;
+		return true;
+	}
+	
 	/*
 		1. context prop
 		2. object prop
@@ -1022,6 +1051,32 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 	}
 
 	return true;
+}
+
+bool TreeRendererVisitor::doesExpressionHaveSelf(godot::ExpressionNode &expr_node) {
+	if (expr_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		return static_cast<IdentifierNode &>(expr_node).name == "self";
+	} else if (expr_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+		return static_cast<MemberExpressionNode &>(expr_node).path[0]->name == "self";
+	} else if (expr_node.type == GdmlNodeType::ARRAY_EXPRESSION) {
+		for (std::unique_ptr<godot::ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr_node).values) {
+			return doesExpressionHaveSelf(*value);
+		}
+	} else if (expr_node.type == GdmlNodeType::DICTIONARY_EXPRESSION) {
+		for (std::unique_ptr<godot::PropertyDefinitionNode> &value : static_cast<DictionaryExpressionNode &>(expr_node).values) {
+			return doesExpressionHaveSelf(*value->value);
+		}
+	} else if (expr_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
+		for (std::unique_ptr<godot::PropertyDefinitionNode> &value : static_cast<ResourceDefinitionNode &>(expr_node).properties) {
+			return doesExpressionHaveSelf(*value->value);
+		}
+	} else if (expr_node.type == GdmlNodeType::FUNCTION_CALL) {
+		for (std::unique_ptr<godot::ExpressionNode> &value : static_cast<FunctionCallExpressionNode &>(expr_node).arguments) {
+			return doesExpressionHaveSelf(*value);
+		}
+	}
+
+	return false;
 }
 
 void TreeRendererVisitor::subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant) {

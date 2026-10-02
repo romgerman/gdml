@@ -24,6 +24,7 @@ namespace traversal {
 struct TreeRendererVisitorContext {
 	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
 
+	std::vector<std::function<void()>> m_deferred_properties;
 	std::map<godot::String, godot::Variant> m_data;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
@@ -44,6 +45,8 @@ struct TreeRendererVisitorContext {
 	void set_active_variable(godot::String &p_name);
 	std::vector<godot::Ref<reactive::GDMLAtom>> get_active_variables();
 	void reset_active_variable(godot::String &p_name);
+
+	void flush_deferred_properties();
 };
 
 struct TreeRendererVisitorResult {
@@ -68,6 +71,7 @@ private:
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 
+	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
 	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::ExpressionNode &value_node);
 	bool getPropertyValue(godot::Variant &variant, godot::String &prop_key, godot::Variant &value);
@@ -78,6 +82,7 @@ private:
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);
 
 	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
+	bool doesExpressionHaveSelf(godot::ExpressionNode &expr_node);
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
 

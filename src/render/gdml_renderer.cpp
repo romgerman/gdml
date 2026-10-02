@@ -25,11 +25,6 @@ void GDMLResult::_bind_methods() {
 
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
 	m_variables[p_name] = atom;
-	atom->connect(StringName("changed"), callable_mp(this, &GDMLResult::on_variable_changed));
-}
-
-void GDMLResult::on_variable_changed() {
-
 }
 
 void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName target_signal) {

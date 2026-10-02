@@ -38,7 +38,7 @@ GridContainer {
 			TextureRect {
 				texture: item_info.item_icon
 			}
-			
+			  
 			ColorRect {
 				color: Color {
 					r: 0; g: 0; b: 0;
@@ -47,8 +47,8 @@ GridContainer {
 			}
 			
 			Button {
+				text: self.name
 				#text: item_info.item_name
-				text: self.get_parent()
 				$normal: StyleBoxEmpty {}
 			}
 		}
