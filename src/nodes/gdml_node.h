@@ -32,7 +32,10 @@ public:
 
 	void render_in_editor();
 	void on_markup_changed();
-	void on_bubble_signal(String signal_name);
+	void on_bubble_signal0(Variant target, String signal_name);
+	void on_bubble_signal1(Variant target, Variant arg1, String signal_name);
+	void on_bubble_signal2(Variant target, Variant arg1, Variant arg2, String signal_name);
+	void on_signals_changed();
 
 	void set_markup(const Ref<GdmlScript> &p_markup);
 	Ref<GdmlScript> get_markup();

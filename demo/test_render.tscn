@@ -23,20 +23,17 @@ func _ready() -> void:
 	get_variable(\"items\").value = items
 	
 	if not Engine.is_editor_hint():
-		connect(\"hover\", _hovered)
-		connect(\"unhover\", _unhovered)
+		connect(\"item_gui_input\", _item_gui_input)
+		pass
 	
 	#await get_tree().create_timer(2.0).timeout
 	#var item_count := get_variable(\"item_count\")
 	#item_count.value = 3
 
-func _hovered() -> void:
-	var item_color := get_variable(\"stylebox\")
-	item_color.value.bg_color = Color.YELLOW
-
-func _unhovered() -> void:
-	var item_color := get_variable(\"stylebox\")
-	item_color.value.bg_color = Color.BLACK
+func _item_gui_input(target: Control, event: InputEvent) -> void:
+	print(\"input\")
+	#var item_color := get_variable(\"stylebox\")
+	#item_color.value.bg_color = Color.YELLOW
 "
 
 [sub_resource type="Resource" id="Resource_mirat"]

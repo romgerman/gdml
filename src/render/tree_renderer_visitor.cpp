@@ -710,18 +710,6 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std:
 void TreeRendererVisitor::setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node) {
 	Control *control = Object::cast_to<Control>(variant);
 
-	// Ref<godot::Theme> control_theme = control->get_theme();
-	// StringName theme_type = control->get_theme_type_variation();
-
-	// if (control_theme.is_null()) {
-	// 	control_theme = ThemeDB::get_singleton()->get_project_theme();
-		
-	// }
-
-	// if (control_theme.is_null()) {
-	// 	control_theme = ThemeDB::get_singleton()->get_default_theme();
-	// }
-
 	if (value_node.type == GdmlNodeType::NUMBER_EXPRESSION) {
 		NumberNode node = (NumberNode &)value_node;
 

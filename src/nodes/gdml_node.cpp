@@ -58,12 +58,8 @@ void GDMLNode::_notification(int p_what) {
 					child->set_owner(get_owner() ? get_owner() : nullptr);
 				}
 
-				for (Variant signal_name : _renderer_result->get_signals()) {
-					_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal).bind(signal_name));
-					if (!has_user_signal(signal_name)) {
-						add_user_signal(signal_name);
-					}
-				}
+				on_signals_changed();
+				_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 			}
 		}
 	} break;
@@ -89,8 +85,56 @@ void GDMLNode::on_markup_changed() {
 	}
 }
 
-void GDMLNode::on_bubble_signal(String signal_name) {
-	emit_signal(signal_name);
+void GDMLNode::on_bubble_signal0(Variant target, String signal_name) {
+	emit_signal(signal_name, target);
+}
+
+void GDMLNode::on_bubble_signal1(Variant target, Variant arg1, String signal_name) {
+	emit_signal(signal_name, target, arg1);
+}
+
+void GDMLNode::on_bubble_signal2(Variant target, Variant arg1, Variant arg2, String signal_name) {
+	emit_signal(signal_name, target, arg1, arg2);
+}
+
+void GDMLNode::on_signals_changed() {
+	for (Variant signal_name : _renderer_result->get_signals()) {
+		for (Variant item : _renderer_result->get_signal_list()) {
+			Dictionary signal_info = item;
+			if (signal_info["name"] == String(signal_name)) {
+				Array args = signal_info["args"];
+				print_line("HERE: ", args.size());
+				switch (args.size())
+				{
+				case 1: {
+					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal0))) {
+						continue;
+					} else {
+						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal0).bind(signal_name));
+					}
+				} break;
+				case 2: {
+					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal1))) {
+						continue;
+					} else {
+						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal1).bind(signal_name));
+					}
+				} break;
+				case 3: {
+					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal2))) {
+						continue;
+					} else {
+						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal2).bind(signal_name));
+					}
+				} break;
+				}
+			}
+		}
+		
+		if (!has_user_signal(signal_name)) {
+			add_user_signal(signal_name);
+		}
+	}
 }
 
 void GDMLNode::set_markup(const Ref<GdmlScript> &p_markup) {

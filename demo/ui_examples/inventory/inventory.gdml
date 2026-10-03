@@ -18,8 +18,7 @@ let items = [
 	{ item_name: "Test Item"; item_icon: MyCoolButton.load_res("res://icon.svg"); }
 ]
 
-signal hover
-signal unhover
+signal item_gui_input
 
 GridContainer {
 	columns: 5
@@ -32,27 +31,30 @@ GridContainer {
 		PanelContainer {
 			custom_minimum_size: item_size
 			$panel: stylebox
-			@mouse_entered: hover
-			@mouse_exited: unhover
 			
 			DropTarget {
-				TextureRect(anchors(0, 0, 1, 1)) {
-					texture: item_info.item_icon
-					expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
-				}
-				
-				ColorRect {
-					color: Color {
-						r: 0; g: 0; b: 0;
-						a: 0.5;
+				Control(anchors(0, 0, 1, 1)) {
+					ColorRect {
+						color: Color {
+							r: 0; g: 0; b: 0;
+							a: 0.5;
+						}
+						mouse_filter: Control.MOUSE_FILTER_IGNORE
 					}
-				}
-				
-				Button(anchors(0, 0, 1, 1)) {
-					$normal: StyleBoxEmpty {}
 					
-					Label {
-						text: item_info.item_name
+					TextureRect(anchors(0, 0, 1, 1)) {
+						texture: item_info.item_icon
+						expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
+						mouse_filter: Control.MOUSE_FILTER_IGNORE
+					}
+					
+					Button(anchors(0, 0, 1, 1)) {
+						@gui_input: item_gui_input
+						$normal: StyleBoxEmpty {}
+						
+						Label {
+							text: item_info.item_name
+						}
 					}
 				}
 			}

@@ -23,6 +23,10 @@ void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_signals"), &GDMLResult::get_signals);
 }
 
+GDMLResult::GDMLResult() {
+	add_user_signal("signals_changed");
+}
+
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
 	m_variables[p_name] = atom;
 }
@@ -31,20 +35,98 @@ void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName 
 	Object *target_object = ObjectDB::get_instance(target);
 
 	if (target_object) {
-		if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal))) {
-			return;
-		}
+		for (Variant item : target_object->get_signal_list()) {
+			Dictionary signal_info = item;
+			if (signal_info["name"] == String(target_signal)) {
+				Array args = signal_info["args"];
+				switch (args.size())
+				{
+				case 0: {
+					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal0))) {
+						return;
+					} else {
+						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal0).bind(signal_name, target_object));
+					}
 
-		target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal).bind(signal_name));
-		
-		if (!has_user_signal(signal_name)) {
-			add_user_signal(signal_name);
+					if (!has_user_signal(signal_name)) {
+						Dictionary target_arg;
+						target_arg["name"] = "target";
+						target_arg["type"] = Variant::OBJECT;
+						add_user_signal(signal_name, Array({
+							target_arg
+						}));
+						m_signals.push_back(signal_name);
+					}
+				} break;
+				case 1: {
+					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal1))) {
+						return;
+					} else {
+						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal1).bind(signal_name, target_object));
+					}
+
+					if (!has_user_signal(signal_name)) {
+						Dictionary target_arg;
+						target_arg["name"] = "target";
+						target_arg["type"] = Variant::OBJECT;
+						Dictionary arg1_arg;
+						arg1_arg["name"] = "arg1";
+						arg1_arg["type"] = Variant::NIL;
+						add_user_signal(signal_name, Array({
+							target_arg,
+							arg1_arg
+						}));
+						m_signals.push_back(signal_name);
+					}
+				} break;
+				case 2: {
+					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal2))) {
+						return;
+					} else {
+						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal2).bind(signal_name, target_object));
+					}
+
+					if (!has_user_signal(signal_name)) {
+						Dictionary target_arg;
+						target_arg["name"] = "target";
+						target_arg["type"] = Variant::OBJECT;
+						Dictionary arg1_arg;
+						arg1_arg["name"] = "arg1";
+						arg1_arg["type"] = Variant::NIL;
+						Dictionary arg2_arg;
+						arg2_arg["name"] = "arg1";
+						arg2_arg["type"] = Variant::NIL;
+						add_user_signal(signal_name, Array({
+							target_arg,
+							arg1_arg,
+							arg2_arg
+						}));
+						m_signals.push_back(signal_name);
+					}
+				} break;
+				}
+			}
 		}
+		
+		emit_signal("signals_changed");
 	}
 }
 
-void GDMLResult::on_defined_signal(String signal_name) {
-	emit_signal(signal_name);
+template<typename... Args>
+void GDMLResult::on_defined_signal(Args ...args, String signal_name, Variant target) {
+	emit_signal(signal_name, target, ...args);
+}
+
+void GDMLResult::on_defined_signal0(String signal_name, Variant target) {
+	emit_signal(signal_name, target);
+}
+
+void GDMLResult::on_defined_signal1(Variant arg1, String signal_name, Variant target) {
+	emit_signal(signal_name, target, arg1);
+}
+
+void GDMLResult::on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target) {
+	emit_signal(signal_name, target, arg1, arg2);
 }
 
 Array GDMLResult::get_nodes() {
@@ -102,8 +184,6 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 				out->connect_signal(pair.first, target_pair.first, target_signal);
 			}
 		}
-
-		out->m_signals.push_back(pair.first);
 	}
 
 	return out;

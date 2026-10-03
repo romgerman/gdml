@@ -27,14 +27,20 @@ protected:
 	Array m_nodes;
 	Dictionary m_variables;
 	Array m_signals;
-
+	
 	static void _bind_methods();
-
+	
 public:
+	GDMLResult();
+	
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
 
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
-	void on_defined_signal(String signal_name);
+	template<typename... Args>
+	void on_defined_signal(Args ...args, String signal_name, Variant target);
+	void on_defined_signal0(String signal_name, Variant target);
+	void on_defined_signal1(Variant arg1, String signal_name, Variant target);
+	void on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target);
 
 	// API
 
