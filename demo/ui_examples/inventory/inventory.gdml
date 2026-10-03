@@ -7,6 +7,18 @@ let stylebox = StyleBoxFlat {
 	bg_color: Color.BLACK
 }
 
+let dt_stylebox = StyleBoxFlat {
+	border_color: Color.YELLOW
+	border_width_left: 2
+	border_width_right: 2
+	border_width_top: 2
+	border_width_bottom: 2
+	expand_margin_left: 2
+	expand_margin_right: 2
+	expand_margin_top: 2
+	expand_margin_bottom: 2
+}
+
 let ItemComponent = Control {
 	anchor_left: 0.0
 	anchor_right: 1.0
@@ -27,13 +39,18 @@ GridContainer {
 	anchor_top: 0.0
 	anchor_bottom: 1.0
 	
-	@for item_info in items {
+	@for i, item_info in items {
 		PanelContainer {
 			custom_minimum_size: item_size
 			$panel: stylebox
 			
 			DropTarget {
+				index: i
+				
 				Control(anchors(0, 0, 1, 1)) {
+					name: "Item"
+					@gui_input: item_gui_input
+					
 					ColorRect {
 						color: Color {
 							r: 0; g: 0; b: 0;
@@ -49,8 +66,8 @@ GridContainer {
 					}
 					
 					Button(anchors(0, 0, 1, 1)) {
-						@gui_input: item_gui_input
 						$normal: StyleBoxEmpty {}
+						mouse_filter: Control.MOUSE_FILTER_PASS
 						
 						Label {
 							text: item_info.item_name

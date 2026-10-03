@@ -404,50 +404,11 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 }
 
 void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
-	Variant range_variant;
 	std::shared_ptr<std::vector<godot::Variant>> nodes = std::make_shared<std::vector<Variant>>();
-	String iter_name;
-
-	if (statement.iter_name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-		iter_name = static_cast<IdentifierNode &>(*statement.iter_name).name;
-	} else {
-		print_error("Cannot use non-identifier expressions in for-statement iterator");
-		return;
-	}
 	
-	if (resolveExpression(range_variant, *statement.range, range_variant)) {
-		if (range_variant.get_type() == Variant::ARRAY) {
-			Array arr = range_variant;
-			for (Variant item : arr) {
-				m_context->set_data(iter_name, item);
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-					m_context->push_active_context();
-					Variant result_node = visitNodeDefinition(*item);
-					m_context->pop_active_context();
-					out_nodes.push_back(result_node);
-					nodes->push_back(result_node);
-				}
-			}
-			m_context->set_data(iter_name, Variant());
-		} else {
-			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
-				m_context->set_data(iter_name, i);
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-					m_context->push_active_context();
-					Variant result_node = visitNodeDefinition(*item);
-					m_context->pop_active_context();
-					out_nodes.push_back(result_node);
-					nodes->push_back(result_node);
-				}
-			}
-			m_context->set_data(iter_name, Variant());
-		}
-	} else {
-		print_error("Couldn't resolve range expression of for-statement");
-		return;
-	}
+	renderForStatement(statement, nodes, out_nodes);
 
-	std::function<void()> render_callback = [nodes, &statement, this, iter_name]() {
+	std::function<void()> render_callback = [nodes, &statement, this]() {
 		if (nodes->size() == 0) {
 			return;
 		}
@@ -467,73 +428,92 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 
 		nodes->clear();
 
-		Variant range_variant;
-		if (resolveExpression(range_variant, *statement.range, range_variant)) {
-			if (range_variant.get_type() == Variant::ARRAY) {
-				Array arr = range_variant;
-				for (Variant item : arr) {
-					m_context->set_data(iter_name, item);
-					for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-						m_context->push_active_context();
-						Variant result_node = visitNodeDefinition(*item);
-						m_context->pop_active_context();
+		std::vector<Variant> cb_nodes;
+		renderForStatement(statement, nodes, cb_nodes);
 
-						Node *node = Object::cast_to<Node>(result_node);
-						if (node) {
-							parent->add_child(node);
-							node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-							nodes->push_back(result_node);
-						}
-					}
-				}
-				m_context->set_data(iter_name, Variant());
-			} else {
-				for (int32_t i = 0; i < (int32_t)range_variant; i++) {
-					m_context->set_data(iter_name, i);
-					for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
-						m_context->push_active_context();
-						Variant result_node = visitNodeDefinition(*item);
-						m_context->pop_active_context();
-
-						Node *node = Object::cast_to<Node>(result_node);
-						if (node) {
-							parent->add_child(node);
-							node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-							nodes->push_back(result_node);
-						}
-					}
-				}
-				m_context->set_data(iter_name, Variant());
-			}
-
-			m_context->flush_deferred_properties();
-		} else {
-			print_error("Couldn't resolve range expression of for-statement");
-		}
-
-		for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
-			std::vector<godot::ObjectID> to_remove;
-
-			for (std::pair<godot::ObjectID, std::set<StringName>> target_pair : pair.second) {
-				Object *target_obj = ObjectDB::get_instance(target_pair.first);
-
-				if (target_obj) {
-					for (StringName target_signal : target_pair.second) {
-						m_result->connect_signal(pair.first, target_pair.first, target_signal);
-					}
-				} else {
-					to_remove.push_back(target_pair.first);
-				}
-			}
-
-			for (ObjectID id : to_remove) {
-				m_context->m_signals[pair.first].erase(id);
+		for (auto result_node : cb_nodes) {
+			Node *node = Object::cast_to<Node>(result_node);
+			if (node) {
+				parent->add_child(node);
+				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+				nodes->push_back(result_node);
 			}
 		}
+		
+		m_context->flush_deferred_properties();
+		updateSignals();
 	};
 
 	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
 		atom->add_callback(render_callback);
+	}
+}
+
+void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<Variant> &out_nodes) {
+	String iter_name;
+
+	if (statement.iter_name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		iter_name = static_cast<IdentifierNode &>(*statement.iter_name).name;
+	} else {
+		printError("Cannot use non-identifier expressions in for-statement iterator", statement);
+		return;
+	}
+
+	String iter_name2;
+	bool has_iter2 = false;
+
+	if (statement.iter_name2) {
+		if (statement.iter_name2->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			iter_name2 = static_cast<IdentifierNode &>(*statement.iter_name2).name;
+			has_iter2 = true;
+		} else {
+			printError("Cannot use non-identifier expressions in for-statement iterator", statement);
+			return;
+		}
+	}
+
+	Variant range_variant;
+	if (resolveExpression(range_variant, *statement.range, range_variant)) {
+		if (range_variant.get_type() == Variant::ARRAY) {
+			Array arr = range_variant;
+			for (int64_t i = 0; i < arr.size(); i++) {
+				Variant item = arr[i];
+				if (has_iter2) {
+					m_context->set_data(iter_name, i);
+					m_context->set_data(iter_name2, item);
+				} else {
+					m_context->set_data(iter_name, item);
+				}
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					m_context->push_active_context();
+					Variant result_node = visitNodeDefinition(*item);
+					m_context->pop_active_context();
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
+			}
+			if (has_iter2) {
+				m_context->set_data(iter_name, Variant());
+				m_context->set_data(iter_name2, Variant());
+			} else {
+				m_context->set_data(iter_name, Variant());
+			}
+		} else {
+			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
+				m_context->set_data(iter_name, i);
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					m_context->push_active_context();
+					Variant result_node = visitNodeDefinition(*item);
+					m_context->pop_active_context();
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
+			}
+			m_context->set_data(iter_name, Variant());
+		}
+	} else {
+		print_error("Couldn't resolve range expression of for-statement");
+		return;
 	}
 }
 
@@ -1129,6 +1109,28 @@ bool TreeRendererVisitor::doesExpressionHaveSelf(godot::ExpressionNode &expr_nod
 void TreeRendererVisitor::subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant) {
 	Ref<reactive::GDMLAtom> atom = m_context->get_variable(p_variable);
 	atom->add_dependency(variant, p_prop);
+}
+
+void TreeRendererVisitor::updateSignals() {
+	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
+		std::vector<godot::ObjectID> to_remove;
+
+		for (std::pair<godot::ObjectID, std::set<StringName>> target_pair : pair.second) {
+			Object *target_obj = ObjectDB::get_instance(target_pair.first);
+
+			if (target_obj) {
+				for (StringName target_signal : target_pair.second) {
+					m_result->connect_signal(pair.first, target_pair.first, target_signal);
+				}
+			} else {
+				to_remove.push_back(target_pair.first);
+			}
+		}
+
+		for (ObjectID id : to_remove) {
+			m_context->m_signals[pair.first].erase(id);
+		}
+	}
 }
 
 void TreeRendererVisitor::printError(const godot::String p_error, const godot::GdmlNode &node) {

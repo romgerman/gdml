@@ -69,6 +69,7 @@ private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
+	void renderForStatement(godot::ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
@@ -85,6 +86,7 @@ private:
 	bool doesExpressionHaveSelf(godot::ExpressionNode &expr_node);
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
+	void updateSignals();
 
 	void printError(const godot::String p_error, const godot::GdmlNode &node);
 };

@@ -74,6 +74,7 @@ module.exports = grammar({
     for_statement: $ => seq(
       "@for",
       field("iter_name", $.identifier),
+      optional(seq(',', field("iter_name2", $.identifier))),
       "in",
       field("range", choice($.identifier, $.number, $.array_expression, $.member_expression)),
       '{',

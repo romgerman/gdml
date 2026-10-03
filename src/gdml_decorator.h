@@ -15,8 +15,10 @@ protected:
 
 public:
 	virtual void modify(godot::Control *p_control, godot::Array p_args);
+	virtual godot::Variant modify_resource(godot::Variant *p_resource, godot::Array p_args);
 
 	GDVIRTUAL2(modify, godot::Variant, godot::Array);
+	GDVIRTUAL2R(godot::Variant, modify_resource, godot::Variant, godot::Array);
 };
 
 }

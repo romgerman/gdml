@@ -138,6 +138,7 @@ struct NodeDefinitionNode;
 
 struct ForStatementNode : public StatementNode {
 	std::unique_ptr<ExpressionNode> iter_name;
+	std::unique_ptr<ExpressionNode> iter_name2;
 	std::unique_ptr<ExpressionNode> range;
 	std::vector<std::unique_ptr<NodeDefinitionNode>> statements;
 };

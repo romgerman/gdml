@@ -259,6 +259,13 @@ std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node 
 		}
 	}
 
+	ts::Node iter_node2 = node.getChildByFieldName("iter_name2");
+	if (!iter_node2.isNull()) {
+		if (iter_node2.isType("identifier")) {
+			out->iter_name2 = visitIdentifier(iter_node2, text);
+		}
+	}
+
 	ts::Node range_node = node.getChildByFieldName("range");
 	if (!range_node.isNull()) {
 		if (range_node.isType("identifier")) {

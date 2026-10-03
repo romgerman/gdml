@@ -137,6 +137,16 @@
           }
         ]
       },
+      "iter_name2": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
       "range": {
         "multiple": false,
         "required": true,
