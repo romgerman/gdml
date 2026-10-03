@@ -397,6 +397,14 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			for (Variant &item : nodes) {
 				obj_as_node->add_child(Object::cast_to<Node>(item));
 			}
+		} else if (statement->type == GdmlNodeType::IF_STATEMENT) {
+			IfStatementNode *for_node = static_cast<IfStatementNode *>(statement.get());
+			std::vector<Variant> nodes;
+			visitIfStatement(*for_node, nodes);
+
+			for (Variant &item : nodes) {
+				obj_as_node->add_child(Object::cast_to<Node>(item));
+			}
 		}
 	}
 
@@ -512,8 +520,78 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 			m_context->set_data(iter_name, Variant());
 		}
 	} else {
-		print_error("Couldn't resolve range expression of for-statement");
-		return;
+		printError("Cannot resolve range expression of for-statement", *statement.range);
+	}
+}
+
+void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes) {
+	std::shared_ptr<std::vector<godot::Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	
+	renderIfStatement(statement, nodes, out_nodes);
+
+	std::function<void()> render_callback = [nodes, &statement, this]() {
+		if (nodes->size() == 0) {
+			return;
+		}
+
+		Node* parent = Object::cast_to<Node>((*nodes)[0])->get_parent();
+
+		if (!parent) {
+			return;
+		}
+
+		for (Variant item : *nodes) {
+			Node *node = Object::cast_to<Node>(item);
+			if (node) {
+				node->queue_free();
+			}
+		}
+
+		nodes->clear();
+
+		std::vector<Variant> cb_nodes;
+		renderIfStatement(statement, nodes, cb_nodes);
+
+		for (auto result_node : cb_nodes) {
+			Node *node = Object::cast_to<Node>(result_node);
+			if (node) {
+				parent->add_child(node);
+				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+				nodes->push_back(result_node);
+			}
+		}
+		
+		m_context->flush_deferred_properties();
+		updateSignals();
+	};
+
+	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
+		atom->add_callback(render_callback);
+	}
+}
+
+void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes) {
+	Variant truthy_variant;
+	if (resolveExpression(truthy_variant, *statement.expression, truthy_variant)) {
+		if (truthy_variant) {
+			for (std::unique_ptr<NodeDefinitionNode> &item : statement.if_statements) {
+				m_context->push_active_context();
+				Variant result_node = visitNodeDefinition(*item);
+				m_context->pop_active_context();
+				out_nodes.push_back(result_node);
+				nodes->push_back(result_node);
+			}
+		} else {
+			for (std::unique_ptr<NodeDefinitionNode> &item : statement.else_statements) {
+				m_context->push_active_context();
+				Variant result_node = visitNodeDefinition(*item);
+				m_context->pop_active_context();
+				out_nodes.push_back(result_node);
+				nodes->push_back(result_node);
+			}
+		}
+	} else {
+		printError("Cannot resolve if-statement expression", *statement.expression);
 	}
 }
 
@@ -895,7 +973,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 		} break;
 		case GdmlNodeType::NUMBER_EXPRESSION: {
 			NumberNode node = static_cast<NumberNode &>(expr_node);
-			value = node.isFloat ? node.getFloat() : node.getInteger();
+			value = Variant(node.isFloat ? node.getFloat() : node.getInteger());
 		} break;
 		case GdmlNodeType::BOOLEAN_EXPRESSION: {
 			BooleanNode &node = static_cast<BooleanNode &>(expr_node);
@@ -1070,6 +1148,118 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			} else {
 				print_error("Other types of expressions are not implemented for a function call");
 			}
+		} break;
+		case GdmlNodeType::BINARY_EXPRESSION: {
+			BinaryExpressionNode &node = static_cast<BinaryExpressionNode &>(expr_node);
+			
+			Variant left;
+			if (resolveExpression(root_variant, *node.left, left)) {
+				Variant right;
+				if (resolveExpression(root_variant, *node.right, right)) {
+					switch (node.op)
+					{
+					case GDMLOperator::AND:
+						value = left && right;
+						break;
+					case GDMLOperator::OR:
+						value = left || right;
+						break;
+					case GDMLOperator::PLUS:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left + (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left + (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left + (float_t)right;
+						}
+						break;
+					case GDMLOperator::MINUS:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left - (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left - (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left - (float_t)right;
+						}
+						break;
+					case GDMLOperator::MUL:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left * (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left * (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left * (float_t)right;
+						}
+						break;
+					case GDMLOperator::DIV:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left / (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left / (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left / (float_t)right;
+						}
+						break;
+					case GDMLOperator::LESS_THAN:
+						value = left < right;
+						break;
+					case GDMLOperator::LESS_OR_EQUAL_THAN:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left <= (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left <= (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left <= (float_t)right;
+						}
+						break;
+					case GDMLOperator::GREATER_THAN:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left > (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left > (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left > (float_t)right;
+						}
+						break;
+					case GDMLOperator::GREATER_OR_EQUAL_THAN:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left >= (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left >= (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left >= (float_t)right;
+						}
+						break;
+					case GDMLOperator::EQUAL:
+						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
+							value = (int64_t)left == (int64_t)right;
+						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
+							value = (float_t)left == (float_t)right;
+						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
+									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
+							value = (float_t)left == (float_t)right;
+						} else {
+							value = left == right;
+						}
+						break;
+					case GDMLOperator::NOT_EQUAL:
+						value = left != right;
+						break;
+					}
+				} else {
+					printError("Cannot resolve right part of binary expression", node);
+				}
+			} else {
+				printError("Cannot resolve left part of binary expression", node);
+			}
+
 		} break;
 		default: {
 			print_error("Cannot resolve unknown expression type");

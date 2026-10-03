@@ -14,6 +14,18 @@ module.exports = grammar({
     /[\s\p{Zs}\uFEFF\u2028\u2029\u2060\u200B]/u
   ],
   word: $ => $.identifier,
+  precedences: $ => [
+    [
+      'member_expression',
+      'function_call',
+      'binary_times',
+      'binary_plus',
+      'binary_relation',
+      'binary_equality',
+      'logical_and',
+      'logical_or',
+    ]
+  ],
   rules: {
     source_file: $ => repeat($.definition),
     definition: $ => choice(
@@ -38,7 +50,7 @@ module.exports = grammar({
         $.theme_property_definition
       ))),
       field('statements', repeat(
-        choice($.node_definition, $.for_statement)
+        choice($.node_definition, $.for_statement, $.if_statement)
       )),
       '}'
     ),
@@ -81,6 +93,19 @@ module.exports = grammar({
       repeat($.node_definition),
       '}'
     ),
+    if_statement: $ => seq(
+      "@if",
+      field("condition", $.expression),
+      '{',
+      field("if", repeat($.node_definition)),
+      '}',
+      optional(seq(
+        "@else",
+        '{',
+        field("else", repeat($.node_definition)),
+        '}'
+      ))
+    ),
 
     // Expressions
     expression: $ => choice(
@@ -92,7 +117,8 @@ module.exports = grammar({
       $.array_expression,
       $.member_expression,
       $.dictionary_expression,
-      $.function_call
+      $.function_call,
+      $.binary_expression
     ),
     member_expression: $ => seq(
       choice($.self, $.identifier),
@@ -135,6 +161,26 @@ module.exports = grammar({
           $.expression
         ))
       )
+    ),
+    binary_expression: $ => choice(
+      ...[
+        ['&&', 'logical_and'],
+        ['||', 'logical_or'],
+        ['+', 'binary_plus'],
+        ['-', 'binary_plus'],
+        ['*', 'binary_times'],
+        ['/', 'binary_times'],
+        ['<', "binary_relation"],
+        ['<=', "binary_relation"],
+        ['==', "binary_equality"],
+        ['!=', "binary_equality"],
+        ['>=', "binary_relation"],
+        ['>', "binary_relation"],
+      ].map(([operator, precedence]) => prec.left(precedence, seq(
+        field("left", $.expression),
+        field("operator", operator),
+        field("right", $.expression)
+      )))
     ),
 
     // Primitives

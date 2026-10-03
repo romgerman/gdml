@@ -115,7 +115,7 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 		return error_color;
 	} else if (type == "comment") {
 		return comment_color;
-	} else if (type == "for_statement") {
+	} else if (type == "for_statement" || type == "if_statement") {
 		return control_flow_color;
 	} else if (type == "signal_definition" || type == "variable_definition") {
 		return keyword_color;

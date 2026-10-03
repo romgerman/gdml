@@ -66,7 +66,9 @@ enum class GdmlNodeType {
 	MEMBER_ACCESS_EXPRESSION,
 	SIGNAL_EXPRESSION,
 	FUNCTION_CALL,
+	BINARY_EXPRESSION,
 	FOR_STATEMENT,
+	IF_STATEMENT,
 	VARIABLE_DEFINITION,
 	SIGNAL_DEFINITION,
 	PROPERTY_DEFINITION,
@@ -74,6 +76,21 @@ enum class GdmlNodeType {
 	NODE_DEFINITION,
 	DEFINITION,
 	SOURCE_FILE
+};
+
+enum class GDMLOperator {
+	AND,
+	OR,
+	PLUS,
+	MINUS,
+	MUL,
+	DIV,
+	LESS_THAN,
+	LESS_OR_EQUAL_THAN,
+	EQUAL,
+	NOT_EQUAL,
+	GREATER_THAN,
+	GREATER_OR_EQUAL_THAN
 };
 
 struct GdmlNode {
@@ -93,7 +110,7 @@ struct NumberNode : public ExpressionNode {
 	String value;
 	bool isFloat;
 
-	uint32_t getInteger() const {
+	int64_t getInteger() const {
 		return value.to_int();
 	}
 
@@ -132,6 +149,12 @@ struct FunctionCallExpressionNode : public ExpressionNode {
 	std::vector<std::unique_ptr<ExpressionNode>> arguments;
 };
 
+struct BinaryExpressionNode : public ExpressionNode {
+	std::unique_ptr<ExpressionNode> left;
+	GDMLOperator op;
+	std::unique_ptr<ExpressionNode> right;
+};
+
 // Statements
 
 struct NodeDefinitionNode;
@@ -141,6 +164,12 @@ struct ForStatementNode : public StatementNode {
 	std::unique_ptr<ExpressionNode> iter_name2;
 	std::unique_ptr<ExpressionNode> range;
 	std::vector<std::unique_ptr<NodeDefinitionNode>> statements;
+};
+
+struct IfStatementNode : public StatementNode {
+	std::unique_ptr<ExpressionNode> expression;
+	std::vector<std::unique_ptr<NodeDefinitionNode>> if_statements;
+	std::vector<std::unique_ptr<NodeDefinitionNode>> else_statements;
 };
 
 struct VariableDefinitionNode : public StatementNode {
@@ -206,6 +235,7 @@ private:
 	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<ForStatementNode> visitForStatement(ts::Node node, CharString &text);
+	std::unique_ptr<IfStatementNode> visitIfStatement(ts::Node node, CharString &text);
 
 	std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, CharString &text);
 	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, CharString &text);
@@ -213,6 +243,7 @@ private:
 	std::unique_ptr<DictionaryExpressionNode> visitDictionaryExpression(ts::Node node, CharString &text);
 	std::unique_ptr<SignalExpressionNode> visitSignalExpression(ts::Node node, CharString &text);
 	std::unique_ptr<FunctionCallExpressionNode> visitFunctionCallExpression(ts::Node node, CharString &text);
+	std::unique_ptr<BinaryExpressionNode> visitBinaryExpression(ts::Node node, CharString &text);
 
 	std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, CharString &text);
 	std::unique_ptr<NumberNode> visitNumber(ts::Node node, CharString &text);

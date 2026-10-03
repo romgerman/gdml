@@ -70,6 +70,8 @@ private:
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 	void renderForStatement(godot::ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
+	void visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes);
+	void renderIfStatement(godot::IfStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);

@@ -65,6 +65,14 @@ GridContainer {
 						mouse_filter: Control.MOUSE_FILTER_IGNORE
 					}
 					
+					@if i == 0 {
+						Button {
+							Label {
+								text: "inside if"
+							}
+						}
+					}
+					
 					Button(anchors(0, 0, 1, 1)) {
 						$normal: StyleBoxEmpty {}
 						mouse_filter: Control.MOUSE_FILTER_PASS

@@ -141,6 +141,8 @@ std::unique_ptr<NodeDefinitionNode> godot::GdmlParser::visitNodeDefinition(ts::N
 			out->statements.push_back(visitNodeDefinition(child_node, text));
 		} else if (child_node.isType("for_statement")) {
 			out->statements.push_back(visitForStatement(child_node, text));
+		} else if (child_node.isType("if_statement")) {
+			out->statements.push_back(visitIfStatement(child_node, text));
 		} else if (child_node.isType("variable_definition")) {
 			out->variables.push_back(visitVariableDefinition(child_node, text));
 		} else if (child_node.isType("function_call")) {
@@ -292,6 +294,47 @@ std::unique_ptr<ForStatementNode> godot::GdmlParser::visitForStatement(ts::Node 
 	return out;
 }
 
+std::unique_ptr<IfStatementNode> godot::GdmlParser::visitIfStatement(ts::Node node, CharString &text) {
+	std::unique_ptr<IfStatementNode> out = std::make_unique<IfStatementNode>();
+	out->type = GdmlNodeType::IF_STATEMENT;
+	out->location = parser::GdmlSourceLocation(node);
+
+	ts::Node expr_node = node.getChildByFieldName("condition");
+	if (!expr_node.isNull()) {
+		if (expr_node.isType("expression")) {
+			out->expression = visitExpression(expr_node, text);
+		}
+	}
+
+	ts::Node if_node = node.getChildByFieldName("if");
+	if (!if_node.isNull()) {
+		for (uint32_t i = 0; i < if_node.getChildCount(); i++) {
+			ts::Node child_node = node.getChild(i);
+
+			if (child_node.isType("node_definition")) {
+				out->if_statements.push_back(visitNodeDefinition(child_node, text));
+			} else if (child_node.isType("comment") || child_node.isError()) {
+				continue;
+			}
+		}
+	}
+
+	ts::Node else_node = node.getChildByFieldName("else");
+	if (!else_node.isNull()) {
+		for (uint32_t i = 0; i < else_node.getChildCount(); i++) {
+			ts::Node child_node = node.getChild(i);
+
+			if (child_node.isType("node_definition")) {
+				out->else_statements.push_back(visitNodeDefinition(child_node, text));
+			} else if (child_node.isType("comment") || child_node.isError()) {
+				continue;
+			}
+		}
+	}
+
+	return out;
+}
+
 std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
 	out->type = GdmlNodeType::UNKNOWN;
@@ -318,6 +361,8 @@ std::unique_ptr<ExpressionNode> godot::GdmlParser::visitExpression(ts::Node node
 			return visitMemberExpression(child_node, text);
 		} else if (child_node.isType("function_call")) {
 			return visitFunctionCallExpression(child_node, text);
+		} else if (child_node.isType("binary_expression")) {
+			return visitBinaryExpression(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -438,6 +483,55 @@ std::unique_ptr<FunctionCallExpressionNode> godot::GdmlParser::visitFunctionCall
 	return out;
 }
 
+std::unique_ptr<BinaryExpressionNode> godot::GdmlParser::visitBinaryExpression(ts::Node node, CharString &text) {
+	std::unique_ptr<BinaryExpressionNode> out = std::make_unique<BinaryExpressionNode>();
+	out->type = GdmlNodeType::BINARY_EXPRESSION;
+	out->location = parser::GdmlSourceLocation(node);
+
+	ts::Node left_node = node.getChildByFieldName("left");
+	if (!left_node.isNull()) {
+		out->left = visitExpression(left_node, text);
+	}
+
+	ts::Node right_node = node.getChildByFieldName("right");
+	if (!right_node.isNull()) {
+		out->right = visitExpression(right_node, text);
+	}
+
+	ts::Node op_node = node.getChildByFieldName("operator");
+	if (!op_node.isNull()) {
+		String op_str = op_node.getText(text);
+
+		if (op_str == "&&") {
+			out->op = GDMLOperator::AND;
+		} else if (op_str == "||") {
+			out->op = GDMLOperator::OR;
+		} else if (op_str == "+") {
+			out->op = GDMLOperator::PLUS;
+		} else if (op_str == "-") {
+			out->op = GDMLOperator::MINUS;
+		} else if (op_str == "*") {
+			out->op = GDMLOperator::MUL;
+		} else if (op_str == "/") {
+			out->op = GDMLOperator::DIV;
+		} else if (op_str == "<") {
+			out->op = GDMLOperator::LESS_THAN;
+		} else if (op_str == "<=") {
+			out->op = GDMLOperator::LESS_OR_EQUAL_THAN;
+		} else if (op_str == "==") {
+			out->op = GDMLOperator::EQUAL;
+		} else if (op_str == "!=") {
+			out->op = GDMLOperator::NOT_EQUAL;
+		} else if (op_str == ">=") {
+			out->op = GDMLOperator::GREATER_OR_EQUAL_THAN;
+		} else if (op_str == ">") {
+			out->op = GDMLOperator::GREATER_THAN;
+		}
+	}
+
+	return out;
+}
+
 std::unique_ptr<IdentifierNode> godot::GdmlParser::visitIdentifier(ts::Node node, CharString &text) {
 	std::unique_ptr<IdentifierNode> out = std::make_unique<IdentifierNode>();
 	out->type = GdmlNodeType::IDENTIFIER_EXPRESSION;
@@ -452,7 +546,7 @@ std::unique_ptr<NumberNode> godot::GdmlParser::visitNumber(ts::Node node, CharSt
 	out->type = GdmlNodeType::NUMBER_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 	out->value = node.getText(text);
-	out->isFloat = out->value.contains(".");
+	out->isFloat = !out->value.is_valid_int();
 
 	return out;
 }
