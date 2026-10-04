@@ -7,17 +7,10 @@ let stylebox = StyleBoxFlat {
 	bg_color: Color.BLACK
 }
 
-let dt_stylebox = StyleBoxFlat {
-	border_color: Color.YELLOW
-	border_width_left: 2
-	border_width_right: 2
-	border_width_top: 2
-	border_width_bottom: 2
-	expand_margin_left: 2
-	expand_margin_right: 2
-	expand_margin_top: 2
-	expand_margin_bottom: 2
-}
+let dt_stylebox = StyleBoxFlat(
+	border(2, 2, 2, 2, Color.YELLOW),
+	expand_margin(2, 2, 2, 2)
+) { }
 
 let inventory_size = 10
 let columns = 5
@@ -27,12 +20,8 @@ let items = [
 
 signal item_gui_input
 
-GridContainer {
+GridContainer(anchors(0, 0, 1, 1)) {
 	columns: columns
-	anchor_left: 0.0
-	anchor_right: 1.0
-	anchor_top: 0.0
-	anchor_bottom: 1.0
 	
 	@for i, item_info in items {
 		PanelContainer {

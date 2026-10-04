@@ -8,8 +8,8 @@ using namespace godot;
 namespace gdml {
 
 void GDMLDecorator::_bind_methods() {
-	GDVIRTUAL_BIND(modify);
-	GDVIRTUAL_BIND(modify_resource);
+	GDVIRTUAL_BIND(modify, "control", "args");
+	GDVIRTUAL_BIND(modify_resource, "resource", "args");
 }
 
 void GDMLDecorator::modify(Control *p_control, Array p_args) {

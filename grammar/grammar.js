@@ -26,6 +26,7 @@ module.exports = grammar({
       'logical_or',
     ],
     [$.node_definition, $._primary_expression],
+    [$.resource_definition, $._primary_expression],
     ['member', $.function_call, $.expression]
   ],
   rules: {
@@ -44,11 +45,11 @@ module.exports = grammar({
     // Statements
     node_definition: $ => seq(
       field('name', $.identifier),
-      optional(seq(
+      field('decorators', optional(seq(
         '(',
         optional(seq($.function_call, repeat(seq(',', $.function_call)))),
         ')'
-      )),
+      ))),
       '{',
       field('variables', repeat($.variable_definition)),
       field('properties', repeat(choice(
@@ -62,6 +63,11 @@ module.exports = grammar({
     ),
     resource_definition: $ => seq(
       field('name', $.identifier),
+      field('decorators', optional(seq(
+        '(',
+        optional(seq($.function_call, repeat(seq(',', $.function_call)))),
+        ')'
+      ))),
       '{',
       field('properties', repeat($.property_definition)),
       '}'

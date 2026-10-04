@@ -1118,6 +1118,65 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				}
 			}
 
+			for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
+				if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+					IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
+					String &decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
+
+					Dictionary class_info;
+
+					for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
+						if (String(ci.get("class", "")) == decorator_classname) {
+							class_info = ci;
+							break;
+						}
+					}
+
+					if (class_info.is_empty()) {
+						printError("Class with name '" + decorator_classname + "' is not found", node);
+						continue;
+					}
+
+					String path = class_info.get("path", "");
+					Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
+					if (script.is_null()) {
+						printError("Cannot load script associated with type '" + decorator_classname + "' by path " + path, node);
+						continue;
+					}
+					Variant decorator_variant = ClassDB::instantiate(script->get_instance_base_type());
+					Object *decorator_object = decorator_variant.get_validated_object();
+					if (!decorator_object) {
+						printError("Cannot construct decorator base class", *dec_fn);
+						continue;
+					}
+					decorator_object->set_script(script);
+
+					Array call_args;
+					call_args.push_back(resource_variant);
+					
+					Array args;
+					for (std::unique_ptr<ExpressionNode> &arg_node : dec_fn->arguments) {
+						Variant arg_value;
+						if (resolveExpression(root_variant, *arg_node, arg_value)) {
+							args.push_back(arg_value);
+						} else {
+							printError("Cannot resolve decorator argument", *arg_node);
+						}
+					}
+
+					call_args.push_back(args);
+
+					if (!decorator_object->has_method(StringName("modify_resource"))) {
+						printError("Decorator doesn't have a 'modify_resource' method", *dec_fn);
+						continue;
+					} else {
+						decorator_object->callv(StringName("modify_resource"), call_args);
+					}
+
+					memdelete(decorator_object);
+				}
+			}
+
 			value = resource_variant;
 		} break;
 		case GDMLNodeType::FUNCTION_CALL: {

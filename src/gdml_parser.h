@@ -198,6 +198,7 @@ struct PropertyDefinitionNode : public StatementNode {
 struct ResourceDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
+	std::vector<std::unique_ptr<FunctionCallExpressionNode>> decorators;
 };
 
 struct NodeDefinitionNode : public StatementNode {

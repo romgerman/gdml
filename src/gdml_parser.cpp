@@ -226,6 +226,8 @@ std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node,
 		} else if (child_node.isType("property_definition")) {
 			std::unique_ptr<PropertyDefinitionNode> def = visitProperty(child_node, text, false);
 			out->properties.push_back(std::move(def));
+		} else if (child_node.isType("function_call")) {
+			out->decorators.push_back(visitFunctionCallExpression(child_node, text));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
