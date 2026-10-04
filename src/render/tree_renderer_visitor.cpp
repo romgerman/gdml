@@ -408,6 +408,8 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			} else {
 				decorator_object->callv(StringName("modify"), call_args);
 			}
+
+			memdelete(decorator_object);
 		}
 	}
 

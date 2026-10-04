@@ -7,6 +7,8 @@
 
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/theme_db.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -110,14 +112,22 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 			for (const std::unique_ptr<ImportStatementNode> &statement : node->imports) {
 				node_stack.push_back(statement.get());
 			}
-			context_node = current_node;
 		} else if (current_node->type == GDMLNodeType::DEFINITION) {
 			DefinitionNode *node = (DefinitionNode *)current_node;
 			node_stack.push_back(node->statement.get());
-			context_node = current_node;
-		} else if (current_node->type == GDMLNodeType::IMPORT) {
-			context_node = current_node;
+		} else if (current_node->type == GDMLNodeType::NODE_DEFINITION) {
+			NodeDefinitionNode *node = (NodeDefinitionNode *)current_node;
+			for (const std::unique_ptr<StatementNode> &statement : node->statements) {
+				node_stack.push_back(statement.get());
+			}
+		} else if (current_node->type == GDMLNodeType::FOR_STATEMENT) {
+			ForStatementNode*node = (ForStatementNode *)current_node;
+			for (const std::unique_ptr<NodeDefinitionNode> &statement : node->statements) {
+				node_stack.push_back(statement.get());
+			}
 		}
+
+		context_node = current_node;
 	}
 	
 	Dictionary out;
@@ -138,17 +148,32 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 				
 				options.push_back(complete_option);
 			}
-		} else if (context_node->type == GDMLNodeType::DEFINITION) {
-			DefinitionNode *def_node = (DefinitionNode *)context_node;
+		} else if (context_node->type == GDMLNodeType::NODE_DEFINITION) {
+			NodeDefinitionNode *node = (NodeDefinitionNode *)context_node;
+			String node_name = node->name->name;
+
+			PackedStringArray classes = ClassDB::get_inheriters_from_class(StringName("Control"));
+			classes.push_back("Control");
+
+			for (String &name : classes) {
+				Dictionary complete_option;
+				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_CLASS;
+				complete_option["display"] = name;
+				complete_option["insert_text"] = name;
+				complete_option["default_value"] = Variant();
+				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
 			
-			if (def_node->statement->type == GDMLNodeType::NODE_DEFINITION) {
-				NodeDefinitionNode *node = (NodeDefinitionNode *)def_node->statement.get();
-				String node_name = node->name->name;
-		
-				if (ClassDB::class_exists(node_name)) {
-					TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
-		
-					for (Dictionary prop_info : props) {
+				options.push_back(complete_option);
+			}
+	
+			if (ClassDB::class_exists(node_name)) {
+				TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+	
+				for (Dictionary prop_info : props) {
+					uint64_t usage = (uint64_t)prop_info["usage"];
+					if (usage != PropertyUsageFlags::PROPERTY_USAGE_GROUP
+						|| usage != PropertyUsageFlags::PROPERTY_USAGE_SUBGROUP
+						|| usage != PropertyUsageFlags::PROPERTY_USAGE_CATEGORY) {
 						Dictionary complete_option;
 						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
 						complete_option["display"] = prop_info.get("name", "");
@@ -160,6 +185,26 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 					}
 				}
 
+				if (ClassDB::is_parent_class(node_name, StringName("Control"))) {
+					Ref<Theme> theme = ThemeDB::get_singleton()->get_default_theme();
+					PackedStringArray overrides_list;
+					overrides_list.append_array(theme->get_icon_list(node_name));
+					overrides_list.append_array(theme->get_font_list(node_name));
+					overrides_list.append_array(theme->get_color_list(node_name));
+					overrides_list.append_array(theme->get_constant_list(node_name));
+					overrides_list.append_array(theme->get_stylebox_list(node_name));
+
+					for (String &name : overrides_list) {
+						Dictionary complete_option;
+						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_NODE_PATH;
+						complete_option["display"] = name;
+						complete_option["insert_text"] = name;
+						complete_option["default_value"] = Variant();
+						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+					
+						options.push_back(complete_option);
+					}
+				}
 			}
 		}
 	}
@@ -220,13 +265,11 @@ bool GdmlScriptLanguage::_handles_global_class_type(const String &p_type) const 
 }
 
 PackedStringArray GdmlScriptLanguage::_get_string_delimiters() const {
-	return helpers::append_all(PackedStringArray(),
-			"\" \"");
+	return helpers::append_all(PackedStringArray(), "\" \"");
 }
 
 PackedStringArray GdmlScriptLanguage::_get_comment_delimiters() const {
-	return helpers::append_all(PackedStringArray(),
-			"#");
+	return helpers::append_all(PackedStringArray(), "#");
 }
 
 PackedStringArray GdmlScriptLanguage::_get_reserved_words() const {
