@@ -161,7 +161,7 @@ TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result) {
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
 
-	if (root_node.type == GdmlNodeType::SOURCE_FILE) {
+	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
 		m_context->push_active_context();
 		{
@@ -186,7 +186,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 	for (const std::unique_ptr<DefinitionNode> &definition : source_node.statements) {
 		switch (definition->statement->type)
 		{
-		case GdmlNodeType::NODE_DEFINITION: {
+		case GDMLNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode *node_def = static_cast<const NodeDefinitionNode *>(definition->statement.get());
 
 			m_context->push_active_context();
@@ -198,7 +198,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 			}
 			m_context->pop_active_context();
 		} break;
-		case GdmlNodeType::VARIABLE_DEFINITION: {
+		case GDMLNodeType::VARIABLE_DEFINITION: {
 			Variant value;
 			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
 
@@ -212,15 +212,15 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 				m_context->set_variable(var->name->name, Variant());
 			}
 		} break;
-		case GdmlNodeType::FOR_STATEMENT: {
+		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			visitForStatement(*statement, result.nodes);
 		} break;
-		case GdmlNodeType::IF_STATEMENT: {
+		case GDMLNodeType::IF_STATEMENT: {
 			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
 			visitIfStatement(*statement, result.nodes);
 		} break;
-		case GdmlNodeType::SIGNAL_DEFINITION: {
+		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
 			visitSignalDefinition(*def);
 		} break;
@@ -299,7 +299,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		if (property->is_theme_override) {
 			Control *control = Object::cast_to<Control>(root_variant);
 			if (control) {
-				if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 					setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
 				}
@@ -307,20 +307,20 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				printError("Trying to set theme override on a non-Control node", *property);
 			}
 		} else {
-			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				trySetVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
 				setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
-			} else if (property->name->type == GdmlNodeType::SIGNAL_EXPRESSION) {
+			} else if (property->name->type == GDMLNodeType::SIGNAL_EXPRESSION) {
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
-				if (signal_expression->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					const String signal_name = static_cast<IdentifierNode *>(signal_expression->name.get())->name;
-					if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION || property->value->type == GdmlNodeType::STRING_EXPRESSION) {
-						if (property->value->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+					if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION || property->value->type == GDMLNodeType::STRING_EXPRESSION) {
+						if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 							connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
-						} else if (property->value->type == GdmlNodeType::STRING_EXPRESSION) {
+						} else if (property->value->type == GDMLNodeType::STRING_EXPRESSION) {
 							connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
 						}
 					} else {
@@ -341,7 +341,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	}
 
 	for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
-		if (dec_fn->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
 			String &decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
 
@@ -400,7 +400,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	}
 
 	for (const std::unique_ptr<StatementNode> &statement : node.statements) {
-		if (statement->type == GdmlNodeType::NODE_DEFINITION) {
+		if (statement->type == GDMLNodeType::NODE_DEFINITION) {
 			const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
 			Variant child_variant = visitNodeDefinition(*child);
 
@@ -411,7 +411,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				assert(child_node);
 				obj_as_node->add_child(child_node);
 			}
-		} else if (statement->type == GdmlNodeType::FOR_STATEMENT) {
+		} else if (statement->type == GDMLNodeType::FOR_STATEMENT) {
 			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
 			visitForStatement(*for_node, nodes);
@@ -419,7 +419,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			for (Variant &item : nodes) {
 				obj_as_node->add_child(Object::cast_to<Node>(item));
 			}
-		} else if (statement->type == GdmlNodeType::IF_STATEMENT) {
+		} else if (statement->type == GDMLNodeType::IF_STATEMENT) {
 			IfStatementNode *for_node = static_cast<IfStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
 			visitIfStatement(*for_node, nodes);
@@ -482,7 +482,7 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
 	String iter_name;
 
-	if (statement.iter_name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+	if (statement.iter_name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		iter_name = static_cast<IdentifierNode &>(*statement.iter_name).name;
 	} else {
 		printError("Cannot use non-identifier expressions in for-statement iterator", statement);
@@ -493,7 +493,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 	bool has_iter2 = false;
 
 	if (statement.iter_name2) {
-		if (statement.iter_name2->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		if (statement.iter_name2->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			iter_name2 = static_cast<IdentifierNode &>(*statement.iter_name2).name;
 			has_iter2 = true;
 		} else {
@@ -794,7 +794,7 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std:
 void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
 	Control *control = Object::cast_to<Control>(variant);
 
-	if (value_node.type == GdmlNodeType::NUMBER_EXPRESSION) {
+	if (value_node.type == GDMLNodeType::NUMBER_EXPRESSION) {
 		NumberNode node = (NumberNode &)value_node;
 
 		if (control->has_theme_constant(prop_key)) {
@@ -802,7 +802,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		} else if (control->has_theme_font_size(prop_key)) {
 			control->add_theme_font_size_override(prop_key, node.getInteger());
 		}
-	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+	} else if (value_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		IdentifierNode &node = (IdentifierNode &)value_node;
 
 		if (m_context->has_variable(node.name)) {
@@ -831,7 +831,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 				}
 			}
 		}
-	} else if (value_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+	} else if (value_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 		const MemberExpressionNode &node = (MemberExpressionNode &)value_node;
 		Variant out_value;
 		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
@@ -861,7 +861,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 			}
 			print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
 		}
-	} else if (value_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
+	} else if (value_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
 		Variant resource_variant;
 
@@ -888,10 +888,10 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		}
 
 		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-			if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
 				setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
 			}
@@ -904,10 +904,10 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		} else if (control->has_theme_font(prop_key)) {
 			control->add_theme_font_override(prop_key, resource_variant);
 		}
-	} else if (value_node.type == GdmlNodeType::FUNCTION_CALL) {
+	} else if (value_node.type == GDMLNodeType::FUNCTION_CALL) {
 		const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)value_node;
 
-		if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+		if (node.name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
 
 			if (m_context->has_variable(name_node->name)) {
@@ -993,19 +993,19 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 
 bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNode &expr_node, Variant &value) {
 	switch (expr_node.type) {
-		case GdmlNodeType::STRING_EXPRESSION: {
+		case GDMLNodeType::STRING_EXPRESSION: {
 			StringNode &node = static_cast<StringNode &>(expr_node);
 			value = node.value;
 		} break;
-		case GdmlNodeType::NUMBER_EXPRESSION: {
+		case GDMLNodeType::NUMBER_EXPRESSION: {
 			NumberNode node = static_cast<NumberNode &>(expr_node);
 			value = Variant(node.isFloat ? node.getFloat() : node.getInteger());
 		} break;
-		case GdmlNodeType::BOOLEAN_EXPRESSION: {
+		case GDMLNodeType::BOOLEAN_EXPRESSION: {
 			BooleanNode &node = static_cast<BooleanNode &>(expr_node);
 			value = node.value;
 		} break;
-		case GdmlNodeType::IDENTIFIER_EXPRESSION: {
+		case GDMLNodeType::IDENTIFIER_EXPRESSION: {
 			IdentifierNode &node = static_cast<IdentifierNode &>(expr_node);
 			Variant out_value;
 			if (getPropertyValue(root_variant, node.name, out_value)) {
@@ -1015,7 +1015,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				return false;
 			}
 		} break;
-		case GdmlNodeType::ARRAY_EXPRESSION: {
+		case GDMLNodeType::ARRAY_EXPRESSION: {
 			ArrayExpressionNode &node = static_cast<ArrayExpressionNode &>(expr_node);
 			Array out_arr;
 
@@ -1028,12 +1028,12 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 
 			value = out_arr;
 		} break;
-		case GdmlNodeType::DICTIONARY_EXPRESSION: {
+		case GDMLNodeType::DICTIONARY_EXPRESSION: {
 			DictionaryExpressionNode &node = static_cast<DictionaryExpressionNode &>(expr_node);
 			Dictionary out_dict;
 
 			for (const std::unique_ptr<PropertyDefinitionNode> &item_node : node.values) {
-				if (item_node->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				if (item_node->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					String &name = static_cast<IdentifierNode *>(item_node->name.get())->name;
 					Variant out_value;
 					if (resolveExpression(root_variant, *item_node->value.get(), out_value)) {
@@ -1044,7 +1044,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 
 			value = out_dict;
 		} break;
-		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
+		case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
 			MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);
 			Variant out_value;
 			if (getDeepPropertyValue(root_variant, node.path, out_value)) {
@@ -1058,7 +1058,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				return false;
 			}
 		} break;
-		case GdmlNodeType::RESOURCE_DEFINITION: {
+		case GDMLNodeType::RESOURCE_DEFINITION: {
 			ResourceDefinitionNode &node = static_cast<ResourceDefinitionNode &>(expr_node);
 			Variant resource_variant;
 
@@ -1085,10 +1085,10 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			}
 
 			for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-				if (property->name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+				if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 					setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
-				} else if (property->name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+				} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 					const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
 					setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
 				}
@@ -1096,7 +1096,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 
 			value = resource_variant;
 		} break;
-		case GdmlNodeType::FUNCTION_CALL: {
+		case GDMLNodeType::FUNCTION_CALL: {
 			const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)expr_node;
 
 			// if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
@@ -1126,7 +1126,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			// 		}
 			// 	}
 			// } else 
-			if (node.name->type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+			if (node.name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 				MemberExpressionNode *name_node = static_cast<MemberExpressionNode *>(node.name.get());
 
 				if (name_node->path.size() < 2) {
@@ -1175,7 +1175,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				print_error("Other types of expressions are not implemented for a function call");
 			}
 		} break;
-		case GdmlNodeType::BINARY_EXPRESSION: {
+		case GDMLNodeType::BINARY_EXPRESSION: {
 			BinaryExpressionNode &node = static_cast<BinaryExpressionNode &>(expr_node);
 			
 			Variant left;
@@ -1297,23 +1297,23 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 }
 
 bool TreeRendererVisitor::doesExpressionHaveSelf(ExpressionNode &expr_node) {
-	if (expr_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
+	if (expr_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		return static_cast<IdentifierNode &>(expr_node).name == "self";
-	} else if (expr_node.type == GdmlNodeType::MEMBER_ACCESS_EXPRESSION) {
+	} else if (expr_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 		return static_cast<MemberExpressionNode &>(expr_node).path[0]->name == "self";
-	} else if (expr_node.type == GdmlNodeType::ARRAY_EXPRESSION) {
+	} else if (expr_node.type == GDMLNodeType::ARRAY_EXPRESSION) {
 		for (std::unique_ptr<ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr_node).values) {
 			return doesExpressionHaveSelf(*value);
 		}
-	} else if (expr_node.type == GdmlNodeType::DICTIONARY_EXPRESSION) {
+	} else if (expr_node.type == GDMLNodeType::DICTIONARY_EXPRESSION) {
 		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<DictionaryExpressionNode &>(expr_node).values) {
 			return doesExpressionHaveSelf(*value->value);
 		}
-	} else if (expr_node.type == GdmlNodeType::RESOURCE_DEFINITION) {
+	} else if (expr_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
 		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<ResourceDefinitionNode &>(expr_node).properties) {
 			return doesExpressionHaveSelf(*value->value);
 		}
-	} else if (expr_node.type == GdmlNodeType::FUNCTION_CALL) {
+	} else if (expr_node.type == GDMLNodeType::FUNCTION_CALL) {
 		for (std::unique_ptr<ExpressionNode> &value : static_cast<FunctionCallExpressionNode &>(expr_node).arguments) {
 			return doesExpressionHaveSelf(*value);
 		}

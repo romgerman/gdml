@@ -1,5 +1,3 @@
-import CustomButton from "res://custom_button.tscn"
-
 let item_size = Vector2 {
 	x: 100
 	y: 100
@@ -75,8 +73,6 @@ GridContainer {
 							text: item_info.item_name
 						}
 					}
-					
-					CustomButton {}
 				}
 			}
 		}

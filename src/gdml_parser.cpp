@@ -58,7 +58,7 @@ std::unique_ptr<SourceFileNode> GdmlParser::parse(const String &text) {
 	collectSyntaxErrors(root_node);
 
 	std::unique_ptr<SourceFileNode> out = std::make_unique<SourceFileNode>();
-	out->type = GdmlNodeType::SOURCE_FILE;
+	out->type = GDMLNodeType::SOURCE_FILE;
 	out->location = parser::GdmlSourceLocation(root_node);
 
 	for (uint32_t i = 0; i < root_node.getNamedChildCount(); i++) {
@@ -100,7 +100,7 @@ void GdmlParser::collectSyntaxErrors(ts::Node node) {
 
 std::unique_ptr<ImportStatementNode> GdmlParser::visitImport(ts::Node node, CharString &text) {
 	std::unique_ptr<ImportStatementNode> out = std::make_unique<ImportStatementNode>();
-	out->type = GdmlNodeType::IMPORT;
+	out->type = GDMLNodeType::IMPORT;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -122,7 +122,7 @@ std::unique_ptr<ImportStatementNode> GdmlParser::visitImport(ts::Node node, Char
 
 std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<DefinitionNode> out = std::make_unique<DefinitionNode>();
-	out->type = GdmlNodeType::DEFINITION;
+	out->type = GDMLNodeType::DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -153,7 +153,7 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharS
 
 std::unique_ptr<NodeDefinitionNode> GdmlParser::visitNodeDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<NodeDefinitionNode> out = std::make_unique<NodeDefinitionNode>();
-	out->type = GdmlNodeType::NODE_DEFINITION;
+	out->type = GDMLNodeType::NODE_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -186,7 +186,7 @@ std::unique_ptr<NodeDefinitionNode> GdmlParser::visitNodeDefinition(ts::Node nod
 
 std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node, CharString &text, bool is_theme_property) {
 	std::unique_ptr<PropertyDefinitionNode> out = std::make_unique<PropertyDefinitionNode>();
-	out->type = GdmlNodeType::PROPERTY_DEFINITION;
+	out->type = GDMLNodeType::PROPERTY_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 	out->is_theme_override = is_theme_property;
 
@@ -215,7 +215,7 @@ std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node,
 
 std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node, CharString &text) {
 	std::unique_ptr<ResourceDefinitionNode> out = std::make_unique<ResourceDefinitionNode>();
-	out->type = GdmlNodeType::RESOURCE_DEFINITION;
+	out->type = GDMLNodeType::RESOURCE_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -238,7 +238,7 @@ std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node,
 
 std::unique_ptr<SignalDefinitionNode> GdmlParser::visitSignalDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<SignalDefinitionNode> out = std::make_unique<SignalDefinitionNode>();
-	out->type = GdmlNodeType::SIGNAL_DEFINITION;
+	out->type = GDMLNodeType::SIGNAL_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -256,7 +256,7 @@ std::unique_ptr<SignalDefinitionNode> GdmlParser::visitSignalDefinition(ts::Node
 
 std::unique_ptr<VariableDefinitionNode> GdmlParser::visitVariableDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<VariableDefinitionNode> out = std::make_unique<VariableDefinitionNode>();
-	out->type = GdmlNodeType::VARIABLE_DEFINITION;
+	out->type = GDMLNodeType::VARIABLE_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -278,7 +278,7 @@ std::unique_ptr<VariableDefinitionNode> GdmlParser::visitVariableDefinition(ts::
 
 std::unique_ptr<ForStatementNode> GdmlParser::visitForStatement(ts::Node node, CharString &text) {
 	std::unique_ptr<ForStatementNode> out = std::make_unique<ForStatementNode>();
-	out->type = GdmlNodeType::FOR_STATEMENT;
+	out->type = GDMLNodeType::FOR_STATEMENT;
 	out->location = parser::GdmlSourceLocation(node);
 
 	ts::Node iter_node = node.getChildByFieldName("iter_name");
@@ -323,7 +323,7 @@ std::unique_ptr<ForStatementNode> GdmlParser::visitForStatement(ts::Node node, C
 
 std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, CharString &text) {
 	std::unique_ptr<IfStatementNode> out = std::make_unique<IfStatementNode>();
-	out->type = GdmlNodeType::IF_STATEMENT;
+	out->type = GDMLNodeType::IF_STATEMENT;
 	out->location = parser::GdmlSourceLocation(node);
 
 	ts::Node expr_node = node.getChildByFieldName("condition");
@@ -364,7 +364,7 @@ std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, Cha
 
 std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
-	out->type = GdmlNodeType::UNKNOWN;
+	out->type = GDMLNodeType::UNKNOWN;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -402,7 +402,7 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, CharS
 
 std::unique_ptr<MemberExpressionNode> GdmlParser::visitMemberExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<MemberExpressionNode> out = std::make_unique<MemberExpressionNode>();
-	out->type = GdmlNodeType::MEMBER_ACCESS_EXPRESSION;
+	out->type = GDMLNodeType::MEMBER_ACCESS_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -424,7 +424,7 @@ std::unique_ptr<MemberExpressionNode> GdmlParser::visitMemberExpression(ts::Node
 
 std::unique_ptr<ArrayExpressionNode> GdmlParser::visitArrayExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<ArrayExpressionNode> out = std::make_unique<ArrayExpressionNode>();
-	out->type = GdmlNodeType::ARRAY_EXPRESSION;
+	out->type = GDMLNodeType::ARRAY_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -444,7 +444,7 @@ std::unique_ptr<ArrayExpressionNode> GdmlParser::visitArrayExpression(ts::Node n
 
 std::unique_ptr<DictionaryExpressionNode> GdmlParser::visitDictionaryExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<DictionaryExpressionNode> out = std::make_unique<DictionaryExpressionNode>();
-	out->type = GdmlNodeType::DICTIONARY_EXPRESSION;
+	out->type = GDMLNodeType::DICTIONARY_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -464,7 +464,7 @@ std::unique_ptr<DictionaryExpressionNode> GdmlParser::visitDictionaryExpression(
 
 std::unique_ptr<SignalExpressionNode> GdmlParser::visitSignalExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<SignalExpressionNode> out = std::make_unique<SignalExpressionNode>();
-	out->type = GdmlNodeType::SIGNAL_EXPRESSION;
+	out->type = GDMLNodeType::SIGNAL_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
@@ -482,7 +482,7 @@ std::unique_ptr<SignalExpressionNode> GdmlParser::visitSignalExpression(ts::Node
 
 std::unique_ptr<FunctionCallExpressionNode> GdmlParser::visitFunctionCallExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<FunctionCallExpressionNode> out = std::make_unique<FunctionCallExpressionNode>();
-	out->type = GdmlNodeType::FUNCTION_CALL;
+	out->type = GDMLNodeType::FUNCTION_CALL;
 	out->location = parser::GdmlSourceLocation(node);
 
 	ts::Node name_node = node.getChildByFieldName("name");
@@ -512,7 +512,7 @@ std::unique_ptr<FunctionCallExpressionNode> GdmlParser::visitFunctionCallExpress
 
 std::unique_ptr<BinaryExpressionNode> GdmlParser::visitBinaryExpression(ts::Node node, CharString &text) {
 	std::unique_ptr<BinaryExpressionNode> out = std::make_unique<BinaryExpressionNode>();
-	out->type = GdmlNodeType::BINARY_EXPRESSION;
+	out->type = GDMLNodeType::BINARY_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	ts::Node left_node = node.getChildByFieldName("left");
@@ -561,7 +561,7 @@ std::unique_ptr<BinaryExpressionNode> GdmlParser::visitBinaryExpression(ts::Node
 
 std::unique_ptr<IdentifierNode> GdmlParser::visitIdentifier(ts::Node node, CharString &text) {
 	std::unique_ptr<IdentifierNode> out = std::make_unique<IdentifierNode>();
-	out->type = GdmlNodeType::IDENTIFIER_EXPRESSION;
+	out->type = GDMLNodeType::IDENTIFIER_EXPRESSION;
 	out->name = node.getText(text);
 	out->location = parser::GdmlSourceLocation(node);
 
@@ -570,7 +570,7 @@ std::unique_ptr<IdentifierNode> GdmlParser::visitIdentifier(ts::Node node, CharS
 
 std::unique_ptr<NumberNode> GdmlParser::visitNumber(ts::Node node, CharString &text) {
 	std::unique_ptr<NumberNode> out = std::make_unique<NumberNode>();
-	out->type = GdmlNodeType::NUMBER_EXPRESSION;
+	out->type = GDMLNodeType::NUMBER_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 	out->value = node.getText(text);
 	out->isFloat = !out->value.is_valid_int();
@@ -580,7 +580,7 @@ std::unique_ptr<NumberNode> GdmlParser::visitNumber(ts::Node node, CharString &t
 
 std::unique_ptr<BooleanNode> GdmlParser::visitBoolean(ts::Node node, CharString &text) {
 	std::unique_ptr<BooleanNode> out = std::make_unique<BooleanNode>();
-	out->type = GdmlNodeType::BOOLEAN_EXPRESSION;
+	out->type = GDMLNodeType::BOOLEAN_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 
 	const String &rawValue = node.getText(text);
@@ -591,7 +591,7 @@ std::unique_ptr<BooleanNode> GdmlParser::visitBoolean(ts::Node node, CharString 
 
 std::unique_ptr<StringNode> GdmlParser::visitString(ts::Node node, CharString &text) {
 	std::unique_ptr<StringNode> out = std::make_unique<StringNode>();
-	out->type = GdmlNodeType::STRING_EXPRESSION;
+	out->type = GDMLNodeType::STRING_EXPRESSION;
 	out->location = parser::GdmlSourceLocation(node);
 	out->value = String();
 

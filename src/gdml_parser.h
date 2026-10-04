@@ -55,7 +55,7 @@ namespace godot {
 
 // Base
 
-enum class GdmlNodeType {
+enum class GDMLNodeType {
 	UNKNOWN = 0,
 	IDENTIFIER_EXPRESSION,
 	NUMBER_EXPRESSION,
@@ -95,7 +95,7 @@ enum class GDMLOperator {
 };
 
 struct GdmlNode {
-	GdmlNodeType type = GdmlNodeType::UNKNOWN;
+	GDMLNodeType type = GDMLNodeType::UNKNOWN;
 	parser::GdmlSourceLocation location;
 };
 struct ExpressionNode : public GdmlNode {};

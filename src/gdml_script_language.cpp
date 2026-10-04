@@ -98,7 +98,7 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 			continue;
 		}
 
-		if (current_node->type == GdmlNodeType::SOURCE_FILE) {
+		if (current_node->type == GDMLNodeType::SOURCE_FILE) {
 			SourceFileNode *node = (SourceFileNode *)current_node;
 			for (const std::unique_ptr<DefinitionNode> &statement : node->statements) {
 				node_stack.push_back(statement.get());
@@ -107,11 +107,11 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 				node_stack.push_back(statement.get());
 			}
 			context_node = current_node;
-		} else if (current_node->type == GdmlNodeType::DEFINITION) {
+		} else if (current_node->type == GDMLNodeType::DEFINITION) {
 			DefinitionNode *node = (DefinitionNode *)current_node;
 			node_stack.push_back(node->statement.get());
 			context_node = current_node;
-		} else if (current_node->type == GdmlNodeType::IMPORT) {
+		} else if (current_node->type == GDMLNodeType::IMPORT) {
 			context_node = current_node;
 		}
 	}
@@ -120,7 +120,7 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 	Array options;
 
 	if (context_node) {
-		if (context_node->type == GdmlNodeType::IMPORT) {
+		if (context_node->type == GDMLNodeType::IMPORT) {
 			std::vector<String> files;
 			get_directory_contents(EditorInterface::get_singleton()->get_resource_filesystem()->get_filesystem(), files);
 
@@ -134,10 +134,10 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 				
 				options.push_back(complete_option);
 			}
-		} else if (context_node->type == GdmlNodeType::DEFINITION) {
+		} else if (context_node->type == GDMLNodeType::DEFINITION) {
 			DefinitionNode *def_node = (DefinitionNode *)context_node;
 			
-			if (def_node->statement->type == GdmlNodeType::NODE_DEFINITION) {
+			if (def_node->statement->type == GDMLNodeType::NODE_DEFINITION) {
 				NodeDefinitionNode *node = (NodeDefinitionNode *)def_node->statement.get();
 				String node_name = node->name->name;
 		

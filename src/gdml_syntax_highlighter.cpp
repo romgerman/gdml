@@ -77,6 +77,10 @@ std::vector<std::tuple<ts::Node, String, bool>> GdmlSyntaxHighlighter::find_node
 		}
 
 		if (node.getStartPoint().row == line) {
+			if (node.isType("string_fragment") || node.isType("escape_sequence")) {
+				return;
+			}
+
 			out.push_back(std::tuple(node, parent, error));
 		}
 	};
@@ -87,9 +91,9 @@ std::vector<std::tuple<ts::Node, String, bool>> GdmlSyntaxHighlighter::find_node
 }
 
 Color GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, String, bool> &pair) const {
-	const ts::Node node = std::get<ts::Node>(pair);
+	const ts::Node &node = std::get<ts::Node>(pair);
 	const bool isError = std::get<bool>(pair);
-	const String parent = std::get<String>(pair);
+	const String &parent = std::get<String>(pair);
 	const String type = node.getType();
 
 	static const std::set<String> possible_parent = {
@@ -131,7 +135,7 @@ Color GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, String, boo
 		return member_color;
 	} else if (type == "number") {
 		return number_color;
-	} else if (type == "string" || type == "string_fragment" || type == "escape_sequence") {
+	} else if (type == "string") {
 		return string_color;
 	} else if (type == "boolean" || type == "true" || type == "false" || type == "self" || type == "from") {
 		return keyword_color;
