@@ -665,6 +665,10 @@
         {
           "type": "SYMBOL",
           "name": "function_call"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "subscript_expression"
         }
       ]
     },
@@ -1240,6 +1244,44 @@
         }
       ]
     },
+    "subscript_expression": {
+      "type": "PREC_RIGHT",
+      "value": "member",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "object",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "expression"
+                }
+              ]
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "["
+          },
+          {
+            "type": "FIELD",
+            "name": "index",
+            "content": {
+              "type": "SYMBOL",
+              "name": "expression"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "]"
+          }
+        ]
+      }
+    },
     "identifier": {
       "type": "PATTERN",
       "value": "[A-Za-z_]+[A-Za-z_0-9]*"
@@ -1394,8 +1436,12 @@
   "precedences": [
     [
       {
+        "type": "STRING",
+        "value": "member"
+      },
+      {
         "type": "SYMBOL",
-        "name": "member_expression"
+        "name": "function_call"
       },
       {
         "type": "STRING",
@@ -1430,6 +1476,20 @@
       {
         "type": "SYMBOL",
         "name": "_primary_expression"
+      }
+    ],
+    [
+      {
+        "type": "STRING",
+        "value": "member"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "function_call"
+      },
+      {
+        "type": "SYMBOL",
+        "name": "expression"
       }
     ]
   ],

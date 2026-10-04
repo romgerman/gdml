@@ -67,6 +67,7 @@ enum class GDMLNodeType {
 	SIGNAL_EXPRESSION,
 	FUNCTION_CALL,
 	BINARY_EXPRESSION,
+	SUBSCRIPT_EXPRESSION,
 	FOR_STATEMENT,
 	IF_STATEMENT,
 	VARIABLE_DEFINITION,
@@ -155,6 +156,11 @@ struct BinaryExpressionNode : public ExpressionNode {
 	std::unique_ptr<ExpressionNode> left;
 	GDMLOperator op;
 	std::unique_ptr<ExpressionNode> right;
+};
+
+struct SubscriptExpressionNode : public ExpressionNode {
+	std::unique_ptr<ExpressionNode> object;
+	std::unique_ptr<ExpressionNode> index;
 };
 
 // Statements
@@ -253,6 +259,7 @@ private:
 	std::unique_ptr<SignalExpressionNode> visitSignalExpression(ts::Node node, CharString &text);
 	std::unique_ptr<FunctionCallExpressionNode> visitFunctionCallExpression(ts::Node node, CharString &text);
 	std::unique_ptr<BinaryExpressionNode> visitBinaryExpression(ts::Node node, CharString &text);
+	std::unique_ptr<SubscriptExpressionNode> visitSubscriptExpression(ts::Node node, CharString &text);
 
 	std::unique_ptr<IdentifierNode> visitIdentifier(ts::Node node, CharString &text);
 	std::unique_ptr<NumberNode> visitNumber(ts::Node node, CharString &text);

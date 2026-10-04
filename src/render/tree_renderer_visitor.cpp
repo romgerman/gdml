@@ -402,8 +402,6 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 			call_args.push_back(args);
 
-			//print_line(decorator_object->get_method_list());
-
 			if (!decorator_object->has_method(StringName("modify"))) {
 				printError("Decorator doesn't have a 'modify' method", *dec_fn);
 				continue;
@@ -1035,15 +1033,9 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 				return true;
 			}
 
-			if (m_context->has_data(node.name)) {
-				value = m_context->get_data(node.name);
-				return true;
-			}
-
 			Variant out_value;
 			if (getPropertyValue(root_variant, node.name, out_value)) {
 				value = out_value;
-				return true;
 			} else {
 				print_error("Couldn't access property \"" + node.name + "\" to get value");
 				return false;
@@ -1286,8 +1278,32 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			}
 
 		} break;
+		case GDMLNodeType::SUBSCRIPT_EXPRESSION: {
+			const SubscriptExpressionNode &node = (SubscriptExpressionNode &)expr_node;
+
+			Variant v_object;
+			if (!resolveExpression(root_variant, *node.object, v_object)) {
+				printError("Cannot resolve object", node);
+				return false;
+			}
+
+			Variant v_index;
+			if (!resolveExpression(root_variant, *node.index, v_index)) {
+				printError("Cannot resolve index", node);
+				return false;
+			}
+			
+			if (v_object.get_type() == Variant::ARRAY) {
+				Array obj = v_object;
+				int64_t index = v_index;
+				value = obj[index];
+			} else if (v_object.get_type() == Variant::DICTIONARY) {
+				Dictionary obj = v_object;
+				value = obj[v_index];
+			}
+		} break;
 		default: {
-			print_error("Cannot resolve unknown expression type");
+			printError("Cannot resolve unknown expression type", expr_node);
 			return false;
 		}
 	}

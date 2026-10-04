@@ -190,23 +190,23 @@ std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node,
 	out->location = parser::GdmlSourceLocation(node);
 	out->is_theme_override = is_theme_property;
 
-	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
-		ts::Node child_node = node.getNamedChild(i);
+	ts::Node name_node = node.getChildByFieldName("name");
+	if (!name_node.isNull()) {
+		if (name_node.isType("identifier")) {
+			out->name = visitIdentifier(name_node, text);
+		} else if (name_node.isType("member_expression")) {
+			out->name = visitMemberExpression(name_node, text);
+		} else if (name_node.isType("signal_expression")) {
+			out->name = visitSignalExpression(name_node, text);
+		}
+	}
 
-		if (child_node.isType("identifier")) {
-			out->name = visitIdentifier(child_node, text);
-		} else if (child_node.isType("member_expression")) {
-			out->name = visitMemberExpression(child_node, text);
-		} else if (child_node.isType("signal_expression")) {
-			out->name = visitSignalExpression(child_node, text);
-		} else if (child_node.isType("expression")) {
-			out->value = visitExpression(child_node, text);
-		} else if (child_node.isType("resource_definition")) {
-			out->value = visitResource(child_node, text);
-		} else if (child_node.isType("comment") || child_node.isError()) {
-			continue;
-		} else {
-			pushError("Unknown node " + String(child_node.getType()) + " while parsing property", child_node);
+	ts::Node value_node = node.getChildByFieldName("value");
+	if (!value_node.isNull()) {
+		if (value_node.isType("expression")) {
+			out->value = visitExpression(value_node, text);
+		} else if (value_node.isType("resource_definition")) {
+			out->value = visitResource(value_node, text);
 		}
 	}
 
@@ -390,6 +390,8 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, CharS
 			return visitFunctionCallExpression(child_node, text);
 		} else if (child_node.isType("binary_expression")) {
 			return visitBinaryExpression(child_node, text);
+		} else if (child_node.isType("subscript_expression")) {
+			return visitSubscriptExpression(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -552,6 +554,24 @@ std::unique_ptr<BinaryExpressionNode> GdmlParser::visitBinaryExpression(ts::Node
 		} else if (op_str == ">") {
 			out->op = GDMLOperator::GREATER_THAN;
 		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<SubscriptExpressionNode> GdmlParser::visitSubscriptExpression(ts::Node node, CharString &text) {
+	std::unique_ptr<SubscriptExpressionNode> out = std::make_unique<SubscriptExpressionNode>();
+	out->type = GDMLNodeType::SUBSCRIPT_EXPRESSION;
+	out->location = parser::GdmlSourceLocation(node);
+
+	ts::Node obj_node = node.getChildByFieldName("object");
+	if (!obj_node.isNull()) {
+		out->object = visitExpression(obj_node, text);
+	}
+
+	ts::Node index_node = node.getChildByFieldName("index");
+	if (!index_node.isNull()) {
+		out->index = visitExpression(index_node, text);
 	}
 
 	return out;

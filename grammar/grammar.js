@@ -16,7 +16,8 @@ module.exports = grammar({
   word: $ => $.identifier,
   precedences: $ => [
     [
-      $.member_expression,
+      'member',
+      $.function_call,
       'binary_times',
       'binary_plus',
       'binary_relation',
@@ -24,7 +25,8 @@ module.exports = grammar({
       'logical_and',
       'logical_or',
     ],
-    [$.node_definition, $._primary_expression]
+    [$.node_definition, $._primary_expression],
+    ['member', $.function_call, $.expression]
   ],
   rules: {
     source_file: $ => seq(
@@ -132,6 +134,7 @@ module.exports = grammar({
       $.array_expression,
       $.dictionary_expression,
       $.function_call,
+      $.subscript_expression
     ),
     member_expression: $ => seq(
       $.expression,
@@ -193,6 +196,12 @@ module.exports = grammar({
         field("right", $.expression)
       )))
     ),
+    subscript_expression: $ => prec.right('member', seq(
+      field('object', choice($.expression)),
+      '[',
+      field('index', $.expression),
+      ']'
+    )),
 
     // Primitives
     identifier: $ => /[A-Za-z_]+[A-Za-z_0-9]*/,
