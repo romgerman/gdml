@@ -80,9 +80,9 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
 			const MemberExpressionNode &self = static_cast<const MemberExpressionNode &>(node);
 			PackedStringArray arr;
-			for (const std::unique_ptr<IdentifierNode> &part : self.path) {
-				arr.append(part->name);
-			}
+			// for (const std::unique_ptr<IdentifierNode> &part : self.path) {
+			// 	arr.append(part->name);
+			// }
 			return String(".").join(arr);
 		} break;
 		case GDMLNodeType::STRING_EXPRESSION: {

@@ -408,10 +408,10 @@ std::unique_ptr<MemberExpressionNode> GdmlParser::visitMemberExpression(ts::Node
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
 		ts::Node child_node = node.getNamedChild(i);
 
-		if (child_node.isType("identifier")) {
-			out->path.push_back(visitIdentifier(child_node, text));
-		} else if (child_node.isType("self")) {
-			out->path.push_back(visitIdentifier(child_node, text));
+		if (child_node.isType("expression")) {
+			out->expression = visitExpression(child_node, text);
+		} else if (child_node.isType("identifier")) {
+			out->identifier = visitIdentifier(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -487,10 +487,8 @@ std::unique_ptr<FunctionCallExpressionNode> GdmlParser::visitFunctionCallExpress
 
 	ts::Node name_node = node.getChildByFieldName("name");
 	if (!name_node.isNull()) {
-		if (name_node.isType("identifier")) {
-			out->name = visitIdentifier(name_node, text);
-		} else if (name_node.isType("member_expression")) {
-			out->name = visitMemberExpression(name_node, text);
+		if (name_node.isType("expression")) {
+			out->name = visitExpression(name_node, text);
 		}
 	}
 

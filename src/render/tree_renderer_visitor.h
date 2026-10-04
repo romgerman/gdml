@@ -78,9 +78,9 @@ private:
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
-	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::ExpressionNode &value_node);
+	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, godot::MemberExpressionNode &member_expression, godot::ExpressionNode &value_node);
 	bool getPropertyValue(godot::Variant &variant, godot::String &prop_key, godot::Variant &value);
-	bool getDeepPropertyValue(godot::Variant &root_variant, const std::vector<std::unique_ptr<godot::IdentifierNode>> &path, godot::Variant &value);
+	bool getDeepPropertyValue(godot::Variant &root_variant, godot::MemberExpressionNode &member_expression, godot::Variant &value);
 
 	void setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node);
 

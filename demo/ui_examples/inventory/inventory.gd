@@ -1,6 +1,8 @@
 @tool
 extends GDMLNode
 
+@export var inventory_size: int = 15
+@export var columns: int = 5
 @export var items: Array[InventoryItem] = []
 
 func _ready() -> void:
@@ -9,6 +11,8 @@ func _ready() -> void:
 			get_variable("items").value = items
 		)
 	
+	get_variable("columns").value = columns
+	get_variable("inventory_size").value = inventory_size
 	get_variable("items").value = items
 	
 	if not Engine.is_editor_hint():

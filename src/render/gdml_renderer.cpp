@@ -141,7 +141,8 @@ Ref<reactive::GDMLAtom> GDMLResult::get_variable(String p_name) {
 	if (m_variables.has(p_name)) {
 		return m_variables[p_name];
 	} else {
-		return nullptr;
+		print_error("Cannot access variable with name '" + p_name + "'");
+		return Ref<reactive::GDMLAtom>(memnew(reactive::GDMLAtom()));
 	}
 }
 

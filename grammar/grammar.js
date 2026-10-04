@@ -16,15 +16,15 @@ module.exports = grammar({
   word: $ => $.identifier,
   precedences: $ => [
     [
-      'member_expression',
-      'function_call',
+      $.member_expression,
       'binary_times',
       'binary_plus',
       'binary_relation',
       'binary_equality',
       'logical_and',
       'logical_or',
-    ]
+    ],
+    [$.node_definition, $._primary_expression]
   ],
   rules: {
     source_file: $ => seq(
@@ -119,20 +119,24 @@ module.exports = grammar({
 
     // Expressions
     expression: $ => choice(
+      $._primary_expression,
+      $.member_expression,
+      $.binary_expression
+    ),
+    _primary_expression: $ => choice(
       $.identifier,
       $.self,
       $.number,
       $.boolean,
       $.string,
       $.array_expression,
-      $.member_expression,
       $.dictionary_expression,
       $.function_call,
-      $.binary_expression
     ),
     member_expression: $ => seq(
-      choice($.self, $.identifier),
-      repeat1(seq('.', $.identifier))
+      $.expression,
+      '.',
+      $.identifier
     ),
     array_expression: $ => seq(
       '[',
@@ -155,10 +159,7 @@ module.exports = grammar({
       $.identifier
     ),
     function_call: $ => seq(
-      field('name', choice(
-        $.member_expression,
-        $.identifier
-      )),
+      field('name', $.expression),
       '(',
       field('arguments', optional($.argument_list)),
       ')'

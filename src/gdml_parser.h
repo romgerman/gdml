@@ -80,7 +80,7 @@ enum class GDMLNodeType {
 };
 
 enum class GDMLOperator {
-	AND,
+	AND = 0,
 	OR,
 	PLUS,
 	MINUS,
@@ -138,7 +138,8 @@ struct DictionaryExpressionNode : public ExpressionNode {
 };
 
 struct MemberExpressionNode : public ExpressionNode {
-	std::vector<std::unique_ptr<IdentifierNode>> path;
+	std::unique_ptr<ExpressionNode> expression;
+	std::unique_ptr<IdentifierNode> identifier;
 };
 
 struct SignalExpressionNode : public ExpressionNode {

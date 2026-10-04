@@ -13,6 +13,7 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/object.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/print_string.hpp>
@@ -234,16 +235,29 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 	if (m_context->m_imports.find(node_name) != m_context->m_imports.end()) {
 		const String &import_path = m_context->m_imports[node_name];
-		Ref<PackedScene> scene = ResourceLoader::get_singleton()->load(import_path, "PackedScene");
 
-		if (scene.is_null()) {
-			printError("Cannot load import path " + import_path, node);
-			return nullptr;
+		if (import_path.ends_with(".tscn") || import_path.ends_with(".scn")) {
+			Ref<PackedScene> scene = ResourceLoader::get_singleton()->load(import_path, "PackedScene");
+	
+			if (scene.is_null()) {
+				printError("Cannot load import path " + import_path, node);
+				return nullptr;
+			}
+	
+			Node *base_object = scene->instantiate();
+			assert(base_object);
+			root_variant = base_object;
+		} else if (import_path.ends_with(".gd")) {
+			Ref<Script> script = ResourceLoader::get_singleton()->load(import_path, "Script");
+			if (script.is_null()) {
+				printError("Cannot load script associated with type '" + node_name + "' by path " + import_path, node);
+				return nullptr;
+			}
+			root_variant = ClassDB::instantiate(script->get_instance_base_type());
+			Object *base_object = root_variant.get_validated_object();
+			assert(base_object);
+			base_object->set_script(script);
 		}
-
-		Node *base_object = scene->instantiate();
-		assert(base_object);
-		root_variant = base_object;
 	} else {
 		if (!ClassDB::class_exists(node.name->name)) {
 			Dictionary class_info;
@@ -311,8 +325,8 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				trySetVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				setVariantPropertyDeep(root_variant, root_variant, member_access->path, *property->value.get());
+				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
+				setVariantPropertyDeep(root_variant, root_variant, *member_access, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::SIGNAL_EXPRESSION) {
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
 				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -648,26 +662,26 @@ bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &var
 	}
 }
 
-bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant &variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, ExpressionNode &value_node) {
+bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant &variant, MemberExpressionNode &member_expression, ExpressionNode &value_node) {
 	Variant previous_variant;
 	Variant current_variant = variant;
 
 	bool is_valid = false;
-	for (auto it = path.begin(); it != path.end() - 1; ++it) {
-		previous_variant = current_variant;
-		current_variant = current_variant.get(it->get()->name, &is_valid);
+	// for (auto it = path.begin(); it != path.end() - 1; ++it) {
+	// 	previous_variant = current_variant;
+	// 	current_variant = current_variant.get(it->get()->name, &is_valid);
 
-		if (!is_valid) {
-			print_error("Cannot get property " + it->get()->name + " in path");
-			return false;
-		}
-	}
+	// 	if (!is_valid) {
+	// 		print_error("Cannot get property " + it->get()->name + " in path");
+	// 		return false;
+	// 	}
+	// }
 
-	String &variant_property = path.back()->name;
-	if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
-		const String &previous_property = (path.end() - 2)->get()->name;
-		previous_variant.set(previous_property, current_variant, &is_valid);
-	}
+	// String &variant_property = path.back()->name;
+	// if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
+	// 	const String &previous_property = (path.end() - 2)->get()->name;
+	// 	previous_variant.set(previous_property, current_variant, &is_valid);
+	// }
 
 	return is_valid;
 }
@@ -710,85 +724,98 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 		}
 	}
 
+	if (!is_valid) {
+		Dictionary class_info;
+	
+		for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
+			if (String(ci.get("class", "")) == prop_key) {
+				class_info = ci;
+				break;
+			}
+		}
+
+		if (!class_info.is_empty()) {
+			String path = class_info.get("path", "");
+			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
+			if (script.is_valid()) {
+				value = script;
+				is_valid = true;
+			}
+		}
+	}
+
+	if (!is_valid) {
+		if (Engine::get_singleton()->has_singleton(prop_key)) {
+			value = Engine::get_singleton()->get_singleton(prop_key);
+			is_valid = true;
+		}
+	}
+
 	return is_valid;
 }
 
-bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, const std::vector<std::unique_ptr<IdentifierNode>> &path, Variant &value) {
-	if (path.empty()) {
-		return false;
-	}
+bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, MemberExpressionNode &member_expression, Variant &value) {
+	std::unique_ptr<ExpressionNode> &expression = member_expression.expression;
+	std::unique_ptr<IdentifierNode> &prop_name = member_expression.identifier;
 	
-	// Variant previous_variant;
-	Variant current_variant = root_variant;
-
-	for (size_t i = 0; i < path.size(); i++) {
-		String &segment_name = path[i]->name;
-		bool is_valid = false;
-
-		if (i == 0) {
-			if (segment_name == "self") {
-				continue;
-			} else {
-				// Check local variables inside statements
-				if (m_context->has_data(segment_name)) {
-					current_variant = m_context->get_data(segment_name);
-					continue;
-				}
-			}
-		}
-		
-		// We have a value go check next
-		Variant next_value = current_variant.get(segment_name, &is_valid);
-
-		if (is_valid) {
-			current_variant = next_value;
-			continue;
-		}
+	if (expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode *id_expr = static_cast<IdentifierNode *>(expression.get());
+		const StringName &value_name = prop_name->name;
 
 		// Check if it's a constant of a basic Variant type
-		if (m_variant_type_map.count(segment_name)) {
-			if (i + 1 < path.size()) {
-				const StringName value_name = path[++i]->name;
-				Variant ret;
-				internal::gdextension_interface_variant_get_constant_value(
-						(GDExtensionVariantType)m_variant_type_map[segment_name],
-						value_name._native_ptr(),
-						&ret);
-				if (ret.get_type() != Variant::NIL) {
-					current_variant = ret;
-					continue;
-				}
+		if (m_variant_type_map.count(id_expr->name)) {
+			Variant ret;
+			internal::gdextension_interface_variant_get_constant_value(
+					(GDExtensionVariantType)m_variant_type_map[id_expr->name],
+					value_name._native_ptr(),
+					&ret);
+			if (ret.get_type() != Variant::NIL) {
+				value = ret;
+				return true;
 			}
 		}
 
 		// Check if it's a class and has the next path segment as a constant
-		if (ClassDB::class_exists(segment_name)) {
-			if (i + 1 < path.size()) {
-				const StringName const_name = path[i + 1]->name;
-	
-				if (ClassDB::class_has_integer_constant(segment_name, const_name)) {
-					current_variant = ClassDB::class_get_integer_constant(segment_name, const_name);
-					i++;
-					continue;
-				}
+		if (ClassDB::class_exists(id_expr->name)) {
+			if (ClassDB::class_has_integer_constant(id_expr->name, value_name)) {
+				value = ClassDB::class_get_integer_constant(id_expr->name, value_name);
+				return true;
 			}
 		}
+	}
 
-		Object *obj = current_variant.get_validated_object();
-		if (obj) {
-			const String class_name = obj->get_class();
+	// Variant previous_variant;
+	Variant base_variant;
 
-			if (ClassDB::class_has_integer_constant(class_name, segment_name)) {
-				current_variant = ClassDB::class_get_integer_constant(class_name, segment_name);
-				continue;
-			}
+	if (expression) {
+		if (!resolveExpression(root_variant, *expression, base_variant)) {
+			return false;
 		}
-
+	} else {
 		return false;
 	}
 
-	value = current_variant;
-	return true;
+	bool is_valid = false;
+	
+	// We have a value go check next
+	Variant next_value = base_variant.get(prop_name->name, &is_valid);
+
+	if (is_valid) {
+		value = next_value;
+		return true;
+	}
+
+	Object *obj = base_variant.get_validated_object();
+	if (obj) {
+		const String class_name = obj->get_class();
+
+		if (ClassDB::class_has_integer_constant(class_name, prop_name->name)) {
+			value = ClassDB::class_get_integer_constant(class_name, prop_name->name);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
@@ -832,9 +859,9 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 			}
 		}
 	} else if (value_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-		const MemberExpressionNode &node = (MemberExpressionNode &)value_node;
+		MemberExpressionNode &node = (MemberExpressionNode &)value_node;
 		Variant out_value;
-		if (getDeepPropertyValue(root_variant, node.path, out_value)) {
+		if (getDeepPropertyValue(root_variant, node, out_value)) {
 			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
 				if (control->has_theme_constant(prop_key)) {
 					control->add_theme_constant_override(prop_key, out_value);
@@ -855,11 +882,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 				}
 			}
 		} else {
-			PackedStringArray arr;
-			for (const std::unique_ptr<IdentifierNode> &idendifier : node.path) {
-				arr.append(idendifier->name);
-			}
-			print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
+			printError("Cannot resolve expression", node);
 		}
 	} else if (value_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
@@ -892,8 +915,8 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
+				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
+				setVariantPropertyDeep(root_variant, resource_variant, *member_access, *property->value.get());
 			}
 		}
 
@@ -1007,9 +1030,20 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 		} break;
 		case GDMLNodeType::IDENTIFIER_EXPRESSION: {
 			IdentifierNode &node = static_cast<IdentifierNode &>(expr_node);
+			if (node.name == "self") {
+				value = root_variant;
+				return true;
+			}
+
+			if (m_context->has_data(node.name)) {
+				value = m_context->get_data(node.name);
+				return true;
+			}
+
 			Variant out_value;
 			if (getPropertyValue(root_variant, node.name, out_value)) {
 				value = out_value;
+				return true;
 			} else {
 				print_error("Couldn't access property \"" + node.name + "\" to get value");
 				return false;
@@ -1047,14 +1081,10 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 		case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
 			MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);
 			Variant out_value;
-			if (getDeepPropertyValue(root_variant, node.path, out_value)) {
+			if (getDeepPropertyValue(root_variant, node, out_value)) {
 				value = out_value;
 			} else {
-				PackedStringArray arr;
-				for (const std::unique_ptr<IdentifierNode> &idendifier : node.path) {
-					arr.append(idendifier->name);
-				}
-				print_error("Couldn't access property by path \"" + String(".").join(arr) + "\" to get value");
+				printError("Cannot resolve expression", node);
 				return false;
 			}
 		} break;
@@ -1089,8 +1119,8 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 					setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
 				} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-					const MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-					setVariantPropertyDeep(root_variant, resource_variant, member_access->path, *property->value.get());
+					MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
+					setVariantPropertyDeep(root_variant, resource_variant, *member_access, *property->value.get());
 				}
 			}
 
@@ -1098,81 +1128,50 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 		} break;
 		case GDMLNodeType::FUNCTION_CALL: {
 			const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)expr_node;
+			
+			Array args;
+	
+			for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
+				Variant arg_value;
+				if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+					args.push_back(arg_value);
+				} else {
+					print_error("Unsupported argument type '" + String::num_int64((int)expr->type) + "' in function call");
+				}
+			}
 
-			// if (node.name->type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
-			// 	IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
+			if (node.name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+				IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
 
-			// 	if (m_context->has_variable(name_node->name)) {
-			// 		Ref<reactive::GDMLAtom> atom = m_context->get_variable(name_node->name);
-			// 		Variant value = atom->get_value();
-
-			// 		if (value.get_type() == Variant::Type::CALLABLE) {
-			// 			Callable callable = value;
-			// 			Array args;
-
-			// 			for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-			// 				Variant arg_value;
-			// 				if (resolveExpression(root_variant, *expr.get(), arg_value)) {
-			// 					args.push_back(arg_value);
-			// 				} else {
-			// 					print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
-			// 				}
-			// 			}
-
-			// 			const Variant result = callable.callv(args);
-			// 			variant.set(prop_key, result, &is_valid);
-			// 		} else {
-			// 			print_error("Cannot call non-Callable");
-			// 		}
-			// 	}
-			// } else 
-			if (node.name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				MemberExpressionNode *name_node = static_cast<MemberExpressionNode *>(node.name.get());
-
-				if (name_node->path.size() < 2) {
-					print_error("Invalid member access expression");
+				Variant target;
+				if (!resolveExpression(root_variant, *node.name, target)) {
+					printError("Cannot resolve function call", node);
 					return false;
 				}
 
-				String method_name = name_node->path.back()->name;
-				Variant current_variant = root_variant;
-
-				for (size_t i = 0; i < name_node->path.size() - 1; i++) {
-					String &segment_name = name_node->path[i]->name;
-					bool is_valid = false;
-
-					// Check local variables inside statements
-					if (m_context->has_data(segment_name)) {
-						current_variant = m_context->get_data(segment_name);
-						continue;
-					}
-
-					// We have a value go check next
-					Variant next_value = current_variant.get(segment_name, &is_valid);
-
-					if (is_valid) {
-						current_variant = next_value;
-						continue;
-					}
+				if (target.get_type() != Variant::CALLABLE) {
+					printError("Cannot call non-Callable",node);
+					return false;
 				}
 
-				if (current_variant.has_method(method_name)) {
-					Callable callable = current_variant.get(method_name);
-					Array args;
-		
-					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-						Variant arg_value;
-						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
-							args.push_back(arg_value);
-						} else {
-							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->path.back()->name + "\"");
-						}
-					}
+				Callable callable = target;
+				value = callable.callv(args);
+			} else if (node.name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
+				MemberExpressionNode *member_node = static_cast<MemberExpressionNode *>(node.name.get());
 
-					value = callable.callv(args);
+				Variant target;
+				if (!resolveExpression(root_variant, *member_node->expression, target)) {
+					printError("Cannot resolve function call", node);
+					return false;
+				}
+
+				Object *obj = target.get_validated_object();
+				if (obj) {
+					value = obj->callv(member_node->identifier->name, args);
 				}
 			} else {
-				print_error("Other types of expressions are not implemented for a function call");
+				printError("Unsupported call target", node);
+				return false;
 			}
 		} break;
 		case GDMLNodeType::BINARY_EXPRESSION: {
@@ -1300,7 +1299,7 @@ bool TreeRendererVisitor::doesExpressionHaveSelf(ExpressionNode &expr_node) {
 	if (expr_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		return static_cast<IdentifierNode &>(expr_node).name == "self";
 	} else if (expr_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-		return static_cast<MemberExpressionNode &>(expr_node).path[0]->name == "self";
+		return doesExpressionHaveSelf(*static_cast<MemberExpressionNode &>(expr_node).expression);
 	} else if (expr_node.type == GDMLNodeType::ARRAY_EXPRESSION) {
 		for (std::unique_ptr<ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr_node).values) {
 			return doesExpressionHaveSelf(*value);

@@ -19,13 +19,8 @@ let dt_stylebox = StyleBoxFlat {
 	expand_margin_bottom: 2
 }
 
-let ItemComponent = Control {
-	anchor_left: 0.0
-	anchor_right: 1.0
-	anchor_top: 0.0
-	anchor_bottom: 1.0
-}
-
+let inventory_size = 10
+let columns = 5
 let items = [
 	{ item_name: "Test Item"; item_icon: MyCoolButton.load_res("res://icon.svg"); }
 ]
@@ -33,7 +28,7 @@ let items = [
 signal item_gui_input
 
 GridContainer {
-	columns: 5
+	columns: columns
 	anchor_left: 0.0
 	anchor_right: 1.0
 	anchor_top: 0.0
