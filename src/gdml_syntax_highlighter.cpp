@@ -10,34 +10,36 @@
 
 using namespace godot;
 
+namespace godot {
+
 void GdmlSyntaxHighlighter::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_syntax_highlighting", "text", "line"), &GdmlSyntaxHighlighter::get_syntax_highlighting);
 }
 
-Dictionary godot::GdmlSyntaxHighlighter::_get_line_syntax_highlighting(int32_t p_line) const {
-	const godot::String text = get_text_edit()->get_line(p_line);
+Dictionary GdmlSyntaxHighlighter::_get_line_syntax_highlighting(int32_t p_line) const {
+	const String text = get_text_edit()->get_line(p_line);
 	return get_syntax_highlighting(text, p_line);
 }
 
-Dictionary godot::GdmlSyntaxHighlighter::get_syntax_highlighting(const godot::String &p_text, int32_t p_line) const {
-	godot::Dictionary out;
+Dictionary GdmlSyntaxHighlighter::get_syntax_highlighting(const String &p_text, int32_t p_line) const {
+	Dictionary out;
 
 	CharString source = p_text.utf8();
 	auto tree = _parser.rawParse(source);
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
-	std::vector<std::tuple<ts::Node, godot::String, bool>> node_on_line = find_nodes_on_line(root_node, p_line);
+	std::vector<std::tuple<ts::Node, String, bool>> node_on_line = find_nodes_on_line(root_node, p_line);
 
 	//print_line(ts_node_string(root_node.raw()));
 
 	auto editor_settings = EditorInterface::get_singleton()->get_editor_settings();
 	Color error_color = editor_settings->get_setting("text_editor/theme/highlighting/error_underline_color");
 
-	for (std::tuple<ts::Node, godot::String, bool> &pair : node_on_line) {
+	for (std::tuple<ts::Node, String, bool> &pair : node_on_line) {
 		const ts::Node &node = std::get<ts::Node>(pair);
 		Variant start_key = Variant(node.getStartPoint().column);
 		Variant end_key = Variant(node.getEndPoint().column);
-		godot::Color color = get_color_for_node(pair);
-		godot::Dictionary line_out;
+		Color color = get_color_for_node(pair);
+		Dictionary line_out;
 		if (color.a != 0.0f) {
 			line_out.set("color", color);
 			out.set(start_key, line_out);
@@ -52,17 +54,17 @@ Dictionary godot::GdmlSyntaxHighlighter::get_syntax_highlighting(const godot::St
 	return out;
 }
 
-std::vector<std::tuple<ts::Node, godot::String, bool>> godot::GdmlSyntaxHighlighter::find_nodes_on_line(const ts::Node &root_node, int32_t line) const {
-	std::vector<std::tuple<ts::Node, godot::String, bool>> out;
+std::vector<std::tuple<ts::Node, String, bool>> GdmlSyntaxHighlighter::find_nodes_on_line(const ts::Node &root_node, int32_t line) const {
+	std::vector<std::tuple<ts::Node, String, bool>> out;
 
-	static const std::set<godot::String> possible_parent = {
+	static const std::set<String> possible_parent = {
 		"node_definition",
 		//"property_definition",
 		"resource_definition",
 		"function_call"
 	};
 
-	std::function<void(const ts::Node, const godot::String, bool)> traverse = [&](const ts::Node &node, const godot::String &parent, bool isError) {
+	std::function<void(const ts::Node, const String, bool)> traverse = [&](const ts::Node &node, const String &parent, bool isError) {
 		bool error = isError || node.isError();
 		
 		if (node.getStartPoint().row == line) {
@@ -84,12 +86,12 @@ std::vector<std::tuple<ts::Node, godot::String, bool>> godot::GdmlSyntaxHighligh
 	return out;
 }
 
-godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, godot::String, bool> &pair) const {
+Color GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, String, bool> &pair) const {
 	const ts::Node node = std::get<ts::Node>(pair);
 	const bool isError = std::get<bool>(pair);
-	const godot::String type = node.getType();
+	const String type = node.getType();
 
-	static const std::set<godot::String> possible_parent = {
+	static const std::set<String> possible_parent = {
 		"node_definition",
 		//"property_definition",
 		"resource_definition",
@@ -122,7 +124,7 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	} else if (type == "signal_expression" || type == "theme_property_definition") {
 		return keyword_color;
 	} else if (type == "identifier") {
-		if (possible_parent.find(std::get<godot::String>(pair)) != possible_parent.end()) {
+		if (possible_parent.find(std::get<String>(pair)) != possible_parent.end()) {
 			return engine_type_color;
 		}
 		return member_color;
@@ -135,6 +137,8 @@ godot::Color godot::GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Nod
 	} else if (type == "{" || type == "}" || type == "[" || type == "]") {
 		return symbol_color;
 	} else {
-		return godot::Color(0.0f, 0.0f, 0.0f, 0.0f);
+		return Color(0.0f, 0.0f, 0.0f, 0.0f);
 	}
+}
+
 }

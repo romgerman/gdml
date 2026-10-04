@@ -79,7 +79,7 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GdmlNodeType::MEMBER_ACCESS_EXPRESSION: {
 			const MemberExpressionNode &self = static_cast<const MemberExpressionNode &>(node);
-			godot::PackedStringArray arr;
+			PackedStringArray arr;
 			for (const std::unique_ptr<IdentifierNode> &part : self.path) {
 				arr.append(part->name);
 			}
@@ -136,6 +136,6 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 	}
 }
 
-godot::String traversal::GdmlPrinterVisitor::depthPad(const godot::String &text, uint32_t depth) {
+String traversal::GdmlPrinterVisitor::depthPad(const String &text, uint32_t depth) {
 	return text.lpad(text.length() + depth);
 }

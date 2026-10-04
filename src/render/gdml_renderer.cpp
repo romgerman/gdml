@@ -179,7 +179,7 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	}
 
 	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : visitor_result.signals) {
-		for (std::pair<godot::ObjectID, std::set<StringName>> target_pair : pair.second) {
+		for (std::pair<ObjectID, std::set<StringName>> target_pair : pair.second) {
 			for (StringName target_signal : target_pair.second) {
 				out->connect_signal(pair.first, target_pair.first, target_signal);
 			}

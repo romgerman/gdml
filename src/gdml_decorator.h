@@ -3,8 +3,6 @@
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/core/gdvirtual.gen.inc>
 
-using namespace godot;
-
 namespace gdml {
 
 class GDMLDecorator : public godot::Object {
