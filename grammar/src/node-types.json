@@ -332,6 +332,29 @@
     }
   },
   {
+    "type": "import_statement",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "from",
+          "named": true
+        },
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "string",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "member_expression",
     "named": true,
     "fields": {},
@@ -524,6 +547,10 @@
       "types": [
         {
           "type": "definition",
+          "named": true
+        },
+        {
+          "type": "import_statement",
           "named": true
         }
       ]
@@ -742,8 +769,16 @@
     "named": false
   },
   {
+    "type": "from",
+    "named": true
+  },
+  {
     "type": "identifier",
     "named": true
+  },
+  {
+    "type": "import",
+    "named": false
   },
   {
     "type": "in",

@@ -27,7 +27,10 @@ module.exports = grammar({
     ]
   ],
   rules: {
-    source_file: $ => repeat($.definition),
+    source_file: $ => seq(
+      optional(repeat($.import_statement)),
+      repeat($.definition)
+    ),
     definition: $ => choice(
       $.signal_definition,
       $.variable_definition,
@@ -105,6 +108,12 @@ module.exports = grammar({
         field("else", repeat($.node_definition)),
         '}'
       ))
+    ),
+    import_statement: $ => seq(
+      "import",
+      $.identifier,
+      $.from,
+      $.string
     ),
 
     // Expressions
@@ -188,6 +197,7 @@ module.exports = grammar({
     number: $ => /\d+(\.\d+)?/,
     boolean: $ => choice(token('true'), token('false')),
     self: $ => token('self'),
+    from: $ => token('from'),
     string: $ => seq(
       '"',
       repeat(choice(

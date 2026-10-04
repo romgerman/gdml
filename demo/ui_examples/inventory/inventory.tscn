@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://bymqjuckrj628"]
+
+[ext_resource type="Script" uid="uid://cjkstodorsick" path="res://ui_examples/inventory/inventory.gdml" id="1_iha5r"]
+[ext_resource type="Script" uid="uid://dieee0qbksxw4" path="res://ui_examples/inventory/inventory.gd" id="2_s1fme"]
+[ext_resource type="Script" uid="uid://dxmfo6g7luyho" path="res://ui_examples/inventory/inventory_item.gd" id="2_wr867"]
+[ext_resource type="Texture2D" uid="uid://c2rhakuaqwjww" path="res://icon.svg" id="3_s1fme"]
+
+[sub_resource type="Resource" id="Resource_mirat"]
+script = ExtResource("2_wr867")
+item_name = "Sword"
+item_icon = ExtResource("3_s1fme")
+metadata/_custom_type_script = "uid://dxmfo6g7luyho"
+
+[sub_resource type="Resource" id="Resource_hn3h5"]
+script = ExtResource("2_wr867")
+item_name = "Shield"
+item_icon = ExtResource("3_s1fme")
+metadata/_custom_type_script = "uid://dxmfo6g7luyho"
+
+[sub_resource type="Resource" id="Resource_3dfi7"]
+script = ExtResource("2_wr867")
+item_name = "Bow"
+item_icon = ExtResource("3_s1fme")
+metadata/_custom_type_script = "uid://dxmfo6g7luyho"
+
+[sub_resource type="Resource" id="Resource_c4k6i"]
+script = ExtResource("2_wr867")
+item_name = "Staff"
+item_icon = ExtResource("3_s1fme")
+metadata/_custom_type_script = "uid://dxmfo6g7luyho"
+
+[node name="Inventory" type="GDMLNode" unique_id=1151797622]
+markup = ExtResource("1_iha5r")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_s1fme")
+items = Array[ExtResource("2_wr867")]([SubResource("Resource_mirat"), SubResource("Resource_hn3h5"), SubResource("Resource_3dfi7"), SubResource("Resource_c4k6i")])

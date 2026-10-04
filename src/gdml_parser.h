@@ -75,6 +75,7 @@ enum class GdmlNodeType {
 	RESOURCE_DEFINITION,
 	NODE_DEFINITION,
 	DEFINITION,
+	IMPORT,
 	SOURCE_FILE
 };
 
@@ -204,7 +205,13 @@ struct DefinitionNode : public StatementNode {
 	std::unique_ptr<StatementNode> statement;
 };
 
+struct ImportStatementNode : public StatementNode {
+	std::unique_ptr<IdentifierNode> name;
+	std::unique_ptr<StringNode> from;
+};
+
 struct SourceFileNode : public GdmlNode {
+	std::vector<std::unique_ptr<ImportStatementNode>> imports;
 	std::vector<std::unique_ptr<DefinitionNode>> statements;
 };
 
@@ -228,6 +235,7 @@ public:
 private:
 	void collectSyntaxErrors(ts::Node node);
 
+	std::unique_ptr<ImportStatementNode> visitImport(ts::Node node, CharString &text);
 	std::unique_ptr<DefinitionNode> visitDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<NodeDefinitionNode> visitNodeDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<PropertyDefinitionNode> visitProperty(ts::Node node, CharString &text, bool is_theme_property);

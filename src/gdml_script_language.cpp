@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
 using namespace godot;
@@ -13,6 +14,16 @@ using namespace godot;
 namespace godot {
 
 GdmlScriptLanguage *GdmlScriptLanguage::instance = nullptr;
+
+void GdmlScriptLanguage::get_directory_contents(EditorFileSystemDirectory *p_dir, std::vector<String> &out_files) const {
+	for (int32_t i = 0; i < p_dir->get_file_count(); i++) {
+		out_files.push_back(p_dir->get_file_path(i));
+	}
+
+	for (int32_t i = 0; i < p_dir->get_subdir_count(); i++) {
+		get_directory_contents(p_dir->get_subdir(i), out_files);
+	}
+}
 
 void GdmlScriptLanguage::_bind_methods() {}
 
@@ -84,7 +95,7 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 		node_stack.pop_back();
 
 		if (current_node->location.span.start > cursor_pos || current_node->location.span.end < cursor_pos) {
-			break;
+			continue;
 		}
 
 		if (current_node->type == GdmlNodeType::SOURCE_FILE) {
@@ -92,10 +103,15 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 			for (const std::unique_ptr<DefinitionNode> &statement : node->statements) {
 				node_stack.push_back(statement.get());
 			}
+			for (const std::unique_ptr<ImportStatementNode> &statement : node->imports) {
+				node_stack.push_back(statement.get());
+			}
 			context_node = current_node;
 		} else if (current_node->type == GdmlNodeType::DEFINITION) {
 			DefinitionNode *node = (DefinitionNode *)current_node;
 			node_stack.push_back(node->statement.get());
+			context_node = current_node;
+		} else if (current_node->type == GdmlNodeType::IMPORT) {
 			context_node = current_node;
 		}
 	}
@@ -104,7 +120,21 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 	Array options;
 
 	if (context_node) {
-		if (context_node->type == GdmlNodeType::DEFINITION) {
+		if (context_node->type == GdmlNodeType::IMPORT) {
+			std::vector<String> files;
+			get_directory_contents(EditorInterface::get_singleton()->get_resource_filesystem()->get_filesystem(), files);
+
+			for (String &file_path : files) {
+				Dictionary complete_option;
+				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_FILE_PATH;
+				complete_option["display"] = file_path;
+				complete_option["insert_text"] = file_path;
+				complete_option["default_value"] = Variant();
+				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+				
+				options.push_back(complete_option);
+			}
+		} else if (context_node->type == GdmlNodeType::DEFINITION) {
 			DefinitionNode *def_node = (DefinitionNode *)context_node;
 			
 			if (def_node->statement->type == GdmlNodeType::NODE_DEFINITION) {

@@ -2,103 +2,9 @@
 
 [ext_resource type="Script" uid="uid://50ej1ovsonsw" path="res://new_script.gd" id="1_dxa44"]
 [ext_resource type="Script" uid="uid://crd36fuo3eoj4" path="res://my_cool_button.gd" id="3_mirat"]
-[ext_resource type="Script" uid="uid://dxmfo6g7luyho" path="res://ui_examples/inventory/inventory_item.gd" id="4_3dfi7"]
+[ext_resource type="PackedScene" uid="uid://bymqjuckrj628" path="res://ui_examples/inventory/inventory.tscn" id="4_3dfi7"]
 [ext_resource type="Script" uid="uid://cjkstodorsick" path="res://ui_examples/inventory/inventory.gdml" id="4_hn3h5"]
-[ext_resource type="Texture2D" uid="uid://c2rhakuaqwjww" path="res://icon.svg" id="5_c4k6i"]
 [ext_resource type="AudioStream" uid="uid://dae0q5f6545bp" path="res://audio/thud-impact-sound-sfx-379990.mp3" id="6_c4k6i"]
-
-[sub_resource type="GDScript" id="GDScript_4tb28"]
-resource_name = "inventory"
-script/source = "@tool
-extends GDMLNode
-
-@export var items: Array[InventoryItem] = []
-
-func _ready() -> void:
-	if markup:
-		markup.changed.connect(func ():
-			get_variable(\"items\").value = items
-		)
-	
-	get_variable(\"items\").value = items
-	
-	if not Engine.is_editor_hint():
-		connect(\"item_gui_input\", _item_gui_input)
-		pass
-	
-	#await get_tree().create_timer(2.0).timeout
-	#var item_count := get_variable(\"item_count\")
-	#item_count.value = 3
-
-var drag_ctrl: Control
-var active_drop_target: DropTarget
-var item_index: int
-
-func _item_gui_input(target: Control, event: InputEvent) -> void:
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.is_pressed():
-				if not drag_ctrl:
-					drag_ctrl = target
-					drag_ctrl.z_index = 999
-					item_index = (drag_ctrl.get_parent() as DropTarget).index
-			elif event.is_released():
-				if drag_ctrl:
-					if active_drop_target:
-						var target_index := active_drop_target.index
-						var a = items[item_index]
-						items[item_index] = items[target_index]
-						items[target_index] = a
-						get_variable(\"items\").value = items
-						
-						active_drop_target.remove_theme_stylebox_override(&\"panel\")
-						active_drop_target = null
-					
-					drag_ctrl.z_index = 0
-					drag_ctrl.position = Vector2.ZERO
-					drag_ctrl = null
-	if event is InputEventMouseMotion:
-		if drag_ctrl:
-			drag_ctrl.position += event.relative
-			
-			var targets := find_children(\"*\", \"DropTarget\", true, false)
-			
-			for t: DropTarget in targets:
-				if drag_ctrl.get_parent() == t:
-					continue
-				if t.get_global_rect().has_point(event.global_position):
-					active_drop_target = t
-					t.add_theme_stylebox_override(&\"panel\", get_variable(\"dt_stylebox\").value)
-					break
-				else:
-					active_drop_target = null
-					t.remove_theme_stylebox_override(&\"panel\")
-			
-"
-
-[sub_resource type="Resource" id="Resource_mirat"]
-script = ExtResource("4_3dfi7")
-item_name = "Sword"
-item_icon = ExtResource("5_c4k6i")
-metadata/_custom_type_script = "uid://dxmfo6g7luyho"
-
-[sub_resource type="Resource" id="Resource_hn3h5"]
-script = ExtResource("4_3dfi7")
-item_name = "Shield"
-item_icon = ExtResource("5_c4k6i")
-metadata/_custom_type_script = "uid://dxmfo6g7luyho"
-
-[sub_resource type="Resource" id="Resource_3dfi7"]
-script = ExtResource("4_3dfi7")
-item_name = "Bow"
-item_icon = ExtResource("5_c4k6i")
-metadata/_custom_type_script = "uid://dxmfo6g7luyho"
-
-[sub_resource type="Resource" id="Resource_c4k6i"]
-script = ExtResource("4_3dfi7")
-item_name = "Staff"
-item_icon = ExtResource("5_c4k6i")
-metadata/_custom_type_script = "uid://dxmfo6g7luyho"
 
 [sub_resource type="GdmlScript" id="GdmlScript_3dfi7"]
 
@@ -149,11 +55,8 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Inventory" type="GDMLNode" parent="CanvasLayer/MarginContainer" unique_id=1510906394]
-markup = ExtResource("4_hn3h5")
+[node name="Inventory" parent="CanvasLayer/MarginContainer" unique_id=1151797622 instance=ExtResource("4_3dfi7")]
 layout_mode = 2
-script = SubResource("GDScript_4tb28")
-items = Array[ExtResource("4_3dfi7")]([SubResource("Resource_mirat"), SubResource("Resource_hn3h5"), SubResource("Resource_3dfi7"), SubResource("Resource_c4k6i")])
 
 [node name="ItemList" type="GDMLNode" parent="CanvasLayer" unique_id=2118346781]
 markup = SubResource("GdmlScript_3dfi7")

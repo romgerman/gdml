@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vector>
+
 #include <godot_cpp/classes/script_language_extension.hpp>
+#include <godot_cpp/classes/editor_file_system.hpp>
+#include <godot_cpp/classes/editor_file_system_directory.hpp>
 
 namespace godot {
 
@@ -9,6 +13,8 @@ class GdmlScriptLanguage : public ScriptLanguageExtension {
 
 private:
 	static GdmlScriptLanguage *instance;
+
+	void get_directory_contents(EditorFileSystemDirectory *p_dir, std::vector<String> &out_files) const;
 
 protected:
 	static void _bind_methods();

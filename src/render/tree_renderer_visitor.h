@@ -29,6 +29,7 @@ struct TreeRendererVisitorContext {
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
+	std::map<godot::String, godot::String> m_imports;
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
 
@@ -73,6 +74,7 @@ private:
 	void visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 	void renderIfStatement(godot::IfStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
+	void visitImportStatement(godot::ImportStatementNode &statement);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
 	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);

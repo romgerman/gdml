@@ -64,7 +64,9 @@ std::unique_ptr<SourceFileNode> GdmlParser::parse(const String &text) {
 	for (uint32_t i = 0; i < root_node.getNamedChildCount(); i++) {
 		ts::Node child_node = root_node.getNamedChild(i);
 
-		if (child_node.isType("definition")) {
+		if (child_node.isType("import_statement")) {
+			out->imports.push_back(visitImport(child_node, source));
+		} else if (child_node.isType("definition")) {
 			out->statements.push_back(visitDefinition(child_node, source));
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
@@ -96,6 +98,28 @@ void GdmlParser::collectSyntaxErrors(ts::Node node) {
 	}
 }
 
+std::unique_ptr<ImportStatementNode> GdmlParser::visitImport(ts::Node node, CharString &text) {
+	std::unique_ptr<ImportStatementNode> out = std::make_unique<ImportStatementNode>();
+	out->type = GdmlNodeType::IMPORT;
+	out->location = parser::GdmlSourceLocation(node);
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->name = visitIdentifier(child_node, text);
+		} else if (child_node.isType("string")) {
+			out->from = visitString(child_node, text);
+		} else if (child_node.isType("from") || child_node.isType("comment") || child_node.isError()) {
+			continue;
+		} else {
+			pushError("Unknown node " + String(child_node.getType()) + " while parsing definition", child_node);
+		}
+	}
+
+	return out;
+}
+
 std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharString &text) {
 	std::unique_ptr<DefinitionNode> out = std::make_unique<DefinitionNode>();
 	out->type = GdmlNodeType::DEFINITION;
@@ -116,7 +140,6 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharS
 		} else if (child_node.isType("for_statement")) {
 			out->statement = visitForStatement(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
-			break;
 			continue;
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing definition", child_node);

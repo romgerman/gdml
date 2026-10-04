@@ -7,7 +7,6 @@
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/theme.hpp>
-#include <godot_cpp/classes/theme.hpp>
 #include <godot_cpp/classes/font.hpp>
 #include <godot_cpp/classes/style_box.hpp>
 #include <godot_cpp/classes/object.hpp>
@@ -180,6 +179,10 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 }
 
 void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, TreeRendererVisitorResult &result) {
+	for (const std::unique_ptr<ImportStatementNode> &statement : source_node.imports) {
+		visitImportStatement(*statement);
+	}
+
 	for (const std::unique_ptr<DefinitionNode> &definition : source_node.statements) {
 		switch (definition->statement->type)
 		{
@@ -222,40 +225,61 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 }
 
 Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
+	const String &node_name = node.name->name;
 	Variant root_variant;
 
-	if (!ClassDB::class_exists(node.name->name)) {
-		Dictionary class_info;
+	if (m_context->m_imports.find(node_name) != m_context->m_imports.end()) {
+		const String &import_path = m_context->m_imports[node_name];
+		Ref<PackedScene> scene = ResourceLoader::get_singleton()->load(import_path, "PackedScene");
 
-		for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
-			if (String(ci.get("class", "")) == node.name->name) {
-				class_info = ci;
-				break;
-			}
-		}
-
-		if (class_info.is_empty()) {
-			printError("Class with name '" + node.name->name + "' is not found", node);
+		if (scene.is_null()) {
+			printError("Cannot load scene from import with path " + import_path, node);
 			return nullptr;
 		}
 
-		String path = class_info.get("path", "");
-		Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
-		if (script.is_null()) {
-			printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
-			return nullptr;
-		}
-		root_variant = ClassDB::instantiate(script->get_instance_base_type());
-		Object *base_object = root_variant.get_validated_object();
+		// Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
+		// if (script.is_null()) {
+		// 	printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
+		// 	return nullptr;
+		// }
+		// root_variant = ClassDB::instantiate(script->get_instance_base_type());
+		Node *base_object = scene->instantiate();
 		assert(base_object);
-		base_object->set_script(script);
+		root_variant = base_object;
 	} else {
-		if (!ClassDB::can_instantiate(node.name->name)) {
-			printError("Cannot construct node of type '" + node.name->name + "'", node);
-			return nullptr;
+		if (!ClassDB::class_exists(node.name->name)) {
+			Dictionary class_info;
+	
+			for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
+				if (String(ci.get("class", "")) == node.name->name) {
+					class_info = ci;
+					break;
+				}
+			}
+	
+			if (class_info.is_empty()) {
+				printError("Class with name '" + node.name->name + "' is not found", node);
+				return nullptr;
+			}
+	
+			String path = class_info.get("path", "");
+			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
+			if (script.is_null()) {
+				printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
+				return nullptr;
+			}
+			root_variant = ClassDB::instantiate(script->get_instance_base_type());
+			Object *base_object = root_variant.get_validated_object();
+			assert(base_object);
+			base_object->set_script(script);
+		} else {
+			if (!ClassDB::can_instantiate(node.name->name)) {
+				printError("Cannot construct node of type '" + node.name->name + "'", node);
+				return nullptr;
+			}
+	
+			root_variant = ClassDB::instantiate(node.name->name);
 		}
-
-		root_variant = ClassDB::instantiate(node.name->name);
 	}
 
 	bool is_node = false;
@@ -599,6 +623,10 @@ void TreeRendererVisitor::visitSignalDefinition(SignalDefinitionNode &definition
 	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
 }
 
+void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &statement) {
+	m_context->m_imports[statement.name->name] = statement.from->value;
+}
+
 bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
 	if (doesExpressionHaveSelf(value_node)) {
 		std::function<void()> deferred_set = [this, root_variant, variant, prop_key, &value_node]() {
@@ -772,9 +800,9 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		NumberNode node = (NumberNode &)value_node;
 
 		if (control->has_theme_constant(prop_key)) {
-			control->add_theme_constant_override(prop_key, node.getFloat());
+			control->add_theme_constant_override(prop_key, node.getInteger());
 		} else if (control->has_theme_font_size(prop_key)) {
-			control->add_theme_font_size_override(prop_key, node.getFloat());
+			control->add_theme_font_size_override(prop_key, node.getInteger());
 		}
 	} else if (value_node.type == GdmlNodeType::IDENTIFIER_EXPRESSION) {
 		IdentifierNode &node = (IdentifierNode &)value_node;
