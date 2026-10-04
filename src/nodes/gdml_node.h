@@ -19,6 +19,9 @@ private:
 	Ref<GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
 
+	void render_in_editor();
+	void render_in_game();
+
 protected:
 	static void _bind_methods();
 
@@ -29,8 +32,7 @@ public:
 	void _ready() override;
 
 	void _notification(int p_what);
-
-	void render_in_editor();
+	
 	void on_markup_changed();
 	void on_bubble_signal0(Variant target, String signal_name);
 	void on_bubble_signal1(Variant target, Variant arg1, String signal_name);

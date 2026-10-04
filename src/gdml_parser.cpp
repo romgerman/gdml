@@ -139,6 +139,8 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharS
 			break;
 		} else if (child_node.isType("for_statement")) {
 			out->statement = visitForStatement(child_node, text);
+		} else if (child_node.isType("if_statement")) {
+			out->statement = visitIfStatement(child_node, text);
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {

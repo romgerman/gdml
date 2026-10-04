@@ -216,6 +216,10 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			visitForStatement(*statement, result.nodes);
 		} break;
+		case GdmlNodeType::IF_STATEMENT: {
+			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
+			visitIfStatement(*statement, result.nodes);
+		} break;
 		case GdmlNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
 			visitSignalDefinition(*def);
@@ -233,16 +237,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		Ref<PackedScene> scene = ResourceLoader::get_singleton()->load(import_path, "PackedScene");
 
 		if (scene.is_null()) {
-			printError("Cannot load scene from import with path " + import_path, node);
+			printError("Cannot load import path " + import_path, node);
 			return nullptr;
 		}
 
-		// Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
-		// if (script.is_null()) {
-		// 	printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
-		// 	return nullptr;
-		// }
-		// root_variant = ClassDB::instantiate(script->get_instance_base_type());
 		Node *base_object = scene->instantiate();
 		assert(base_object);
 		root_variant = base_object;

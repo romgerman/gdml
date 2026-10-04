@@ -35,7 +35,8 @@ module.exports = grammar({
       $.signal_definition,
       $.variable_definition,
       $.node_definition,
-      $.for_statement
+      $.for_statement,
+      $.if_statement
     ),
 
     // Statements

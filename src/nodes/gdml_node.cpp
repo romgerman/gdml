@@ -50,17 +50,7 @@ void GDMLNode::_notification(int p_what) {
 		}
 
 		if (!Engine::get_singleton()->is_editor_hint()) {
-			if (_markup.is_valid()) {
-				_renderer_result = _renderer->renderMarkup(_markup.ptr());
-				for (Variant item : _renderer_result->get_nodes()) {
-					Control *child = cast_to<Control>(item);
-					add_child(child);
-					child->set_owner(get_owner() ? get_owner() : nullptr);
-				}
-
-				on_signals_changed();
-				_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
-			}
+			render_in_game();
 		}
 	} break;
 	}
@@ -76,6 +66,20 @@ void GDMLNode::render_in_editor() {
 		for (Variant item : _renderer_result->get_nodes()) {
 			add_child(cast_to<Control>(item));
 		}
+	}
+}
+
+void GDMLNode::render_in_game() {
+	if (_markup.is_valid()) {
+		_renderer_result = _renderer->renderMarkup(_markup.ptr());
+		for (Variant item : _renderer_result->get_nodes()) {
+			Control *child = cast_to<Control>(item);
+			add_child(child);
+			child->set_owner(get_owner() ? get_owner() : nullptr);
+		}
+
+		on_signals_changed();
+		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 	}
 }
 
