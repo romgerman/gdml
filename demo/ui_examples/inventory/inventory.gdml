@@ -20,7 +20,7 @@ let items = [
 
 signal item_gui_input
 
-component Item = Control(anchors(0, 0, 1, 1)) {
+component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 	name: "Item"
 	@gui_input: item_gui_input
 	
@@ -59,7 +59,9 @@ GridContainer(anchors(0, 0, 1, 1)) {
 			DropTarget {
 				index: i
 				
-				Item {}
+				Item {
+					item_info: item_info
+				}
 			}
 		}
 	}

@@ -128,9 +128,31 @@
           }
         ]
       },
-      "value": {
+      "params": {
         "multiple": true,
         "required": false,
+        "types": [
+          {
+            "type": "(",
+            "named": false
+          },
+          {
+            "type": ")",
+            "named": false
+          },
+          {
+            "type": ",",
+            "named": false
+          },
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": true,
         "types": [
           {
             "type": "=",

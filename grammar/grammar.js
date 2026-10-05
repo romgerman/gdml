@@ -99,10 +99,21 @@ module.exports = grammar({
     component_definition: $ => seq(
       "component",
       field("name", $.identifier),
-      optional(field("value", seq(
+      optional(field("params", seq(
+        '(',
+        seq(
+          $.identifier,
+          repeat(seq(
+            ',',
+            $.identifier
+          ))
+        ),
+        ')'
+      ))),
+      field("value", seq(
         '=',
         $.node_definition
-      ))),
+      )),
     ),
     for_statement: $ => seq(
       "@for",
@@ -183,13 +194,11 @@ module.exports = grammar({
       ')'
     ),
     argument_list: $ => seq(
-      seq(
-        $.expression,
-        repeat(seq(
-          ',',
-          $.expression
-        ))
-      )
+      $.expression,
+      repeat(seq(
+        ',',
+        $.expression
+      ))
     ),
     binary_expression: $ => choice(
       ...[

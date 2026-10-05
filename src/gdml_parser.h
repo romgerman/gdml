@@ -189,6 +189,7 @@ struct VariableDefinitionNode : public StatementNode {
 struct ComponentDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 	std::unique_ptr<NodeDefinitionNode> value;
+	std::vector<std::unique_ptr<IdentifierNode>> params;
 };
 
 struct SignalDefinitionNode : public StatementNode {

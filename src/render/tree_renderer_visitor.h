@@ -21,7 +21,23 @@ namespace godot {
 
 namespace traversal {
 
+class Scope {
+	std::map<godot::String, godot::Variant> m_local_variables;
+	std::shared_ptr<Scope> parent_scope;
+
+public:
+	void set_variable(godot::String p_name, godot::Variant p_value);
+	godot::Variant get_variable(godot::String p_name);
+
+	std::shared_ptr<Scope> create_scope();
+};
+
 struct TreeRendererVisitorContext {
+	struct Component {
+		godot::NodeDefinitionNode *node;
+		std::vector<godot::String> params;
+	};
+
 	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
 
 	std::vector<std::function<void()>> m_deferred_properties;
@@ -30,7 +46,7 @@ struct TreeRendererVisitorContext {
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
 	std::map<godot::String, godot::String> m_imports;
-	std::map<godot::String, godot::NodeDefinitionNode *> m_components;
+	std::map<godot::String, Component> m_components;
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
 
@@ -49,6 +65,12 @@ struct TreeRendererVisitorContext {
 	void reset_active_variable(godot::String &p_name);
 
 	void flush_deferred_properties();
+
+	std::unique_ptr<Scope> m_global_scope;
+
+	Scope *get_scope();
+
+	TreeRendererVisitorContext();
 };
 
 struct TreeRendererVisitorResult {
@@ -69,7 +91,7 @@ public:
 
 private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
-	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
+	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node, bool is_component = false);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 	void renderForStatement(godot::ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes);

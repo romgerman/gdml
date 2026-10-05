@@ -1,3 +1,17 @@
+let item_size = Vector2 {
+	x: 100
+	y: 100
+}
+
+let stylebox = StyleBoxFlat {
+	bg_color: Color.BLACK
+}
+
+let dt_stylebox = StyleBoxFlat(
+	border(2, 2, 2, 2, Color.YELLOW),
+	expand_margin(2, 2, 2, 2)
+) { }
+
 let inventory_size = 10
 let columns = 5
 let items = [
@@ -6,10 +20,47 @@ let items = [
 
 signal item_gui_input
 
-GridContainer {
-	@for i, item_info in items {
+component Item = Control(anchors(0, 0, 1, 1)) {
+	name: "Item"
+	@gui_input: item_gui_input
+	
+	ColorRect {
+		color: Color {
+			r: 0; g: 0; b: 0;
+			a: 0.5;
+		}
+		mouse_filter: Control.MOUSE_FILTER_IGNORE
+	}
+	
+	TextureRect(anchors(0, 0, 1, 1)) {
+		texture: item_info.item_icon
+		expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
+		mouse_filter: Control.MOUSE_FILTER_IGNORE
+	}
+	
+	Button(anchors(0, 0, 1, 1)) {
+		$normal: StyleBoxEmpty {}
+		mouse_filter: Control.MOUSE_FILTER_PASS
+		
 		Label {
-			text: items[i]
+			text: item_info.item_name
+		}
+	}
+}
+
+GridContainer(anchors(0, 0, 1, 1)) {
+	columns: columns
+	
+	@for i, item_info in items {
+		PanelContainer {
+			custom_minimum_size: item_size
+			$panel: stylebox
+			
+			DropTarget {
+				index: i
+				
+				Item {}
+			}
 		}
 	}
 }

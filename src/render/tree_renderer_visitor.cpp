@@ -23,6 +23,30 @@ using namespace parser;
 
 namespace traversal {
 
+void Scope::set_variable(godot::String p_name, godot::Variant p_value) {
+	m_local_variables[p_name] = p_value;
+}
+
+godot::Variant Scope::get_variable(godot::String p_name) {
+	Scope *current_scope = this;
+
+	do {
+		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
+			return current_scope->m_local_variables[p_name];
+		}
+
+		current_scope = current_scope->parent_scope.get();
+	} while (current_scope != nullptr);
+
+	return godot::Variant();
+}
+
+std::shared_ptr<Scope> Scope::create_scope() {
+	std::shared_ptr<Scope> scope = std::make_shared<Scope>();
+	scope->parent_scope = std::shared_ptr<Scope>(this);
+	return scope;
+}
+
 #pragma region Context
 
 void TreeRendererVisitorContext::set_data(const String &p_name, Variant p_value) {
@@ -112,6 +136,14 @@ void TreeRendererVisitorContext::flush_deferred_properties() {
 	}
 
 	m_deferred_properties.clear();
+}
+
+Scope *TreeRendererVisitorContext::get_scope() {
+	return m_global_scope.get();
+}
+
+TreeRendererVisitorContext::TreeRendererVisitorContext() {
+	m_global_scope = std::make_unique<Scope>();
 }
 
 #pragma endregion
@@ -215,7 +247,14 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		} break;
 		case GDMLNodeType::COMPONENT_DEFINITION: {
 			ComponentDefinitionNode *component = static_cast<ComponentDefinitionNode *>(definition->statement.get());
-			m_context->m_components[component->name->name] = static_cast<NodeDefinitionNode *>(component->value.get());
+			auto component_item = TreeRendererVisitorContext::Component();
+			component_item.node = static_cast<NodeDefinitionNode *>(component->value.get());
+			
+			for (std::unique_ptr<godot::IdentifierNode> &p : component->params) {
+				component_item.params.push_back(p->name);
+			}
+
+			m_context->m_components[component->name->name] = component_item;
 		} break;
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
@@ -233,7 +272,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 	}
 }
 
-Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
+Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node, bool is_component) {
 	const String &node_name = node.name->name;
 	Variant root_variant;
 
@@ -263,7 +302,8 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			base_object->set_script(script);
 		}
 	} else if (m_context->m_components.find(node_name) != m_context->m_components.end()) {
-		root_variant = visitNodeDefinition(*m_context->m_components[node_name]);
+		TreeRendererVisitorContext::Component &cmp = m_context->m_components[node_name];
+		root_variant = visitNodeDefinition(*cmp.node, true);
 	} else {
 		if (!ClassDB::class_exists(node_name)) {
 			Dictionary class_info;
@@ -1437,4 +1477,4 @@ void TreeRendererVisitor::printError(const String p_error, const GdmlNode &node)
 
 #pragma endregion
 
-}
+} //namespace traversal

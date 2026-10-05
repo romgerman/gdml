@@ -288,15 +288,28 @@ std::unique_ptr<ComponentDefinitionNode> GdmlParser::visitComponentDefinition(ts
 	out->type = GDMLNodeType::COMPONENT_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
 
+	ts::Node name_node = node.getChildByFieldName("name");
+	if (!name_node.isNull()) {
+		out->name = visitIdentifier(name_node, text);
+	}
+
+	ts::Node params_node = node.getChildByFieldName("params");
+	if (!params_node.isNull()) {
+		for (uint32_t i = 0; i < params_node.getChildCount(); i++) {
+			ts::Node child_node = params_node.getChild(i);
+
+			if (child_node.isType("identifier")) {
+				out->params.push_back(visitIdentifier(child_node, text));
+			}
+		}
+	}
+
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
 		ts::Node child_node = node.getNamedChild(i);
 
-		if (child_node.isType("identifier")) {
-			out->name = visitIdentifier(child_node, text);
-		} else if (child_node.isType("node_definition")) {
+		if (child_node.isType("node_definition")) {
 			out->value = visitNodeDefinition(child_node, text);
-		} else {
-			pushError("Unknown node '" + String(child_node.getType()) + "' while parsing component definition", child_node);
+			break;
 		}
 	}
 
