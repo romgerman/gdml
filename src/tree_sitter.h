@@ -31,6 +31,14 @@ public:
 	TSPoint getEndPoint() const;
 	godot::String getText(const godot::CharString &sourceText) const;
 
+	bool operator==(Node &right) {
+		return ts_node_eq(m_node, right.m_node);
+	}
+
+	bool operator!=(Node &right) {
+		return !ts_node_eq(m_node, right.m_node);
+	}
+
 	static Node getRootNode(const TSTree *tree);
 };
 

@@ -90,7 +90,7 @@ public:
 
 private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
-	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node, bool is_component = false);
+	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
 	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
 	void renderForStatement(godot::ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes);

@@ -295,10 +295,10 @@ std::unique_ptr<ComponentDefinitionNode> GdmlParser::visitComponentDefinition(ts
 
 	ts::Node params_node = node.getChildByFieldName("params");
 	if (!params_node.isNull()) {
-		for (uint32_t i = 0; i < params_node.getChildCount(); i++) {
-			ts::Node child_node = params_node.getChild(i);
+		for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+			ts::Node child_node = node.getNamedChild(i);
 
-			if (child_node.isType("identifier")) {
+			if (child_node.isType("identifier") && child_node != name_node) {
 				out->params.push_back(visitIdentifier(child_node, text));
 			}
 		}

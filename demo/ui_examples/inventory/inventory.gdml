@@ -57,6 +57,7 @@ GridContainer(anchors(0, 0, 1, 1)) {
 			$panel: stylebox
 			
 			DropTarget {
+				
 				index: i
 				
 				Item {

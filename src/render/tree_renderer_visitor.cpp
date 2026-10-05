@@ -296,7 +296,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 	}
 }
 
-Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node, bool is_component) {
+Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 	const String &node_name = node.name->name;
 	Variant root_variant;
 
@@ -327,7 +327,28 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node,
 		}
 	} else if (m_context->m_components.find(node_name) != m_context->m_components.end()) {
 		TreeRendererVisitorContext::Component &cmp = m_context->m_components[node_name];
-		root_variant = visitNodeDefinition(*cmp.node, true);
+		std::shared_ptr<Scope> current_scope = m_context->m_current_scope;
+		std::shared_ptr<Scope> component_scope = std::make_shared<Scope>();
+
+		for (String &param_name : cmp.params) {
+			for (const std::unique_ptr<godot::PropertyDefinitionNode> &prop : node.properties) {
+				if (prop->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+					IdentifierNode &prop_name = static_cast<IdentifierNode &>(*prop->name);
+					if (prop_name.name == param_name) {
+						Variant out;
+						if (resolveExpression(root_variant, *prop->value, out)) {
+							component_scope->set_variable(param_name, out);
+						} else {
+							printError("Cannot resolve expression while rendering a component", *prop);
+						}
+					}
+				}
+			}
+		}
+
+		m_context->m_current_scope = component_scope;
+		root_variant = visitNodeDefinition(*cmp.node);
+		m_context->m_current_scope = current_scope;
 	} else {
 		if (!ClassDB::class_exists(node_name)) {
 			Dictionary class_info;
