@@ -24,7 +24,32 @@ using namespace parser;
 namespace traversal {
 
 void Scope::set_variable(godot::String p_name, godot::Variant p_value) {
+	Scope *current_scope = this;
+
+	do {
+		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
+			current_scope->m_local_variables[p_name] = p_value;
+			return;
+		}
+
+		current_scope = current_scope->m_parent_scope.get();
+	} while (current_scope != nullptr);
+
 	m_local_variables[p_name] = p_value;
+}
+
+bool Scope::has_variable(godot::String p_name) {
+	Scope *current_scope = this;
+
+	do {
+		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
+			return true;
+		}
+
+		current_scope = current_scope->m_parent_scope.get();
+	} while (current_scope != nullptr);
+
+	return false;
 }
 
 godot::Variant Scope::get_variable(godot::String p_name) {
@@ -35,7 +60,7 @@ godot::Variant Scope::get_variable(godot::String p_name) {
 			return current_scope->m_local_variables[p_name];
 		}
 
-		current_scope = current_scope->parent_scope.get();
+		current_scope = current_scope->m_parent_scope.get();
 	} while (current_scope != nullptr);
 
 	return godot::Variant();
@@ -43,27 +68,11 @@ godot::Variant Scope::get_variable(godot::String p_name) {
 
 std::shared_ptr<Scope> Scope::create_scope() {
 	std::shared_ptr<Scope> scope = std::make_shared<Scope>();
-	scope->parent_scope = std::shared_ptr<Scope>(this);
+	scope->m_parent_scope = shared_from_this();
 	return scope;
 }
 
 #pragma region Context
-
-void TreeRendererVisitorContext::set_data(const String &p_name, Variant p_value) {
-	m_data[p_name] = p_value;
-}
-
-bool TreeRendererVisitorContext::has_data(String &p_name) {
-	return m_data.find(p_name) != m_data.end();
-}
-
-Variant TreeRendererVisitorContext::get_data(String &p_name) {
-	if (m_data.find(p_name) != m_data.end()) {
-		return m_data[p_name];
-	} else {
-		return nullptr;
-	}
-}
 
 void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
 	if (m_variables.find(p_name) != m_variables.end()) {
@@ -139,11 +148,20 @@ void TreeRendererVisitorContext::flush_deferred_properties() {
 }
 
 Scope *TreeRendererVisitorContext::get_scope() {
-	return m_global_scope.get();
+	return m_current_scope.get();
+}
+
+void TreeRendererVisitorContext::push_scope() {
+	m_current_scope = m_current_scope->create_scope();
+}
+
+void TreeRendererVisitorContext::pop_scope() {
+	m_current_scope = m_current_scope->m_parent_scope;
 }
 
 TreeRendererVisitorContext::TreeRendererVisitorContext() {
 	m_global_scope = std::make_unique<Scope>();
+	m_current_scope = std::move(m_global_scope);
 }
 
 #pragma endregion
@@ -223,12 +241,14 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 			const NodeDefinitionNode *node_def = static_cast<const NodeDefinitionNode *>(definition->statement.get());
 
 			m_context->push_active_context();
+			m_context->push_scope();
 			{
 				Variant result_node = visitNodeDefinition(*node_def);
 				if (result_node) {
 					result.nodes.push_back(result_node);
 				}
 			}
+			m_context->pop_scope();
 			m_context->pop_active_context();
 		} break;
 		case GDMLNodeType::VARIABLE_DEFINITION: {
@@ -258,11 +278,15 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		} break;
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
+			m_context->push_scope();
 			visitForStatement(*statement, result.nodes);
+			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::IF_STATEMENT: {
 			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
+			m_context->push_scope();
 			visitIfStatement(*statement, result.nodes);
+			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
@@ -462,7 +486,9 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node,
 	for (const std::unique_ptr<StatementNode> &statement : node.statements) {
 		if (statement->type == GDMLNodeType::NODE_DEFINITION) {
 			const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
+			m_context->push_scope();
 			Variant child_variant = visitNodeDefinition(*child);
+			m_context->pop_scope();
 
 			if (child_variant.get_type() != Variant::Type::NIL) {
 				Object *child_obj = child_variant.get_validated_object();
@@ -474,7 +500,9 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node,
 		} else if (statement->type == GDMLNodeType::FOR_STATEMENT) {
 			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
+			m_context->push_scope();
 			visitForStatement(*for_node, nodes);
+			m_context->pop_scope();
 
 			for (Variant &item : nodes) {
 				obj_as_node->add_child(Object::cast_to<Node>(item));
@@ -482,7 +510,9 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node,
 		} else if (statement->type == GDMLNodeType::IF_STATEMENT) {
 			IfStatementNode *for_node = static_cast<IfStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
+			m_context->push_scope();
 			visitIfStatement(*for_node, nodes);
+			m_context->pop_scope();
 
 			for (Variant &item : nodes) {
 				obj_as_node->add_child(Object::cast_to<Node>(item));
@@ -569,10 +599,10 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 			for (int64_t i = 0; i < arr.size(); i++) {
 				Variant item = arr[i];
 				if (has_iter2) {
-					m_context->set_data(iter_name, i);
-					m_context->set_data(iter_name2, item);
+					m_context->get_scope()->set_variable(iter_name, i);
+					m_context->get_scope()->set_variable(iter_name2, item);
 				} else {
-					m_context->set_data(iter_name, item);
+					m_context->get_scope()->set_variable(iter_name, item);
 				}
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
 					m_context->push_active_context();
@@ -581,16 +611,10 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
 				}
-			}
-			if (has_iter2) {
-				m_context->set_data(iter_name, Variant());
-				m_context->set_data(iter_name2, Variant());
-			} else {
-				m_context->set_data(iter_name, Variant());
 			}
 		} else {
 			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
-				m_context->set_data(iter_name, i);
+				m_context->get_scope()->set_variable(iter_name, i);
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
@@ -599,7 +623,6 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 					nodes->push_back(result_node);
 				}
 			}
-			m_context->set_data(iter_name, Variant());
 		}
 	} else {
 		printError("Cannot resolve range expression of for-statement", *statement.range);
@@ -748,8 +771,8 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 	bool is_valid = false;
 
 	if (!is_valid) {
-		if (m_context->has_data(prop_key)) {
-			value = m_context->get_data(prop_key);
+		if (m_context->get_scope()->has_variable(prop_key)) {
+			value = m_context->get_scope()->get_variable(prop_key);
 			is_valid = true;
 		}
 	}
@@ -1041,7 +1064,7 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 	}
 
 	if (obj) {
-		const Variant name_or_callable = m_context->m_data[callable_name];
+		const Variant name_or_callable = m_context->get_scope()->get_variable(callable_name);
 		if (name_or_callable) {
 			if (name_or_callable.get_type() == Variant::STRING) {
 				obj->connect(signal_name, Callable(root_variant, name_or_callable));

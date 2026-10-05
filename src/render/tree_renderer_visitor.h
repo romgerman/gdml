@@ -21,12 +21,13 @@ namespace godot {
 
 namespace traversal {
 
-class Scope {
+class Scope : public std::enable_shared_from_this<Scope> {
 	std::map<godot::String, godot::Variant> m_local_variables;
-	std::shared_ptr<Scope> parent_scope;
-
+	
 public:
+	std::shared_ptr<Scope> m_parent_scope;
 	void set_variable(godot::String p_name, godot::Variant p_value);
+	bool has_variable(godot::String p_name);
 	godot::Variant get_variable(godot::String p_name);
 
 	std::shared_ptr<Scope> create_scope();
@@ -41,7 +42,6 @@ struct TreeRendererVisitorContext {
 	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
 
 	std::vector<std::function<void()>> m_deferred_properties;
-	std::map<godot::String, godot::Variant> m_data;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
@@ -49,10 +49,6 @@ struct TreeRendererVisitorContext {
 	std::map<godot::String, Component> m_components;
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
-
-	void set_data(const godot::String &p_name, godot::Variant p_value);
-	bool has_data(godot::String &p_name);
-	godot::Variant get_data(godot::String &p_name);
 
 	void set_variable(godot::String &p_name, godot::Variant p_value);
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
@@ -66,9 +62,12 @@ struct TreeRendererVisitorContext {
 
 	void flush_deferred_properties();
 
-	std::unique_ptr<Scope> m_global_scope;
+	std::shared_ptr<Scope> m_global_scope;
+	std::shared_ptr<Scope> m_current_scope;
 
 	Scope *get_scope();
+	void push_scope();
+	void pop_scope();
 
 	TreeRendererVisitorContext();
 };
