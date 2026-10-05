@@ -37,6 +37,7 @@ module.exports = grammar({
     definition: $ => choice(
       $.signal_definition,
       $.variable_definition,
+      $.component_definition,
       $.node_definition,
       $.for_statement,
       $.if_statement
@@ -94,6 +95,14 @@ module.exports = grammar({
         choice($.expression, $.resource_definition)
       ))),
       choice('\n', ';')
+    ),
+    component_definition: $ => seq(
+      "component",
+      field("name", $.identifier),
+      optional(field("value", seq(
+        '=',
+        $.node_definition
+      ))),
     ),
     for_statement: $ => seq(
       "@for",

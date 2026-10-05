@@ -71,6 +71,7 @@ enum class GDMLNodeType {
 	FOR_STATEMENT,
 	IF_STATEMENT,
 	VARIABLE_DEFINITION,
+	COMPONENT_DEFINITION,
 	SIGNAL_DEFINITION,
 	PROPERTY_DEFINITION,
 	RESOURCE_DEFINITION,
@@ -185,6 +186,11 @@ struct VariableDefinitionNode : public StatementNode {
 	std::unique_ptr<ExpressionNode> value;
 };
 
+struct ComponentDefinitionNode : public StatementNode {
+	std::unique_ptr<IdentifierNode> name;
+	std::unique_ptr<NodeDefinitionNode> value;
+};
+
 struct SignalDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 };
@@ -250,6 +256,7 @@ private:
 	std::unique_ptr<ResourceDefinitionNode> visitResource(ts::Node node, CharString &text);
 	std::unique_ptr<SignalDefinitionNode> visitSignalDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<VariableDefinitionNode> visitVariableDefinition(ts::Node node, CharString &text);
+	std::unique_ptr<ComponentDefinitionNode> visitComponentDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<ForStatementNode> visitForStatement(ts::Node node, CharString &text);
 	std::unique_ptr<IfStatementNode> visitIfStatement(ts::Node node, CharString &text);
 

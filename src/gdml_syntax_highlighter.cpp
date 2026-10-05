@@ -124,7 +124,7 @@ Color GdmlSyntaxHighlighter::get_color_for_node(std::tuple<ts::Node, String, boo
 		return comment_color;
 	} else if (type == "for_statement" || type == "if_statement") {
 		return control_flow_color;
-	} else if (type == "signal_definition" || type == "variable_definition" || type == "import_statement") {
+	} else if (type == "signal_definition" || type == "variable_definition" || type == "import_statement" || type == "component_definition") {
 		return keyword_color;
 	} else if (type == "signal_expression" || type == "theme_property_definition") {
 		return keyword_color;

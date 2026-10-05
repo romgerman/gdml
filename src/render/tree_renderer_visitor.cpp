@@ -213,6 +213,10 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 				m_context->set_variable(var->name->name, Variant());
 			}
 		} break;
+		case GDMLNodeType::COMPONENT_DEFINITION: {
+			ComponentDefinitionNode *component = static_cast<ComponentDefinitionNode *>(definition->statement.get());
+			m_context->m_components[component->name->name] = static_cast<NodeDefinitionNode *>(component->value.get());
+		} break;
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			visitForStatement(*statement, result.nodes);
@@ -258,26 +262,28 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			assert(base_object);
 			base_object->set_script(script);
 		}
+	} else if (m_context->m_components.find(node_name) != m_context->m_components.end()) {
+		root_variant = visitNodeDefinition(*m_context->m_components[node_name]);
 	} else {
-		if (!ClassDB::class_exists(node.name->name)) {
+		if (!ClassDB::class_exists(node_name)) {
 			Dictionary class_info;
 	
 			for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
-				if (String(ci.get("class", "")) == node.name->name) {
+				if (String(ci.get("class", "")) == node_name) {
 					class_info = ci;
 					break;
 				}
 			}
 	
 			if (class_info.is_empty()) {
-				printError("Class with name '" + node.name->name + "' is not found", node);
+				printError("Class with name '" + node_name + "' is not found", node);
 				return nullptr;
 			}
 	
 			String path = class_info.get("path", "");
 			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
 			if (script.is_null()) {
-				printError("Cannot load script associated with type '" + node.name->name + "' by path " + path, node);
+				printError("Cannot load script associated with type '" + node_name + "' by path " + path, node);
 				return nullptr;
 			}
 			root_variant = ClassDB::instantiate(script->get_instance_base_type());
@@ -285,12 +291,12 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			assert(base_object);
 			base_object->set_script(script);
 		} else {
-			if (!ClassDB::can_instantiate(node.name->name)) {
-				printError("Cannot construct node of type '" + node.name->name + "'", node);
+			if (!ClassDB::can_instantiate(node_name)) {
+				printError("Cannot construct node of type '" + node_name + "'", node);
 				return nullptr;
 			}
 	
-			root_variant = ClassDB::instantiate(node.name->name);
+			root_variant = ClassDB::instantiate(node_name);
 		}
 	}
 

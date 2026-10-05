@@ -129,18 +129,23 @@ std::unique_ptr<DefinitionNode> GdmlParser::visitDefinition(ts::Node node, CharS
 		ts::Node child_node = node.getNamedChild(i);
 
 		if (child_node.isType("node_definition")) {
-			out->statement = std::move(visitNodeDefinition(child_node, text));
+			out->statement = visitNodeDefinition(child_node, text);
 			break;
 		} else if (child_node.isType("signal_definition")) {
-			out->statement = std::move(visitSignalDefinition(child_node, text));
+			out->statement = visitSignalDefinition(child_node, text);
 			break;
 		} else if (child_node.isType("variable_definition")) {
-			out->statement = std::move(visitVariableDefinition(child_node, text));
+			out->statement = visitVariableDefinition(child_node, text);
+			break;
+		} else if (child_node.isType("component_definition")) {
+			out->statement = visitComponentDefinition(child_node, text);
 			break;
 		} else if (child_node.isType("for_statement")) {
 			out->statement = visitForStatement(child_node, text);
+			break;
 		} else if (child_node.isType("if_statement")) {
 			out->statement = visitIfStatement(child_node, text);
+			break;
 		} else if (child_node.isType("comment") || child_node.isError()) {
 			continue;
 		} else {
@@ -272,6 +277,26 @@ std::unique_ptr<VariableDefinitionNode> GdmlParser::visitVariableDefinition(ts::
 			out->value = visitResource(child_node, text);
 		} else {
 			pushError("Unknown node " + String(child_node.getType()) + " while parsing variable definition", child_node);
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<ComponentDefinitionNode> GdmlParser::visitComponentDefinition(ts::Node node, CharString &text) {
+	std::unique_ptr<ComponentDefinitionNode> out = std::make_unique<ComponentDefinitionNode>();
+	out->type = GDMLNodeType::COMPONENT_DEFINITION;
+	out->location = parser::GdmlSourceLocation(node);
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->name = visitIdentifier(child_node, text);
+		} else if (child_node.isType("node_definition")) {
+			out->value = visitNodeDefinition(child_node, text);
+		} else {
+			pushError("Unknown node '" + String(child_node.getType()) + "' while parsing component definition", child_node);
 		}
 	}
 

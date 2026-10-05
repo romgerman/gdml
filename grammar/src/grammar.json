@@ -43,6 +43,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "component_definition"
+        },
+        {
+          "type": "SYMBOL",
           "name": "node_definition"
         },
         {
@@ -492,6 +496,48 @@
             {
               "type": "STRING",
               "value": ";"
+            }
+          ]
+        }
+      ]
+    },
+    "component_definition": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "component"
+        },
+        {
+          "type": "FIELD",
+          "name": "name",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
+        },
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "FIELD",
+              "name": "value",
+              "content": {
+                "type": "SEQ",
+                "members": [
+                  {
+                    "type": "STRING",
+                    "value": "="
+                  },
+                  {
+                    "type": "SYMBOL",
+                    "name": "node_definition"
+                  }
+                ]
+              }
+            },
+            {
+              "type": "BLANK"
             }
           ]
         }

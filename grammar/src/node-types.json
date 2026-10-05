@@ -115,6 +115,36 @@
     "fields": {}
   },
   {
+    "type": "component_definition",
+    "named": true,
+    "fields": {
+      "name": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "value": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "=",
+            "named": false
+          },
+          {
+            "type": "node_definition",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "definition",
     "named": true,
     "fields": {},
@@ -122,6 +152,10 @@
       "multiple": false,
       "required": true,
       "types": [
+        {
+          "type": "component_definition",
+          "named": true
+        },
         {
           "type": "for_statement",
           "named": true
@@ -823,6 +857,10 @@
     "type": "comment",
     "named": true,
     "extra": true
+  },
+  {
+    "type": "component",
+    "named": false
   },
   {
     "type": "escape_sequence",

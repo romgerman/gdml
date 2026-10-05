@@ -30,6 +30,7 @@ struct TreeRendererVisitorContext {
 	// signal definition name <-> [signal target <-> [signal names]]
 	std::map<godot::String, SignalTarget> m_signals;
 	std::map<godot::String, godot::String> m_imports;
+	std::map<godot::String, godot::NodeDefinitionNode *> m_components;
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
 
