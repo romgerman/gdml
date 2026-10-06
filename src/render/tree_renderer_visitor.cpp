@@ -393,6 +393,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			is_node = true;
 		} else {
 			printError("Object is not a node", node);
+			Object *obj = Object::cast_to<Object>(root_variant);
+			if (obj && !Object::cast_to<RefCounted>(obj)) {
+				memdelete(obj);
+			}
 			return nullptr;
 		}
 	} else {
@@ -448,7 +452,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
 		if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
-			String &decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
+			String decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
 
 			Dictionary class_info;
 
@@ -495,6 +499,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 			if (!decorator_object->has_method(StringName("modify"))) {
 				printError("Decorator doesn't have a 'modify' method", *dec_fn);
+				memdelete(decorator_object);
 				continue;
 			} else {
 				decorator_object->callv(StringName("modify"), call_args);
@@ -1211,7 +1216,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
 				if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
-					String &decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
+					String decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
 
 					Dictionary class_info;
 
@@ -1258,6 +1263,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 
 					if (!decorator_object->has_method(StringName("modify_resource"))) {
 						printError("Decorator doesn't have a 'modify_resource' method", *dec_fn);
+						memdelete(decorator_object);
 						continue;
 					} else {
 						decorator_object->callv(StringName("modify_resource"), call_args);

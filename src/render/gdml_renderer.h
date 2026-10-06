@@ -32,6 +32,7 @@ protected:
 	
 public:
 	GDMLResult();
+	~GDMLResult();
 	
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
 

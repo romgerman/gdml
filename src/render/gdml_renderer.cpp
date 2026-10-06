@@ -27,6 +27,15 @@ GDMLResult::GDMLResult() {
 	add_user_signal("signals_changed");
 }
 
+GDMLResult::~GDMLResult() {
+	for (Variant item : m_nodes) {
+		Node *node = cast_to<Node>(item);
+		if (!node->get_parent()) {
+			node->queue_free();
+		}
+	}
+}
+
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
 	m_variables[p_name] = atom;
 }
