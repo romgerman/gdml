@@ -15,7 +15,6 @@ protected:
 
 public:
 	static reactive::GDMLAtom *create_atom(godot::StringName p_name, godot::Variant p_initial_value = godot::Variant());
-	static void use_effect(godot::Callable fn);
 };
 
 } //namespace global

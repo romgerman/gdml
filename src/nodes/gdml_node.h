@@ -46,6 +46,8 @@ public:
 	bool get_render_in_editor();
 
 	Ref<reactive::GDMLAtom> get_variable(String p_name);
+
+	void use_effect(Callable p_fn);
 };
 
 }

@@ -30,6 +30,8 @@ void GDMLNode::_bind_methods() {
 	);
 
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLNode::get_variable);
+
+	ClassDB::bind_method(D_METHOD("use_effect", "fn"), &GDMLNode::use_effect);
 }
 
 GDMLNode::GDMLNode() {
@@ -62,22 +64,13 @@ void GDMLNode::render_in_editor() {
 			cast_to<Node>(item)->queue_free();
 		}
 
-		_renderer_result = _renderer->renderMarkup(_markup.ptr());
-		for (Variant item : _renderer_result->get_nodes()) {
-			add_child(cast_to<Control>(item));
-		}
+		_renderer_result = _renderer->renderMarkup(this, _markup.ptr(), false);
 	}
 }
 
 void GDMLNode::render_in_game() {
 	if (_markup.is_valid()) {
-		_renderer_result = _renderer->renderMarkup(_markup.ptr());
-		for (Variant item : _renderer_result->get_nodes()) {
-			Control *child = cast_to<Control>(item);
-			add_child(child);
-			child->set_owner(get_owner() ? get_owner() : nullptr);
-		}
-
+		_renderer_result = _renderer->renderMarkup(this, _markup.ptr(), true);
 		on_signals_changed();
 		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 	}
@@ -160,6 +153,10 @@ bool GDMLNode::get_render_in_editor() {
 
 Ref<reactive::GDMLAtom> GDMLNode::get_variable(String p_name) {
 	return _renderer_result->get_variable(p_name);
+}
+
+void GDMLNode::use_effect(Callable p_fn) {
+
 }
 
 }

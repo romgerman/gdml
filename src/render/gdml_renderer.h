@@ -23,8 +23,15 @@ class GDMLResult : public RefCounted {
 	friend class GDMLRenderer;
 	GDCLASS(GDMLResult, RefCounted)
 
+	template<typename... Args>
+	void on_defined_signal(Args ...args, String signal_name, Variant target);
+	void on_defined_signal0(String signal_name, Variant target);
+	void on_defined_signal1(Variant arg1, String signal_name, Variant target);
+	void on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target);
+	void on_defined_signal3(Variant arg1, Variant arg2, Variant arg3, String signal_name, Variant target);
+
 protected:
-	Array m_nodes;
+	Array m_root;
 	Dictionary m_variables;
 	Array m_signals;
 	
@@ -32,20 +39,11 @@ protected:
 	
 public:
 	GDMLResult();
-	~GDMLResult();
 	
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
-
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
-	template<typename... Args>
-	void on_defined_signal(Args ...args, String signal_name, Variant target);
-	void on_defined_signal0(String signal_name, Variant target);
-	void on_defined_signal1(Variant arg1, String signal_name, Variant target);
-	void on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target);
 
 	// API
-
-	Array get_nodes();
 
 	Array get_variable_list();
 	Ref<reactive::GDMLAtom> get_variable(String p_name);
@@ -64,8 +62,8 @@ protected:
 
 public:
 	GDMLRenderer();
-	Ref<GDMLResult> renderString(const String &source);
-	Ref<GDMLResult> renderMarkup(GdmlScript *script);
+	Ref<GDMLResult> renderString(Node *p_root, const String &p_source, bool p_set_owner = true);
+	Ref<GDMLResult> renderMarkup(Node *p_root, GdmlScript *p_script, bool p_set_owner = true);
 };
 
 } //namespace godot

@@ -786,13 +786,6 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 		value = variant;
 		return true;
 	}
-	
-	/*
-		1. context prop
-		2. object prop
-		3. static object prop
-		4. object constant prop
-	*/
 
 	bool is_valid = false;
 
@@ -879,7 +872,6 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, MemberExpr
 		}
 	}
 
-	// Variant previous_variant;
 	Variant base_variant;
 
 	if (expression) {
@@ -1173,7 +1165,7 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			if (getDeepPropertyValue(root_variant, node, out_value)) {
 				value = out_value;
 			} else {
-				printError("Cannot resolve expression", node);
+				printError("Cannot resolve member expression", node);
 				return false;
 			}
 		} break;

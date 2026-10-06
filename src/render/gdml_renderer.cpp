@@ -15,8 +15,6 @@ using namespace parser;
 namespace godot {
 
 void GDMLResult::_bind_methods() {
-	
-	ClassDB::bind_method(D_METHOD("get_nodes"), &GDMLResult::get_nodes);
 	ClassDB::bind_method(D_METHOD("get_variable_list"), &GDMLResult::get_variable_list);
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLResult::get_variable);
 	
@@ -25,15 +23,6 @@ void GDMLResult::_bind_methods() {
 
 GDMLResult::GDMLResult() {
 	add_user_signal("signals_changed");
-}
-
-GDMLResult::~GDMLResult() {
-	for (Variant item : m_nodes) {
-		Node *node = cast_to<Node>(item);
-		if (!node->get_parent()) {
-			node->queue_free();
-		}
-	}
 }
 
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
@@ -103,12 +92,41 @@ void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName 
 						arg1_arg["name"] = "arg1";
 						arg1_arg["type"] = Variant::NIL;
 						Dictionary arg2_arg;
-						arg2_arg["name"] = "arg1";
+						arg2_arg["name"] = "arg2";
 						arg2_arg["type"] = Variant::NIL;
 						add_user_signal(signal_name, Array({
 							target_arg,
 							arg1_arg,
 							arg2_arg
+						}));
+						m_signals.push_back(signal_name);
+					}
+				} break;
+				case 3: {
+					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal3))) {
+						return;
+					} else {
+						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal3).bind(signal_name, target_object));
+					}
+
+					if (!has_user_signal(signal_name)) {
+						Dictionary target_arg;
+						target_arg["name"] = "target";
+						target_arg["type"] = Variant::OBJECT;
+						Dictionary arg1_arg;
+						arg1_arg["name"] = "arg1";
+						arg1_arg["type"] = Variant::NIL;
+						Dictionary arg2_arg;
+						arg2_arg["name"] = "arg2";
+						arg2_arg["type"] = Variant::NIL;
+						Dictionary arg3_arg;
+						arg3_arg["name"] = "arg3";
+						arg3_arg["type"] = Variant::NIL;
+						add_user_signal(signal_name, Array({
+							target_arg,
+							arg1_arg,
+							arg2_arg,
+							arg3_arg,
 						}));
 						m_signals.push_back(signal_name);
 					}
@@ -138,8 +156,8 @@ void GDMLResult::on_defined_signal2(Variant arg1, Variant arg2, String signal_na
 	emit_signal(signal_name, target, arg1, arg2);
 }
 
-Array GDMLResult::get_nodes() {
-	return m_nodes;
+void GDMLResult::on_defined_signal3(Variant arg1, Variant arg2, Variant arg3, String signal_name, Variant target) {
+	emit_signal(signal_name, target, arg1, arg2, arg3);
 }
 
 Array GDMLResult::get_variable_list() {
@@ -160,15 +178,15 @@ Array GDMLResult::get_signals() {
 }
 
 void GDMLRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "source"), &GDMLRenderer::renderString);
-	ClassDB::bind_method(D_METHOD("renderMarkup", "markup_script"), &GDMLRenderer::renderMarkup);
+	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source", "set_owner"), &GDMLRenderer::renderString);
+	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script", "set_owner"), &GDMLRenderer::renderMarkup);
 }
 
 GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
-	std::shared_ptr<SourceFileNode> result = m_parser->parse(source);
+Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source, bool p_set_owner) {
+	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
 
@@ -180,8 +198,12 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out);
 	traversal::TreeRendererVisitorResult visitor_result = m_visitor->visit(*result);
 
-	for (Variant node : visitor_result.nodes) {
-		out->m_nodes.push_back(node);
+	for (Variant item : visitor_result.nodes) {
+		Node *node = cast_to<Node>(item);
+		p_root->add_child(node);
+		if (p_set_owner) {
+			node->set_owner(p_root->get_owner() ? p_root->get_owner() : p_root);
+		}
 	}
 
 	for (std::pair<String, Ref<reactive::GDMLAtom>> pair : visitor_result.variables) {
@@ -199,8 +221,8 @@ Ref<GDMLResult> GDMLRenderer::renderString(const String &source) {
 	return out;
 }
 
-Ref<GDMLResult> GDMLRenderer::renderMarkup(GdmlScript *script) {
-	return renderString(script->get_source_code());
+Ref<GDMLResult> GDMLRenderer::renderMarkup(Node *p_root, GdmlScript *p_script, bool p_set_owner) {
+	return renderString(p_root, p_script->get_source_code(), p_set_owner);
 }
 
 }

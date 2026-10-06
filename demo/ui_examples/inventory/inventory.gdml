@@ -12,11 +12,8 @@ let dt_stylebox = StyleBoxFlat(
 	expand_margin(2, 2, 2, 2)
 ) { }
 
-let inventory_size = 10
 let columns = 5
-let items = [
-	{ item_name: "Test Item"; item_icon: MyCoolButton.load_res("res://icon.svg"); }
-]
+let inventory = [{}]
 
 signal item_gui_input
 
@@ -51,7 +48,7 @@ component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 GridContainer(anchors(0, 0, 1, 1)) {
 	columns: columns
 	
-	@for i, item_info in items {
+	@for i, stack in inventory {
 		PanelContainer {
 			custom_minimum_size: item_size
 			$panel: stylebox
@@ -59,8 +56,10 @@ GridContainer(anchors(0, 0, 1, 1)) {
 			DropTarget {
 				index: i
 				
-				Item {
-					item_info: item_info
+				@if stack.item {
+					Item {
+						item_info: stack.item
+					}
 				}
 			}
 		}
