@@ -5,11 +5,12 @@
 
 #include <vector>
 
+#include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/theme.hpp>
 #include <godot_cpp/classes/theme_db.hpp>
-#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/classes/project_settings.hpp>
 
 using namespace godot;
 
@@ -228,6 +229,22 @@ Dictionary GdmlScriptLanguage::_lookup_code(const String &p_code,
 		out["type"] = LookupResultType::LOOKUP_RESULT_CLASS;
 		out["class_name"] = p_symbol;
 		return out;
+	} else {
+		Dictionary class_info;
+	
+		for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
+			if (String(ci.get("class", "")) == p_symbol) {
+				class_info = ci;
+				break;
+			}
+		}
+
+		if (!class_info.is_empty()) {
+			out["result"] = Error::OK;
+			out["type"] = LookupResultType::LOOKUP_RESULT_CLASS;
+			out["class_name"] = p_symbol;
+			return out;
+		}
 	}
 
 	out["result"] = Error::ERR_UNAVAILABLE;

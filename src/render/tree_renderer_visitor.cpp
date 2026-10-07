@@ -500,6 +500,12 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				printError("Cannot load script associated with type '" + decorator_classname + "' by path " + path, node);
 				continue;
 			}
+
+			if (script->get_instance_base_type() != StringName("GDMLDecorator")) {
+				printError("Class doesn't inherit GDMLDecorator class", node);
+				continue;
+			}
+
 			Variant decorator_variant = ClassDB::instantiate(script->get_instance_base_type());
 			Object *decorator_object = decorator_variant.get_validated_object();
 			if (!decorator_object) {
