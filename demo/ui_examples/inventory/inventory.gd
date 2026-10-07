@@ -33,7 +33,6 @@ func init_inventory() -> void:
 			stack.item = items[randi_range(0, items.size() - 1)]
 		stack.amount = randi_range(1, 10)
 		inventory.push_back(stack)
-		print(stack)
 
 var drag_ctrl: Control
 var active_drop_target: DropTarget

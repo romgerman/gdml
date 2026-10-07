@@ -3,9 +3,7 @@ extends CanvasLayer
 @export var ui_script: GdmlScript
 
 func _ready() -> void:
-	var result = GDMLRenderer.new().renderMarkup(ui_script)
-	for n in result.get_nodes():
-		add_child(n)
+	var result = GDMLRenderer.new().renderMarkup(self, ui_script)
 
 func _raw_fn():
 	return "text from fn"

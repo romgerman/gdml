@@ -23,13 +23,18 @@ namespace traversal {
 
 class Scope : public std::enable_shared_from_this<Scope> {
 	std::map<godot::String, godot::Variant> m_local_variables;
+	std::shared_ptr<Scope> m_parent_scope;
+	godot::Node* m_parent_node;
 	
 public:
-	std::shared_ptr<Scope> m_parent_scope;
 	void set_variable(godot::String p_name, godot::Variant p_value);
 	bool has_variable(godot::String p_name);
 	godot::Variant get_variable(godot::String p_name);
 
+	void set_parent_node(godot::Node *p_node);
+	godot::Node* get_parent_node();
+
+	std::shared_ptr<Scope> get_parent_scope();
 	std::shared_ptr<Scope> create_scope();
 };
 
@@ -82,10 +87,11 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 	godot::Ref<godot::GDMLResult> m_result;
+	godot::Node *m_root_node;
 
 public:
 
-	TreeRendererVisitor(godot::Ref<godot::GDMLResult> result);
+	TreeRendererVisitor(godot::Ref<godot::GDMLResult> result, godot::Node *p_root);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:

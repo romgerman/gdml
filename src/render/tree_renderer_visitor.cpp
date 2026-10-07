@@ -66,6 +66,28 @@ godot::Variant Scope::get_variable(godot::String p_name) {
 	return godot::Variant();
 }
 
+void Scope::set_parent_node(Node *p_node) {
+	m_parent_node = p_node;
+}
+
+Node *Scope::get_parent_node() {
+	Scope *current_scope = this;
+
+	do {
+		if (current_scope->m_parent_node) {
+			return current_scope->m_parent_node;
+		}
+
+		current_scope = current_scope->m_parent_scope.get();
+	} while (current_scope != nullptr);
+
+	return nullptr;
+}
+
+std::shared_ptr<Scope> Scope::get_parent_scope() {
+	return m_parent_scope;
+}
+
 std::shared_ptr<Scope> Scope::create_scope() {
 	std::shared_ptr<Scope> scope = std::make_shared<Scope>();
 	scope->m_parent_scope = shared_from_this();
@@ -156,20 +178,21 @@ void TreeRendererVisitorContext::push_scope() {
 }
 
 void TreeRendererVisitorContext::pop_scope() {
-	m_current_scope = m_current_scope->m_parent_scope;
+	m_current_scope = m_current_scope->get_parent_scope();
 }
 
 TreeRendererVisitorContext::TreeRendererVisitorContext() {
-	m_global_scope = std::make_unique<Scope>();
-	m_current_scope = std::move(m_global_scope);
+	m_global_scope = std::make_shared<Scope>();
+	m_current_scope = m_global_scope;
 }
 
 #pragma endregion
 
 #pragma region Renderer
 
-TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result) {
+TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result, godot::Node *p_root) {
 	m_result = result;
+	m_root_node = p_root;
 	m_variant_type_map = {
 		{ "Vector2", Variant::Type::VECTOR2 },
 		{ "Vector2i", Variant::Type::VECTOR2I },
@@ -211,6 +234,7 @@ TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result) {
 
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
+	m_context->get_scope()->set_parent_node(m_root_node);
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
@@ -404,6 +428,8 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		return nullptr;
 	}
 
+	m_context->get_scope()->set_parent_node(obj_as_node);
+
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 		if (property->is_theme_override) {
 			Control *control = Object::cast_to<Control>(root_variant);
@@ -551,16 +577,11 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
 	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	Node* parent = m_context->get_scope()->get_parent_node();
 	
 	renderForStatement(statement, nodes, out_nodes);
 
-	std::function<void()> render_callback = [nodes, &statement, this]() {
-		if (nodes->size() == 0) {
-			return;
-		}
-
-		Node* parent = Object::cast_to<Node>((*nodes)[0])->get_parent();
-
+	std::function<void()> render_callback = [parent, nodes, &statement, this]() {
 		if (!parent) {
 			return;
 		}
@@ -657,16 +678,11 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 
 void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vector<Variant> &out_nodes) {
 	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	Node* parent = m_context->get_scope()->get_parent_node();
 	
 	renderIfStatement(statement, nodes, out_nodes);
 
-	std::function<void()> render_callback = [nodes, &statement, this]() {
-		if (nodes->size() == 0) {
-			return;
-		}
-
-		Node* parent = Object::cast_to<Node>((*nodes)[0])->get_parent();
-
+	std::function<void()> render_callback = [parent, nodes, &statement, this]() {
 		if (!parent) {
 			return;
 		}

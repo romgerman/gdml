@@ -13,7 +13,7 @@ let dt_stylebox = StyleBoxFlat(
 ) { }
 
 let columns = 5
-let inventory = [{}]
+let inventory = []
 
 signal item_gui_input
 

@@ -178,8 +178,8 @@ Array GDMLResult::get_signals() {
 }
 
 void GDMLRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source", "set_owner"), &GDMLRenderer::renderString);
-	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script", "set_owner"), &GDMLRenderer::renderMarkup);
+	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source", "set_owner"), &GDMLRenderer::renderString, DEFVAL(true));
+	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script", "set_owner"), &GDMLRenderer::renderMarkup, DEFVAL(true));
 }
 
 GDMLRenderer::GDMLRenderer() :
@@ -195,7 +195,7 @@ Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source,
 	}
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
-	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out);
+	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out, p_root);
 	traversal::TreeRendererVisitorResult visitor_result = m_visitor->visit(*result);
 
 	for (Variant item : visitor_result.nodes) {
