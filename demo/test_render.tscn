@@ -23,19 +23,20 @@ func _ready() -> void:
 [node name="TestRender" type="Node2D" unique_id=43238584]
 
 [node name="NodeThatRenders" type="Control" parent="." unique_id=671934518]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_dxa44")
 what = ExtResource("4_hn3h5")
 
 [node name="Control" type="Control" parent="." unique_id=991579122]
+visible = false
 layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
 [node name="Button" type="Button" parent="Control" unique_id=670703550]
-visible = false
 layout_mode = 0
 offset_right = 8.0
 offset_bottom = 8.0
@@ -57,6 +58,7 @@ theme_override_constants/margin_bottom = 10
 
 [node name="Inventory" parent="CanvasLayer/MarginContainer" unique_id=1151797622 instance=ExtResource("4_3dfi7")]
 layout_mode = 2
+mouse_filter = 1
 
 [node name="ItemList" type="GDMLNode" parent="CanvasLayer" unique_id=2118346781]
 markup = SubResource("GdmlScript_3dfi7")

@@ -141,11 +141,19 @@ void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName 
 }
 
 void GDMLResult::attach(bool p_set_owner) {
+	std::function<void(Node *, Node *)> set_owner_recursively = [&set_owner_recursively](Node *node, Node *owner) {
+		node->set_owner(owner);
+		for (Variant item : node->get_children()) {
+			Node *child = Object::cast_to<Node>(item);
+			set_owner_recursively(child, owner);
+		}
+	};
+
 	for (Variant item : m_nodes) {
 		Node *node = cast_to<Node>(item);
 		m_root->add_child(node);
 		if (p_set_owner) {
-			node->set_owner(m_root->get_owner() ? m_root->get_owner() : m_root);
+			set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
 		}
 	}
 }

@@ -20,6 +20,7 @@ signal cell_ready
 
 component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 	name: "Item"
+	mouse_filter: Control.MOUSE_FILTER_PASS
 	@gui_input: item_gui_input
 	
 	ColorRect {
@@ -52,11 +53,13 @@ GridContainer(anchors(0, 0, 1, 1)) {
 	@for i, stack in inventory {
 		PanelContainer {
 			custom_minimum_size: item_size
+			mouse_filter: Control.MOUSE_FILTER_PASS
 			$panel: stylebox
 			@ready: cell_ready
 			
 			DropTarget {
 				index: i
+				mouse_filter: Control.MOUSE_FILTER_PASS
 				
 				@if stack.item {
 					Item {
