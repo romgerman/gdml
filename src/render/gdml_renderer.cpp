@@ -19,6 +19,7 @@ void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLResult::get_variable);
 	
 	ClassDB::bind_method(D_METHOD("get_signals"), &GDMLResult::get_signals);
+	ClassDB::bind_method(D_METHOD("attach", "set_owner"), &GDMLResult::attach, DEFVAL(true));
 }
 
 GDMLResult::GDMLResult() {
@@ -139,6 +140,16 @@ void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName 
 	}
 }
 
+void GDMLResult::attach(bool p_set_owner) {
+	for (Variant item : m_nodes) {
+		Node *node = cast_to<Node>(item);
+		m_root->add_child(node);
+		if (p_set_owner) {
+			node->set_owner(m_root->get_owner() ? m_root->get_owner() : m_root);
+		}
+	}
+}
+
 template<typename... Args>
 void GDMLResult::on_defined_signal(Args ...args, String signal_name, Variant target) {
 	emit_signal(signal_name, target, ...args);
@@ -178,14 +189,14 @@ Array GDMLResult::get_signals() {
 }
 
 void GDMLRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source", "set_owner"), &GDMLRenderer::renderString, DEFVAL(true));
-	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script", "set_owner"), &GDMLRenderer::renderMarkup, DEFVAL(true));
+	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source"), &GDMLRenderer::renderString);
+	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script"), &GDMLRenderer::renderMarkup);
 }
 
 GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source, bool p_set_owner) {
+Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source) {
 	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
@@ -196,33 +207,23 @@ Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source,
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
 	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out, p_root);
-	traversal::TreeRendererVisitorResult visitor_result = m_visitor->visit(*result);
-
-	for (Variant item : visitor_result.nodes) {
-		Node *node = cast_to<Node>(item);
-		p_root->add_child(node);
-		if (p_set_owner) {
-			node->set_owner(p_root->get_owner() ? p_root->get_owner() : p_root);
-		}
-	}
+	traversal::TreeRendererVisitorResult &visitor_result = m_visitor->visit(*result);
 
 	for (std::pair<String, Ref<reactive::GDMLAtom>> pair : visitor_result.variables) {
 		out->add_variable(pair.first, pair.second);
 	}
 
-	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : visitor_result.signals) {
-		for (std::pair<ObjectID, std::set<StringName>> target_pair : pair.second) {
-			for (StringName target_signal : target_pair.second) {
-				out->connect_signal(pair.first, target_pair.first, target_signal);
-			}
-		}
+	out->m_root = p_root;
+	
+	for (Variant item : visitor_result.nodes) {
+		out->m_nodes.push_back(item);
 	}
 
 	return out;
 }
 
-Ref<GDMLResult> GDMLRenderer::renderMarkup(Node *p_root, GdmlScript *p_script, bool p_set_owner) {
-	return renderString(p_root, p_script->get_source_code(), p_set_owner);
+Ref<GDMLResult> GDMLRenderer::renderMarkup(Node *p_root, GdmlScript *p_script) {
+	return renderString(p_root, p_script->get_source_code());
 }
 
 }

@@ -16,6 +16,7 @@ let columns = 5
 let inventory = []
 
 signal item_gui_input
+signal cell_ready
 
 component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 	name: "Item"
@@ -52,6 +53,7 @@ GridContainer(anchors(0, 0, 1, 1)) {
 		PanelContainer {
 			custom_minimum_size: item_size
 			$panel: stylebox
+			@ready: cell_ready
 			
 			DropTarget {
 				index: i

@@ -64,15 +64,17 @@ void GDMLNode::render_in_editor() {
 			cast_to<Node>(item)->queue_free();
 		}
 
-		_renderer_result = _renderer->renderMarkup(this, _markup.ptr(), false);
+		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
+		_renderer_result->attach(false);
 	}
 }
 
 void GDMLNode::render_in_game() {
 	if (_markup.is_valid()) {
-		_renderer_result = _renderer->renderMarkup(this, _markup.ptr(), true);
+		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
 		on_signals_changed();
 		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
+		_renderer_result->attach(true);
 	}
 }
 

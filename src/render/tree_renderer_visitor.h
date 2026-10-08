@@ -59,6 +59,8 @@ struct TreeRendererVisitorContext {
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
 	bool has_variable(godot::String &p_name);
 
+	bool has_global_signal(godot::String &p_name);
+
 	void push_active_context();
 	void pop_active_context();
 	void set_active_variable(godot::String &p_name);
@@ -112,7 +114,7 @@ private:
 
 	void setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node);
 
-	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, const godot::String &callable_name);
+	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::String &callable_name);
 
 	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
 	bool doesExpressionHaveSelf(godot::ExpressionNode &expr_node);

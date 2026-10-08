@@ -31,9 +31,10 @@ class GDMLResult : public RefCounted {
 	void on_defined_signal3(Variant arg1, Variant arg2, Variant arg3, String signal_name, Variant target);
 
 protected:
-	Array m_root;
 	Dictionary m_variables;
 	Array m_signals;
+	Node *m_root;
+	Array m_nodes;
 	
 	static void _bind_methods();
 	
@@ -42,6 +43,7 @@ public:
 	
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
+	void attach(bool p_set_owner = true);
 
 	// API
 
@@ -62,8 +64,8 @@ protected:
 
 public:
 	GDMLRenderer();
-	Ref<GDMLResult> renderString(Node *p_root, const String &p_source, bool p_set_owner = true);
-	Ref<GDMLResult> renderMarkup(Node *p_root, GdmlScript *p_script, bool p_set_owner = true);
+	Ref<GDMLResult> renderString(Node *p_root, const String &p_source);
+	Ref<GDMLResult> renderMarkup(Node *p_root, GdmlScript *p_script);
 };
 
 } //namespace godot

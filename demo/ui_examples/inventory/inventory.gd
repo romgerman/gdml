@@ -24,15 +24,23 @@ func _ready() -> void:
 	
 	if not Engine.is_editor_hint():
 		connect("item_gui_input", _item_gui_input)
+		connect("cell_ready", _cell_ready)
 		pass
-	
+
+func _cell_ready(ctrl: Control) -> void:
+	print("ready")
+	ctrl.size = Vector2.ZERO
+	var tw := create_tween()
+	tw.tween_property(ctrl, "size", Vector2.ONE, 0.35)
+
 func init_inventory() -> void:
 	for i in inventory_size:
 		var stack := ItemStack.new()
-		if randf() > 0.5:
-			stack.item = items[randi_range(0, items.size() - 1)]
 		stack.amount = randi_range(1, 10)
 		inventory.push_back(stack)
+	
+	for i in items.size():
+		inventory[i].item = items[i]
 
 var drag_ctrl: Control
 var active_drop_target: DropTarget

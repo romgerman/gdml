@@ -119,6 +119,10 @@ bool TreeRendererVisitorContext::has_variable(String &p_name) {
 	return m_variables.find(p_name) != m_variables.end();
 }
 
+bool TreeRendererVisitorContext::has_global_signal(godot::String &p_name) {
+	return m_signals.find(p_name) != m_signals.end();
+}
+
 void TreeRendererVisitorContext::push_active_context() {
 	m_active_variables.push_back(std::map<String, bool>());
 	m_active_context_index++;
@@ -1090,16 +1094,11 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 	}
 }
 
-bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, const String &callable_name) {
+bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, String &callable_name) {
 	Object *obj = variant.get_validated_object();
 	
-	if (m_context->m_signals.find(callable_name) != m_context->m_signals.end()) {
-
-		if (m_context->m_signals[callable_name].find((ObjectID)obj->get_instance_id()) == m_context->m_signals[callable_name].end()) {
-			m_context->m_signals[callable_name][(ObjectID)obj->get_instance_id()] = std::set<StringName>();
-		}
-
-		m_context->m_signals[callable_name][(ObjectID)obj->get_instance_id()].insert(signal_name);
+	if (m_context->has_global_signal(callable_name)) {
+		m_result->connect_signal(callable_name, (ObjectID)obj->get_instance_id(), signal_name);
 		return true;
 	}
 
