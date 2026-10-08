@@ -94,13 +94,17 @@ void GDMLNode::on_bubble_signal2(Variant target, Variant arg1, Variant arg2, Str
 	emit_signal(signal_name, target, arg1, arg2);
 }
 
+void GDMLNode::on_bubble_signal3(Variant target, Variant arg1, Variant arg2, Variant arg3, String signal_name) {
+	emit_signal(signal_name, target, arg1, arg2, arg3);
+}
+
 void GDMLNode::on_signals_changed() {
 	for (Variant signal_name : _renderer_result->get_signals()) {
 		for (Variant item : _renderer_result->get_signal_list()) {
 			Dictionary signal_info = item;
 			if (signal_info["name"] == String(signal_name)) {
 				Array args = signal_info["args"];
-				print_line("HERE: ", args.size());
+				
 				switch (args.size())
 				{
 				case 1: {
@@ -122,6 +126,13 @@ void GDMLNode::on_signals_changed() {
 						continue;
 					} else {
 						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal2).bind(signal_name));
+					}
+				} break;
+				case 4: {
+					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal3))) {
+						continue;
+					} else {
+						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal3).bind(signal_name));
 					}
 				} break;
 				}

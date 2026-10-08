@@ -37,6 +37,7 @@ public:
 	void on_bubble_signal0(Variant target, String signal_name);
 	void on_bubble_signal1(Variant target, Variant arg1, String signal_name);
 	void on_bubble_signal2(Variant target, Variant arg1, Variant arg2, String signal_name);
+	void on_bubble_signal3(Variant target, Variant arg1, Variant arg2, Variant arg3, String signal_name);
 	void on_signals_changed();
 
 	void set_markup(const Ref<GdmlScript> &p_markup);
