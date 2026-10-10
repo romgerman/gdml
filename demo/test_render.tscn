@@ -4,21 +4,6 @@
 [ext_resource type="Script" uid="uid://crd36fuo3eoj4" path="res://my_cool_button.gd" id="3_mirat"]
 [ext_resource type="PackedScene" uid="uid://bymqjuckrj628" path="res://ui_examples/inventory/inventory.tscn" id="4_3dfi7"]
 [ext_resource type="Script" uid="uid://cjkstodorsick" path="res://ui_examples/inventory/inventory.gdml" id="4_hn3h5"]
-[ext_resource type="AudioStream" uid="uid://dae0q5f6545bp" path="res://audio/thud-impact-sound-sfx-379990.mp3" id="6_c4k6i"]
-
-[sub_resource type="GdmlScript" id="GdmlScript_3dfi7"]
-
-[sub_resource type="GDScript" id="GDScript_3dfi7"]
-resource_name = "item_list"
-script/source = "@tool
-extends GDMLNode
-
-@export var items: Array[AudioStream] = []
-
-func _ready() -> void:
-	pass
-	#get_variable(\"items\").value = items
-"
 
 [node name="TestRender" type="Node2D" unique_id=43238584]
 
@@ -59,14 +44,3 @@ theme_override_constants/margin_bottom = 10
 [node name="Inventory" parent="CanvasLayer/MarginContainer" unique_id=1151797622 instance=ExtResource("4_3dfi7")]
 layout_mode = 2
 mouse_filter = 1
-
-[node name="ItemList" type="GDMLNode" parent="CanvasLayer" unique_id=2118346781]
-markup = SubResource("GdmlScript_3dfi7")
-visible = false
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = SubResource("GDScript_3dfi7")
-items = Array[AudioStream]([ExtResource("6_c4k6i")])

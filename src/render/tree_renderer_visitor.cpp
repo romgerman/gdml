@@ -1359,6 +1359,8 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
 									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
 							value = (float_t)left + (float_t)right;
+						} else if (left.get_type() == Variant::STRING || right.get_type() == Variant::STRING) {
+							value = String(left) + String(right);
 						}
 						break;
 					case GDMLOperator::MINUS:

@@ -14,9 +14,9 @@ let dt_stylebox = StyleBoxFlat(
 
 let columns = 5
 let inventory = []
+let item_refs = {}
 
 signal item_gui_input
-signal cell_ready
 
 component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 	name: "Item"
@@ -51,19 +51,21 @@ GridContainer(anchors(0, 0, 1, 1)) {
 	columns: columns
 	
 	@for i, stack in inventory {
-		PanelContainer {
+		PanelContainer(ref(item_refs, i)) {
 			custom_minimum_size: item_size
 			mouse_filter: Control.MOUSE_FILTER_PASS
+			offset_transform_enabled: true
 			$panel: stylebox
-			@ready: cell_ready
 			
 			DropTarget {
+				name: "DropTarget"
 				index: i
 				mouse_filter: Control.MOUSE_FILTER_PASS
 				
 				@if stack.item {
 					Item {
 						item_info: stack.item
+						offset_transform_enabled: true
 					}
 				}
 			}
