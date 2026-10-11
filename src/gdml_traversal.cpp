@@ -15,25 +15,24 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			const SourceFileNode &self = static_cast<const SourceFileNode &>(node);
 			String out;
 			for (const std::unique_ptr<DefinitionNode> &statement : self.statements) {
-				out += visitNode(*statement, depth + 1);
+				out += visitNode(*statement, depth);
 			}
 			return out;
 		} break;
 		case GDMLNodeType::DEFINITION: {
 			const DefinitionNode &self = static_cast<const DefinitionNode &>(node);
-			return visitNode(*self.statement, depth);
+			return visitNode(*self.statement, depth + 1);
 		} break;
 		case GDMLNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode &self = static_cast<const NodeDefinitionNode &>(node);
 			String out = self.name->name + " {\n";
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
-				out += visitNode(*prop, depth + 1) + "\n";
+				out += depthPad(visitNode(*prop, depth + 1) + "\n", depth);
 			}
 			for (const std::unique_ptr<StatementNode> &child : self.statements) {
-				out += visitNode(*child, depth + 1) + "\n";
+				out += depthPad(visitNode(*child, depth + 1) + "\n", depth);
 			}
-			out += "}";
-			return depthPad(out, depth);
+			return out + "}";
 		} break;
 		case GDMLNodeType::PROPERTY_DEFINITION: {
 			const PropertyDefinitionNode &self = static_cast<const PropertyDefinitionNode &>(node);
@@ -42,12 +41,11 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GDMLNodeType::RESOURCE_DEFINITION: {
 			const ResourceDefinitionNode &self = static_cast<const ResourceDefinitionNode &>(node);
-			String out = self.name->name + " {\n";
+			String out = depthPad(self.name->name + " {\n", depth);
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
-				out += visitNode(*prop, depth + 1) + "\n";
+				out += depthPad(visitNode(*prop, depth + 1) + "\n", depth);
 			}
-			out += "}";
-			return depthPad(out, depth);
+			return depthPad(out + "}", depth);
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			const SignalDefinitionNode &self = static_cast<const SignalDefinitionNode &>(node);
@@ -64,6 +62,11 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			}
 			return depthPad(out, depth);
 		} break;
+		case GDMLNodeType::COMPONENT_DEFINITION: {
+			const ComponentDefinitionNode &self = static_cast<const ComponentDefinitionNode &>(node);
+			String out = "component " + self.name->name + " = " + visitNode(*self.value, depth) + "\n";
+			return depthPad(out, depth);
+		};
 		case GDMLNodeType::FOR_STATEMENT: {
 			const ForStatementNode &self = static_cast<const ForStatementNode &>(node); 
 			String out = "@for " + visitNode(*self.iter_name, depth) + " in " + visitNode(*self.range, depth) + "{\n";
@@ -73,17 +76,27 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 			out += "\n}";
 			return depthPad(out, depth);
 		} break;
+		case GDMLNodeType::IF_STATEMENT: {
+			const IfStatementNode &self = static_cast<const IfStatementNode &>(node); 
+			String out = depthPad("@if " + visitNode(*self.expression, depth) + " {\n", depth);
+			for (auto &s : self.if_statements) {
+				out += depthPad(visitNode(*s, depth + 1), depth);
+			}
+			out += depthPad("} @else {", depth);
+			for (auto &s : self.else_statements) {
+				out += depthPad(visitNode(*s, depth + 1), depth);
+			}
+			return depthPad(out + "}\n", depth);
+		} break;
+		// Expressions
 		case GDMLNodeType::IDENTIFIER_EXPRESSION: {
 			const IdentifierNode &self = static_cast<const IdentifierNode &>(node);
 			return self.name;
 		} break;
 		case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
 			const MemberExpressionNode &self = static_cast<const MemberExpressionNode &>(node);
-			PackedStringArray arr;
-			// for (const std::unique_ptr<IdentifierNode> &part : self.path) {
-			// 	arr.append(part->name);
-			// }
-			return String(".").join(arr);
+			String out = visitNode(*self.expression, depth) + "." + visitNode(*self.identifier, depth);
+			return out;
 		} break;
 		case GDMLNodeType::STRING_EXPRESSION: {
 			const StringNode &self = static_cast<const StringNode &>(node);
@@ -121,11 +134,21 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GDMLNodeType::FUNCTION_CALL: {
 			const FunctionCallExpressionNode& self = static_cast<const FunctionCallExpressionNode &>(node);
-			String out = visitNode(*self.name, 0) + "(";
+			String out = visitNode(*self.name, depth) + "(";
 			for (const std::unique_ptr<ExpressionNode> &expr: self.arguments) {
-				out += visitNode(*expr, 0) + ", ";
+				out += visitNode(*expr, depth) + ", ";
 			}
 			out += ")";
+			return out;
+		} break;
+		case GDMLNodeType::BINARY_EXPRESSION: {
+			const BinaryExpressionNode& self = static_cast<const BinaryExpressionNode &>(node);
+			String out = visitNode(*self.left, depth) + " op " + visitNode(*self.right, depth);
+			return out;
+		} break;
+		case GDMLNodeType::SUBSCRIPT_EXPRESSION: {
+			const SubscriptExpressionNode& self = static_cast<const SubscriptExpressionNode &>(node);
+			String out = visitNode(*self.object, depth) + "[" + visitNode(*self.index, depth) + "]";
 			return out;
 		} break;
 		case GDMLNodeType::UNKNOWN: {

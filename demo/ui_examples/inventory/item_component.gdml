@@ -1,0 +1,27 @@
+component ItemCmp(item_info) = Control(anchors(0, 0, 1, 1)) {
+	name: "Item"
+	mouse_filter: Control.MOUSE_FILTER_PASS
+	
+	ColorRect {
+		color: Color {
+			r: 0; g: 0; b: 0;
+			a: 0.5;
+		}
+		mouse_filter: Control.MOUSE_FILTER_IGNORE
+	}
+	
+	TextureRect(anchors(0, 0, 1, 1)) {
+		texture: item_info.item_icon
+		expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
+		mouse_filter: Control.MOUSE_FILTER_IGNORE
+	}
+	
+	Button(anchors(0, 0, 1, 1)) {
+		$normal: StyleBoxEmpty {}
+		mouse_filter: Control.MOUSE_FILTER_PASS
+		
+		Label {
+			text: item_info.item_name
+		}
+	}
+}

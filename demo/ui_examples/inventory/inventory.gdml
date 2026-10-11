@@ -1,3 +1,5 @@
+import ItemCmp from "res://ui_examples/inventory/item_component.gdml"
+
 let item_size = Vector2 {
 	x: 100
 	y: 100
@@ -57,15 +59,21 @@ GridContainer(anchors(0, 0, 1, 1)) {
 			offset_transform_enabled: true
 			$panel: stylebox
 			
+			
 			DropTarget {
 				name: "DropTarget"
 				index: i
 				mouse_filter: Control.MOUSE_FILTER_PASS
 				
 				@if stack.item {
-					Item {
+					#Item {
+					#	item_info: stack.item
+					#	offset_transform_enabled: true
+					#}
+					
+					
+					ItemCmp {
 						item_info: stack.item
-						offset_transform_enabled: true
 					}
 				}
 			}

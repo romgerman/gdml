@@ -21,7 +21,7 @@ GdmlScriptLanguage *GdmlScriptLanguage::instance = nullptr;
 void GdmlScriptLanguage::get_directory_contents(EditorFileSystemDirectory *p_dir, std::vector<String> &out_files) const {
 	for (int32_t i = 0; i < p_dir->get_file_count(); i++) {
 		if (ClassDB::is_parent_class(p_dir->get_file_type(i), "PackedScene")
-			// || ClassDB::is_parent_class(p_dir->get_file_type(i), "GdmlScript")
+			|| ClassDB::is_parent_class(p_dir->get_file_type(i), "GdmlScript")
 			|| ClassDB::is_parent_class(p_dir->get_file_type(i), "GDScript")) {
 			out_files.push_back(p_dir->get_file_path(i));
 		}

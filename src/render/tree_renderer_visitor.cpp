@@ -352,6 +352,57 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			Object *base_object = root_variant.get_validated_object();
 			assert(base_object);
 			base_object->set_script(script);
+		} else if (import_path.ends_with(".gdml")) {
+			Ref<Script> script = ResourceLoader::get_singleton()->load(import_path, "Script");
+			if (script.is_null()) {
+				printError("Cannot load markup associated with type '" + node_name + "' by path " + import_path, node);
+				return nullptr;
+			}
+			GdmlParser parser;
+			const SourceFileNode &source_file = m_document.load(import_path, script->get_source_code());// parser.parse(script->get_source_code());
+			std::unique_ptr<TreeRendererVisitorContext::Component> component = std::make_unique<TreeRendererVisitorContext::Component>();
+
+			for (const std::unique_ptr<DefinitionNode> &def : source_file.statements) {
+				if (def->statement->type == GDMLNodeType::COMPONENT_DEFINITION) {
+					ComponentDefinitionNode *cmp = static_cast<ComponentDefinitionNode *>(def->statement.get());
+					if (cmp->name->name == node_name) {
+						component->node = cmp->value.get();
+						for (std::unique_ptr<godot::IdentifierNode> &p : cmp->params) {
+							component->params.push_back(p->name);
+						}
+						break;
+					}
+				}
+			}
+
+			if (component->node) {
+				std::shared_ptr<Scope> current_scope = m_context->m_current_scope;
+				std::shared_ptr<Scope> component_scope = std::make_shared<Scope>();
+				component_scope->set_parent_node(current_scope->get_parent_node());
+
+				for (String &param_name : component->params) {
+					for (const std::unique_ptr<godot::PropertyDefinitionNode> &prop : node.properties) {
+						if (prop->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+							IdentifierNode &prop_name = static_cast<IdentifierNode &>(*prop->name);
+							if (prop_name.name == param_name) {
+								Variant out;
+								if (resolveExpression(root_variant, *prop->value, out)) {
+									component_scope->set_variable(param_name, out);
+								} else {
+									printError("Cannot resolve expression while rendering a component", *prop);
+								}
+							}
+						}
+					}
+				}
+
+				m_context->m_current_scope = component_scope;
+				root_variant = visitNodeDefinition(*component->node);
+				m_context->m_current_scope = current_scope;
+			} else {
+				printError("Cannot find an imported component with name '" + node_name + "' [" + import_path + "]", node);
+				return nullptr;
+			}
 		}
 	} else if (m_context->m_components.find(node_name) != m_context->m_components.end()) {
 		TreeRendererVisitorContext::Component &cmp = m_context->m_components[node_name];
@@ -456,12 +507,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
 				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					const String signal_name = static_cast<IdentifierNode *>(signal_expression->name.get())->name;
-					if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION || property->value->type == GDMLNodeType::STRING_EXPRESSION) {
-						if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-							connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
-						} else if (property->value->type == GDMLNodeType::STRING_EXPRESSION) {
-							connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
-						}
+					if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+						connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
+					} else if (property->value->type == GDMLNodeType::STRING_EXPRESSION) {
+						connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
 					} else {
 						printError("Cannot connect signal. Callable name should be an identifier or a string", *property);
 					}
@@ -475,7 +524,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	for (const std::unique_ptr<VariableDefinitionNode> &var : node.variables) {
 		Variant value;
 		if (resolveExpression(value, *var, value)) {
-			m_context->set_variable(var->name->name, value);
+			m_context->get_scope()->set_variable(var->name->name, value);
 		}
 	}
 
@@ -570,10 +619,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				obj_as_node->add_child(Object::cast_to<Node>(item));
 			}
 		} else if (statement->type == GDMLNodeType::IF_STATEMENT) {
-			IfStatementNode *for_node = static_cast<IfStatementNode *>(statement.get());
+			IfStatementNode *if_node = static_cast<IfStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
 			m_context->push_scope();
-			visitIfStatement(*for_node, nodes);
+			visitIfStatement(*if_node, nodes);
 			m_context->pop_scope();
 
 			for (Variant &item : nodes) {
@@ -587,11 +636,12 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
 	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	std::shared_ptr<Scope> scope = m_context->m_current_scope;
 	Node* parent = m_context->get_scope()->get_parent_node();
 	
 	renderForStatement(statement, nodes, out_nodes);
 
-	std::function<void()> render_callback = [parent, nodes, &statement, this]() {
+	std::function<void()> render_callback = [parent, nodes, scope, &statement, this]() {
 		if (!parent) {
 			return;
 		}
@@ -606,7 +656,10 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 		nodes->clear();
 
 		std::vector<Variant> cb_nodes;
+		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
+		m_context->m_current_scope = scope;
 		renderForStatement(statement, nodes, cb_nodes);
+		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
 			Node *node = Object::cast_to<Node>(result_node);
@@ -665,8 +718,10 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
 					m_context->pop_active_context();
-					out_nodes.push_back(result_node);
-					nodes->push_back(result_node);
+					if (result_node) {
+						out_nodes.push_back(result_node);
+						nodes->push_back(result_node);
+					}
 				}
 			}
 		} else {
@@ -676,8 +731,10 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
 					m_context->pop_active_context();
-					out_nodes.push_back(result_node);
-					nodes->push_back(result_node);
+					if (result_node) {
+						out_nodes.push_back(result_node);
+						nodes->push_back(result_node);
+					}
 				}
 			}
 		}
@@ -688,11 +745,12 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 
 void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vector<Variant> &out_nodes) {
 	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
+	std::shared_ptr<Scope> scope = m_context->m_current_scope;
 	Node* parent = m_context->get_scope()->get_parent_node();
 	
 	renderIfStatement(statement, nodes, out_nodes);
 
-	std::function<void()> render_callback = [parent, nodes, &statement, this]() {
+	std::function<void()> render_callback = [parent, nodes, scope, &statement, this]() {
 		if (!parent) {
 			return;
 		}
@@ -707,7 +765,10 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vect
 		nodes->clear();
 
 		std::vector<Variant> cb_nodes;
+		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
+		m_context->m_current_scope = scope;
 		renderIfStatement(statement, nodes, cb_nodes);
+		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
 			Node *node = Object::cast_to<Node>(result_node);
@@ -735,16 +796,20 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode &statement, const st
 				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
 				m_context->pop_active_context();
-				out_nodes.push_back(result_node);
-				nodes->push_back(result_node);
+				if (result_node) {
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
 			}
 		} else {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement.else_statements) {
 				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
 				m_context->pop_active_context();
-				out_nodes.push_back(result_node);
-				nodes->push_back(result_node);
+				if (result_node) {
+					out_nodes.push_back(result_node);
+					nodes->push_back(result_node);
+				}
 			}
 		}
 	} else {

@@ -85,11 +85,28 @@ struct TreeRendererVisitorResult {
 	std::map<godot::String, TreeRendererVisitorContext::SignalTarget> signals;
 };
 
+class GDMLDocument {
+	std::map<godot::String, std::unique_ptr<godot::SourceFileNode>> m_files;
+
+public:
+	const godot::SourceFileNode &load(const godot::String &p_path, const godot::String p_source) {
+		auto it = m_files.find(p_path);
+
+		if (it == m_files.end()) {
+			godot::GdmlParser parser;
+			it = m_files.emplace(p_path, parser.parse(p_source)).first;
+		}
+		
+		return *it->second;
+	}
+};
+
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 	godot::Ref<godot::GDMLResult> m_result;
 	godot::Node *m_root_node;
+	GDMLDocument m_document;
 
 public:
 

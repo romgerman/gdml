@@ -30,6 +30,7 @@ void GDMLNode::_bind_methods() {
 	);
 
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLNode::get_variable);
+	ClassDB::bind_method(D_METHOD("get_variable_value", "name"), &GDMLNode::get_variable_value);
 
 	ClassDB::bind_method(D_METHOD("use_effect", "fn"), &GDMLNode::use_effect);
 }
@@ -166,6 +167,10 @@ bool GDMLNode::get_render_in_editor() {
 
 Ref<reactive::GDMLAtom> GDMLNode::get_variable(String p_name) {
 	return _renderer_result->get_variable(p_name);
+}
+
+Variant GDMLNode::get_variable_value(String p_name) {
+	return _renderer_result->get_variable(p_name)->get_value();
 }
 
 void GDMLNode::use_effect(Callable p_fn) {
