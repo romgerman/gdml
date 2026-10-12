@@ -66,15 +66,15 @@ GridContainer(anchors(0, 0, 1, 1)) {
 				mouse_filter: Control.MOUSE_FILTER_PASS
 				
 				@if stack.item {
-					#Item {
-					#	item_info: stack.item
-					#	offset_transform_enabled: true
-					#}
-					
-					
-					ItemCmp {
+					Item {
 						item_info: stack.item
+						offset_transform_enabled: true
 					}
+					
+					
+					#ItemCmp {
+					#	item_info: stack.item
+					#}
 				}
 			}
 		}

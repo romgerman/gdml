@@ -122,22 +122,23 @@ module.exports = grammar({
       "in",
       field("range", choice($.identifier, $.number, $.array_expression, $.member_expression)),
       '{',
-      repeat($.node_definition),
+      field("statements", optional($.block)),
       '}'
     ),
     if_statement: $ => seq(
       "@if",
       field("condition", $.expression),
       '{',
-      field("if", repeat($.node_definition)),
+      field("if", optional($.block)),
       '}',
       optional(seq(
         "@else",
         '{',
-        field("else", repeat($.node_definition)),
+        field("else", optional($.block)),
         '}'
       ))
     ),
+    block: $ => repeat1($.node_definition),
     import_statement: $ => seq(
       "import",
       $.identifier,

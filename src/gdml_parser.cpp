@@ -348,13 +348,16 @@ std::unique_ptr<ForStatementNode> GdmlParser::visitForStatement(ts::Node node, C
 		}
 	}
 
-	for (uint32_t i = 0; i < node.getChildCount(); i++) {
-		ts::Node child_node = node.getChild(i);
-
-		if (child_node.isType("node_definition")) {
-			out->statements.push_back(visitNodeDefinition(child_node, text));
-		} else if (child_node.isType("comment") || child_node.isError()) {
-			continue;
+	ts::Node statements_node = node.getChildByFieldName("statements");
+	if (!statements_node.isNull()) {
+		for (uint32_t i = 0; i < statements_node.getNamedChildCount(); i++) {
+			ts::Node child_node = statements_node.getNamedChild(i);
+	
+			if (child_node.isType("node_definition")) {
+				out->statements.push_back(visitNodeDefinition(child_node, text));
+			} else if (child_node.isType("comment") || child_node.isError()) {
+				continue;
+			}
 		}
 	}
 
@@ -375,8 +378,8 @@ std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, Cha
 
 	ts::Node if_node = node.getChildByFieldName("if");
 	if (!if_node.isNull()) {
-		for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
-			ts::Node child_node = node.getNamedChild(i);
+		for (uint32_t i = 0; i < if_node.getNamedChildCount(); i++) {
+			ts::Node child_node = if_node.getNamedChild(i);
 
 			if (child_node.isType("node_definition")) {
 				out->if_statements.push_back(visitNodeDefinition(child_node, text));
@@ -388,8 +391,8 @@ std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, Cha
 
 	ts::Node else_node = node.getChildByFieldName("else");
 	if (!else_node.isNull()) {
-		for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
-			ts::Node child_node = node.getNamedChild(i);
+		for (uint32_t i = 0; i < else_node.getNamedChildCount(); i++) {
+			ts::Node child_node = else_node.getNamedChild(i);
 
 			if (child_node.isType("node_definition")) {
 				out->else_statements.push_back(visitNodeDefinition(child_node, text));
