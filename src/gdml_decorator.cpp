@@ -10,6 +10,7 @@ namespace gdml {
 void GDMLDecorator::_bind_methods() {
 	GDVIRTUAL_BIND(modify, "control", "args");
 	GDVIRTUAL_BIND(modify_resource, "resource", "args");
+	GDVIRTUAL_BIND(get_decorator_name);
 }
 
 void GDMLDecorator::modify(Control *p_control, Array p_args) {
@@ -25,6 +26,15 @@ Variant GDMLDecorator::modify_resource(Variant *p_resource, Array p_args) {
 		return out;
 	}
 	return p_resource;
+}
+
+godot::StringName GDMLDecorator::get_decorator_name() {
+	if (GDVIRTUAL_IS_OVERRIDDEN(get_decorator_name)) {
+		Variant out;
+		GDVIRTUAL_CALL(get_decorator_name, out);
+		return out;
+	}
+	return godot::StringName();
 }
 
 }

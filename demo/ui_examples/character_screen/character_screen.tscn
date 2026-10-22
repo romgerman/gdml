@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://dycyjbyx585f5"]
+
+[ext_resource type="Script" uid="uid://dvhxyroq3eful" path="res://ui_examples/character_screen/character_screen.gdml" id="1_o83dp"]
+
+[node name="CharacterScreen" type="GDMLNode" unique_id=138545206]
+markup = ExtResource("1_o83dp")
+is_nodes_preview_enabled = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="@HBoxContainer@21459" type="HBoxContainer" parent="." unique_id=990770795]
+layout_mode = 0
+
+[node name="@VBoxContainer@21458" type="VBoxContainer" parent="@HBoxContainer@21459" unique_id=515530378]
+layout_mode = 2
+size_flags_horizontal = 3

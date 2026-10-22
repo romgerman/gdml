@@ -1,9 +1,12 @@
 #include "tree_renderer_visitor.h"
 #include "gdml_renderer.h"
 
-#include <assert.h>
+#include <cassert>
 #include <functional>
 
+#include <godot_cpp/core/object.hpp>
+#include <godot_cpp/core/class_db.hpp>
+#include <godot_cpp/core/print_string.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/control.hpp>
 #include <godot_cpp/classes/theme.hpp>
@@ -14,9 +17,6 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/core/object.hpp>
-#include <godot_cpp/core/class_db.hpp>
-#include <godot_cpp/core/print_string.hpp>
 
 using namespace godot;
 using namespace parser;
@@ -359,7 +359,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				return nullptr;
 			}
 			GdmlParser parser;
-			const SourceFileNode &source_file = m_document.load(import_path, script->get_source_code());// parser.parse(script->get_source_code());
+			const SourceFileNode &source_file = m_document.load(import_path, script->get_source_code());
 			std::unique_ptr<TreeRendererVisitorContext::Component> component = std::make_unique<TreeRendererVisitorContext::Component>();
 
 			for (const std::unique_ptr<DefinitionNode> &def : source_file.statements) {
@@ -531,41 +531,51 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
 		if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
-			String decorator_classname = "GDMLDecorator_" + dec_fn_name->name;
+			String decorator_classname = "GDMLDecorator";
 
 			Dictionary class_info;
+			Object *decorator_object = nullptr;
 
 			for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
-				if (String(ci.get("class", "")) == decorator_classname) {
-					class_info = ci;
-					break;
+				if (String(ci.get("base", "")) == decorator_classname) {
+					String path = ci.get("path", "");
+
+					if (path.is_empty()) {
+						continue;
+					}
+
+					Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
+					if (script.is_null()) {
+						printError("Cannot load decorator script " + path, node);
+						continue;
+					}
+
+					Variant decorator_variant = ClassDB::instantiate(script->get_instance_base_type());
+					decorator_object = decorator_variant.get_validated_object();
+					if (!decorator_object) {
+						printError("Cannot construct decorator base type", *dec_fn);
+						continue;
+					}
+					decorator_object->set_script(script);
+
+					if (!decorator_object->has_method(StringName("get_decorator_name"))) {
+						printError("Decorator script doesn't have required 'get_decorator_name' method " + path, node);
+						continue;
+					}
+
+					if (String(decorator_object->call(StringName("get_decorator_name"))) == dec_fn_name->name) {
+						class_info = ci;
+						break;
+					} else {
+						memdelete(decorator_object);
+					}
 				}
 			}
 
 			if (class_info.is_empty()) {
-				printError("Class with name '" + decorator_classname + "' is not found", node);
+				printError("Decorator script for '" + dec_fn_name->name + "' not found", node);
 				continue;
 			}
-
-			String path = class_info.get("path", "");
-			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
-			if (script.is_null()) {
-				printError("Cannot load script associated with type '" + decorator_classname + "' by path " + path, node);
-				continue;
-			}
-
-			if (script->get_instance_base_type() != StringName("GDMLDecorator")) {
-				printError("Class doesn't inherit GDMLDecorator class", node);
-				continue;
-			}
-
-			Variant decorator_variant = ClassDB::instantiate(script->get_instance_base_type());
-			Object *decorator_object = decorator_variant.get_validated_object();
-			if (!decorator_object) {
-				printError("Cannot construct decorator base class", *dec_fn);
-				continue;
-			}
-			decorator_object->set_script(script);
 
 			Array call_args;
 			call_args.push_back(obj_as_node);
@@ -583,7 +593,6 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			call_args.push_back(args);
 
 			if (!decorator_object->has_method(StringName("modify"))) {
-				printError("Decorator doesn't have a 'modify' method", *dec_fn);
 				memdelete(decorator_object);
 				continue;
 			} else {

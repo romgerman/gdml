@@ -13,5 +13,8 @@ func modify(control: Variant, args: Array) -> void:
 		else:
 			ref_list[args[0]] = control
 
+func get_decorator_name() -> Variant:
+	return &"ref"
+
 static func get_ref(name: String) -> Control:
 	return ref_list.get(name)

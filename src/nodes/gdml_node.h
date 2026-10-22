@@ -18,6 +18,7 @@ private:
 	Ref<GDMLRenderer> _renderer;
 	Ref<GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
+	bool m_nodes_preview_enabled = false;
 
 	void render_in_editor();
 	void render_in_game();
@@ -45,6 +46,9 @@ public:
 
 	void set_render_in_editor(bool p_enabled);
 	bool get_render_in_editor();
+
+	void set_is_nodes_preview_enabled(bool p_enabled);
+	bool get_is_nodes_preview_enabled();
 
 	Ref<reactive::GDMLAtom> get_variable(String p_name);
 	Variant get_variable_value(String p_name);

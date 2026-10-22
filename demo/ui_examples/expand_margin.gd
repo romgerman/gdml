@@ -9,3 +9,6 @@ func modify_resource(res: Variant, args: Array) -> Variant:
 		res.expand_margin_right = args[2] if args[2] else 0
 		res.expand_margin_bottom = args[3] if args[3] else 0
 	return res
+
+func get_decorator_name() -> Variant:
+	return &"expand_margin"

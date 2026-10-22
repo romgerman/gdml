@@ -1,0 +1,28 @@
+let stats = {
+	health: "100";
+	mana: "100";
+	vitality: "150";
+	strength: "154";
+	defence: "145";
+	intellect: "15";
+}
+
+HBoxContainer(anchors(0, 0, 1, 1)) {
+	VBoxContainer {
+		size_flags_horizontal: Control.SIZE_EXPAND_FILL
+		
+		@for name, value in stats {
+			HBoxContainer {
+				
+			
+				Label {
+					text: name
+				}
+				
+				Label {
+					text: value
+				}
+			}
+		}
+	}
+}

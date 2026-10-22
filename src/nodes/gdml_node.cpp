@@ -29,6 +29,15 @@ void GDMLNode::_bind_methods() {
 		"get_render_in_editor"
 	);
 
+	ClassDB::bind_method(D_METHOD("set_is_nodes_preview_enabled", "p_enabled"), &GDMLNode::set_is_nodes_preview_enabled);
+	ClassDB::bind_method(D_METHOD("get_is_nodes_preview_enabled"), &GDMLNode::get_is_nodes_preview_enabled);
+
+	ADD_PROPERTY(
+		PropertyInfo(Variant::BOOL, "is_nodes_preview_enabled"),
+		"set_is_nodes_preview_enabled",
+		"get_is_nodes_preview_enabled"
+	);
+
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLNode::get_variable);
 	ClassDB::bind_method(D_METHOD("get_variable_value", "name"), &GDMLNode::get_variable_value);
 
@@ -66,7 +75,7 @@ void GDMLNode::render_in_editor() {
 		}
 
 		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
-		_renderer_result->attach(false);
+		_renderer_result->attach(m_nodes_preview_enabled);
 	}
 }
 
@@ -163,6 +172,14 @@ void GDMLNode::set_render_in_editor(bool p_enabled) {
 
 bool GDMLNode::get_render_in_editor() {
 	return m_render_in_editor;
+}
+
+void GDMLNode::set_is_nodes_preview_enabled(bool p_enabled) {
+	m_nodes_preview_enabled = p_enabled;
+}
+
+bool GDMLNode::get_is_nodes_preview_enabled() {
+	return m_nodes_preview_enabled;
 }
 
 Ref<reactive::GDMLAtom> GDMLNode::get_variable(String p_name) {

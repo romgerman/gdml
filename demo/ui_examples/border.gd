@@ -12,3 +12,6 @@ func modify_resource(res: Variant, args: Array) -> Variant:
 		if args.size() > 4 and args[4] is Color:
 			res.border_color = args[4]
 	return res
+
+func get_decorator_name() -> Variant:
+	return &"border"
