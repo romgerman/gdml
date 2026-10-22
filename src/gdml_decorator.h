@@ -5,8 +5,8 @@
 
 namespace gdml {
 
-class GDMLDecorator : public godot::Object {
-	GDCLASS(GDMLDecorator, godot::Object)
+class GDMLDecorator : public godot::RefCounted {
+	GDCLASS(GDMLDecorator, godot::RefCounted)
 
 protected:
 	static void _bind_methods();
