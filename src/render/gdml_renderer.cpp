@@ -1,6 +1,8 @@
 #include "gdml_renderer.h"
 
 #include "tree_renderer_visitor.h"
+#include "diff.h"
+#include "tree_patcher.h"
 
 #include <assert.h>
 
@@ -149,11 +151,47 @@ void GDMLResult::attach(bool p_set_owner) {
 		}
 	};
 
-	for (Variant item : m_nodes) {
-		Node *node = cast_to<Node>(item);
-		m_root->add_child(node);
-		if (p_set_owner) {
-			set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
+	if (m_root->get_child_count() > 0) {
+		gdml::Differ differ;
+		std::vector<Node *> old_nodes;
+		std::vector<Node *> new_nodes;
+		for (Variant item : m_root->get_children()) {
+			Node *node = cast_to<Node>(item);
+			old_nodes.push_back(node);
+		}
+		for (Variant item : m_nodes) {
+			Node *node = cast_to<Node>(item);
+			new_nodes.push_back(node);
+		}
+		std::vector<gdml::DiffItem> diff;
+		differ.diff(old_nodes, new_nodes, m_root, diff);
+		print_line("diff:");
+		for (gdml::DiffItem &item : diff) {
+			if (item.type == gdml::DiffType::DELETE) {
+				print_line("DELETE: ", item.node);
+			} else if (item.type == gdml::DiffType::INSERT) {
+				print_line("INSERT: ", item.node);
+			} else if (item.type == gdml::DiffType::UPDATE) {
+				print_line("UPDATE: ", item.node);
+			} else if (item.type == gdml::DiffType::MOVE) {
+				print_line("MOVE: ", item.node, " to ", item.index);
+			}
+		}
+		gdml::TreePatcher patcher;
+		patcher.patch(m_root, diff);
+		for (Variant item : m_root->get_children()) {
+			Node *node = cast_to<Node>(item);
+			if (p_set_owner) {
+				set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
+			}
+		}
+	} else {
+		for (Variant item : m_nodes) {
+			Node *node = cast_to<Node>(item);
+			m_root->add_child(node);
+			if (p_set_owner) {
+				set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
+			}
 		}
 	}
 }

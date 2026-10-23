@@ -4,7 +4,7 @@ class_name MyCoolButton
 
 var time: float
 var timeString: String
-var timeStringAtom: GDMLAtom = gdml.atom(&"time")
+var timeStringAtom: GDMLAtom = GDML.atom(&"time")
 
 func _ready() -> void:
 	print("My Cool Button is ready")

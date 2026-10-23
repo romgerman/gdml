@@ -11,9 +11,31 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="@HBoxContainer@21459" type="HBoxContainer" parent="." unique_id=990770795]
+[node name="@HBoxContainer@21719" type="HBoxContainer" parent="." unique_id=1991743583]
 layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
 
-[node name="@VBoxContainer@21458" type="VBoxContainer" parent="@HBoxContainer@21459" unique_id=515530378]
+[node name="@VBoxContainer@21718" type="VBoxContainer" parent="@HBoxContainer@21719" unique_id=1425739020]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="@Label@21699" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1571326393]
+layout_mode = 2
+text = "Hello 10"
+
+[node name="@Label@22665" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1059844662]
+layout_mode = 2
+text = "100.0"
+
+[node name="@Label@22666" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=2028426044]
+layout_mode = 2
+text = "100.0"
+
+[node name="@Label@22667" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=840319022]
+layout_mode = 2
+text = "150.0"
+
+[node name="@Label@22668" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=752325030]
+layout_mode = 2
+text = "153.0"

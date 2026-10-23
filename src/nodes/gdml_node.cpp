@@ -70,10 +70,6 @@ void GDMLNode::_notification(int p_what) {
 
 void GDMLNode::render_in_editor() {
 	if (_markup.is_valid()) {
-		for (Variant item : get_children()) {
-			cast_to<Node>(item)->queue_free();
-		}
-
 		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
 		_renderer_result->attach(m_nodes_preview_enabled);
 	}

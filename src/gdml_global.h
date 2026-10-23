@@ -7,8 +7,8 @@
 
 namespace global {
 
-class GDMLGlobal : public godot::Object {
-	GDCLASS(GDMLGlobal, godot::Object);
+class GDML : public godot::Object {
+	GDCLASS(GDML, godot::Object);
 
 protected:
 	static void _bind_methods();

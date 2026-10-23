@@ -33,7 +33,7 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 			GDREGISTER_CLASS(reactive::GDMLAtom);
 			GDREGISTER_CLASS(GDMLResult);
 			GDREGISTER_CLASS(GDMLRenderer);
-			GDREGISTER_CLASS(global::GDMLGlobal);
+			GDREGISTER_CLASS(global::GDML);
 
 			GDREGISTER_CLASS(GDMLNode);
 			GDREGISTER_CLASS(gdml::GDMLDecorator);
