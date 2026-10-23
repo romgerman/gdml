@@ -20,22 +20,68 @@ anchor_bottom = 1.0
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="@Label@21699" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1571326393]
+[node name="@HBoxContainer@22616" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1622003994]
 layout_mode = 2
-text = "Hello 10"
 
-[node name="@Label@22665" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1059844662]
+[node name="@Label@22604" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22616" unique_id=1817272804]
 layout_mode = 2
-text = "100.0"
+text = "health"
 
-[node name="@Label@22666" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=2028426044]
+[node name="@Label@22605" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22616" unique_id=1868923370]
 layout_mode = 2
-text = "100.0"
+text = "100"
 
-[node name="@Label@22667" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=840319022]
+[node name="@HBoxContainer@22518" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=866533477]
 layout_mode = 2
-text = "150.0"
 
-[node name="@Label@22668" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=752325030]
+[node name="@Label@22506" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22518" unique_id=457785771]
 layout_mode = 2
-text = "153.0"
+text = "mana"
+
+[node name="@Label@22507" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22518" unique_id=1541841978]
+layout_mode = 2
+text = "100"
+
+[node name="@HBoxContainer@22519" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=206886677]
+layout_mode = 2
+
+[node name="@Label@22508" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22519" unique_id=859605607]
+layout_mode = 2
+text = "vitality"
+
+[node name="@Label@22509" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22519" unique_id=1894937164]
+layout_mode = 2
+text = "150"
+
+[node name="@HBoxContainer@22520" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1499784237]
+layout_mode = 2
+
+[node name="@Label@22510" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22520" unique_id=531967674]
+layout_mode = 2
+text = "strength"
+
+[node name="@Label@22511" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22520" unique_id=1825233929]
+layout_mode = 2
+text = "154"
+
+[node name="@HBoxContainer@22521" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1724929511]
+layout_mode = 2
+
+[node name="@Label@22512" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22521" unique_id=1319891857]
+layout_mode = 2
+text = "defence"
+
+[node name="@Label@22513" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22521" unique_id=12769695]
+layout_mode = 2
+text = "145"
+
+[node name="@HBoxContainer@22597" type="HBoxContainer" parent="@HBoxContainer@21719/@VBoxContainer@21718" unique_id=1675204501]
+layout_mode = 2
+
+[node name="@Label@22590" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22597" unique_id=317488991]
+layout_mode = 2
+text = "intellect"
+
+[node name="@Label@22591" type="Label" parent="@HBoxContainer@21719/@VBoxContainer@21718/@HBoxContainer@22597" unique_id=1733853431]
+layout_mode = 2
+text = "15"

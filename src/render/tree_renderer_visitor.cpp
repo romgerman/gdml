@@ -690,6 +690,26 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 					}
 				}
 			}
+		} else if (range_variant.get_type() == Variant::DICTIONARY) {
+			Dictionary dict = range_variant;
+			for (Variant key : dict.keys()) {
+				Variant value = dict[key];
+				if (has_iter2) {
+					m_context->get_scope()->set_variable(iter_name, key);
+					m_context->get_scope()->set_variable(iter_name2, value);
+				} else {
+					m_context->get_scope()->set_variable(iter_name, key);
+				}
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+					m_context->push_active_context();
+					Variant result_node = visitNodeDefinition(*item);
+					m_context->pop_active_context();
+					if (result_node) {
+						out_nodes.push_back(result_node);
+						nodes->push_back(result_node);
+					}
+				}
+			}
 		} else {
 			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
 				m_context->get_scope()->set_variable(iter_name, i);

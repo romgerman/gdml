@@ -7,23 +7,9 @@ let stats = {
 	intellect: "15";
 }
 
-let stats_arr = [
-	100, 100, 150, 153
-]
-
 HBoxContainer(anchors(0, 0, 1, 1)) {
 	VBoxContainer {
 		size_flags_horizontal: Control.SIZE_EXPAND_FILL
-		
-		Label {
-			text: "Hello 10"
-		}
-		
-		@for value in stats_arr {
-			Label {
-				text: value
-			}
-		}
 		
 		@for name, value in stats {
 			HBoxContainer {
