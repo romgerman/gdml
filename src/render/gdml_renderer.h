@@ -35,6 +35,7 @@ protected:
 	Array m_signals;
 	Node *m_root;
 	Array m_nodes;
+	bool is_first_renderer = true;
 	
 	static void _bind_methods();
 	
@@ -44,6 +45,7 @@ public:
 	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
 	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
 	void attach(bool p_set_owner = true);
+	Node *get_root();
 
 	// API
 

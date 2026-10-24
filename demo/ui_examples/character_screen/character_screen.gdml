@@ -9,6 +9,7 @@ let stats = {
 
 HBoxContainer(anchors(0, 0, 1, 1)) {
 	VBoxContainer {
+		alignment: BoxContainer.ALIGNMENT_CENTER
 		size_flags_horizontal: Control.SIZE_EXPAND_FILL
 		
 		@for name, value in stats {

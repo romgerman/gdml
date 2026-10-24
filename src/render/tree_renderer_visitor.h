@@ -57,9 +57,9 @@ struct TreeRendererVisitorContext {
 	std::vector<std::map<godot::String, bool>> m_active_variables;
 	uint32_t m_active_context_index = -1;
 
-	void set_variable(godot::String &p_name, godot::Variant p_value);
-	godot::Ref<reactive::GDMLAtom> get_variable(godot::String &p_name);
-	bool has_variable(godot::String &p_name);
+	void set_reactive_variable(godot::String &p_name, godot::Variant p_value);
+	godot::Ref<reactive::GDMLAtom> get_reactive_variable(godot::String &p_name);
+	bool has_reactive_variable(godot::String &p_name);
 
 	bool has_global_signal(godot::String &p_name);
 
@@ -81,6 +81,13 @@ struct TreeRendererVisitorContext {
 	TreeRendererVisitorContext();
 };
 
+struct FragmentContext {
+	godot::ObjectID parent_id;
+	std::shared_ptr<Scope> scope;
+	godot::StatementNode *statement;
+	std::shared_ptr<std::vector<godot::Variant>> rendered_nodes;
+};
+
 struct TreeRendererVisitorResult {
 	std::vector<godot::Variant> nodes;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> variables;
@@ -96,17 +103,16 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	gdml::DecoratorCache m_decorator_cache;
 
 public:
-
 	TreeRendererVisitor(godot::Ref<godot::GDMLResult> result, godot::Node *p_root);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
 	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
-	void visitForStatement(godot::ForStatementNode &statement, std::vector<godot::Variant> &out_nodes);
-	void renderForStatement(godot::ForStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
-	void visitIfStatement(godot::IfStatementNode &statement, std::vector<godot::Variant> &out_nodes);
-	void renderIfStatement(godot::IfStatementNode &statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
+	void visitForStatement(godot::ForStatementNode *statement, std::vector<godot::Variant> &out_nodes);
+	void renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
+	void visitIfStatement(godot::IfStatementNode *statement, std::vector<godot::Variant> &out_nodes);
+	void renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 	void visitImportStatement(godot::ImportStatementNode &statement);
 

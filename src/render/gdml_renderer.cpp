@@ -151,7 +151,21 @@ void GDMLResult::attach(bool p_set_owner) {
 		}
 	};
 
-	if (m_root->get_child_count() > 0) {
+	if (is_first_renderer) {
+		for (Variant item : m_root->get_children()) {
+			Node *node = cast_to<Node>(item);
+			node->queue_free();
+		}
+
+		for (Variant item : m_nodes) {
+			Node *node = cast_to<Node>(item);
+			m_root->add_child(node);
+			if (p_set_owner) {
+				set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
+			}
+		}
+		is_first_renderer = false;
+	} else {
 		gdml::Differ differ;
 		std::vector<Node *> old_nodes;
 		std::vector<Node *> new_nodes;
@@ -165,16 +179,15 @@ void GDMLResult::attach(bool p_set_owner) {
 		}
 		std::vector<gdml::DiffItem> diff;
 		differ.diff(old_nodes, new_nodes, m_root, diff);
-		print_line("diff:");
 		for (gdml::DiffItem &item : diff) {
 			if (item.type == gdml::DiffType::DELETE) {
 				print_line("DELETE: ", item.node);
 			} else if (item.type == gdml::DiffType::INSERT) {
 				print_line("INSERT: ", item.node);
+			} else if (item.type == gdml::DiffType::MOVE) {
+				print_line("MOVE: ", item.node);
 			} else if (item.type == gdml::DiffType::UPDATE) {
 				print_line("UPDATE: ", item.node);
-			} else if (item.type == gdml::DiffType::MOVE) {
-				print_line("MOVE: ", item.node, " to ", item.index);
 			}
 		}
 		gdml::TreePatcher patcher;
@@ -185,15 +198,11 @@ void GDMLResult::attach(bool p_set_owner) {
 				set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
 			}
 		}
-	} else {
-		for (Variant item : m_nodes) {
-			Node *node = cast_to<Node>(item);
-			m_root->add_child(node);
-			if (p_set_owner) {
-				set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
-			}
-		}
 	}
+}
+
+Node *GDMLResult::get_root() {
+	return m_root;
 }
 
 template<typename... Args>

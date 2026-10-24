@@ -97,7 +97,7 @@ std::shared_ptr<Scope> Scope::create_scope() {
 
 #pragma region Context
 
-void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
+void TreeRendererVisitorContext::set_reactive_variable(String &p_name, Variant p_value) {
 	if (m_variables.find(p_name) != m_variables.end()) {
 		Ref<reactive::GDMLAtom> atom = m_variables[p_name];
 		atom->set_value(p_value);
@@ -108,7 +108,7 @@ void TreeRendererVisitorContext::set_variable(String &p_name, Variant p_value) {
 	}
 }
 
-Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_variable(String &p_name) {
+Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_reactive_variable(String &p_name) {
 	if (m_variables.find(p_name) != m_variables.end()) {
 		return m_variables[p_name];
 	} else {
@@ -116,7 +116,7 @@ Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_variable(String &p_name)
 	}
 }
 
-bool TreeRendererVisitorContext::has_variable(String &p_name) {
+bool TreeRendererVisitorContext::has_reactive_variable(String &p_name) {
 	return m_variables.find(p_name) != m_variables.end();
 }
 
@@ -151,7 +151,7 @@ std::vector<Ref<reactive::GDMLAtom>> TreeRendererVisitorContext::get_active_vari
 
 	for (std::pair<String, bool> pair : m_active_variables[m_active_context_index]) {
 		if (pair.second) {
-			out.push_back(get_variable(pair.first));
+			out.push_back(get_reactive_variable(pair.first));
 		}
 	}
 
@@ -286,12 +286,12 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 
 			if (var->value) {
 				if (resolveExpression(value, *var->value, value)) {
-					m_context->set_variable(var->name->name, value);
+					m_context->set_reactive_variable(var->name->name, value);
 				} else {
 					printError("Couldn't resolve variable expression", *var);
 				}
 			} else {
-				m_context->set_variable(var->name->name, Variant());
+				m_context->set_reactive_variable(var->name->name, Variant());
 			}
 		} break;
 		case GDMLNodeType::COMPONENT_DEFINITION: {
@@ -308,13 +308,13 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			m_context->push_scope();
-			visitForStatement(*statement, result.nodes);
+			visitForStatement(statement, result.nodes);
 			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::IF_STATEMENT: {
 			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
 			m_context->push_scope();
-			visitIfStatement(*statement, result.nodes);
+			visitIfStatement(statement, result.nodes);
 			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
@@ -578,7 +578,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
 			m_context->push_scope();
-			visitForStatement(*for_node, nodes);
+			visitForStatement(for_node, nodes);
 			m_context->pop_scope();
 
 			for (Variant &item : nodes) {
@@ -588,7 +588,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			IfStatementNode *if_node = static_cast<IfStatementNode *>(statement.get());
 			std::vector<Variant> nodes;
 			m_context->push_scope();
-			visitIfStatement(*if_node, nodes);
+			visitIfStatement(if_node, nodes);
 			m_context->pop_scope();
 
 			for (Variant &item : nodes) {
@@ -600,31 +600,44 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 	return root_variant;
 }
 
-void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::vector<Variant> &out_nodes) {
-	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
-	std::shared_ptr<Scope> scope = m_context->m_current_scope;
-	Node* parent = m_context->get_scope()->get_parent_node();
-	
-	renderForStatement(statement, nodes, out_nodes);
+void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::vector<Variant> &out_nodes) {
+	std::shared_ptr<FragmentContext> fragment = std::make_shared<FragmentContext>();
+	fragment->rendered_nodes = std::make_shared<std::vector<Variant>>();
+	fragment->scope = m_context->m_current_scope;
+	fragment->parent_id = (ObjectID)m_context->get_scope()->get_parent_node()->get_instance_id();
+	fragment->statement = statement;
 
-	std::function<void()> render_callback = [parent, nodes, scope, &statement, this]() {
-		if (!parent) {
+	if (statement->range->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->range);
+		if (m_context->has_reactive_variable(range_expr.name)) {
+			m_context->set_active_variable(range_expr.name);
+		}
+	}
+	
+	renderForStatement(statement, fragment->rendered_nodes, out_nodes);
+
+	std::function<void()> render_callback = [fragment, this]() {
+		Object *parent_obj = ObjectDB::get_instance(fragment->parent_id);
+		if (!parent_obj) {
+			print_line("Trying to render for-statement with non-existent or invalid parent node");
 			return;
 		}
 
-		for (Variant item : *nodes) {
+		Node *parent = Object::cast_to<Node>(parent_obj);
+
+		for (Variant item : *fragment->rendered_nodes) {
 			Node *node = Object::cast_to<Node>(item);
 			if (node) {
 				node->queue_free();
 			}
 		}
 
-		nodes->clear();
+		fragment->rendered_nodes->clear();
 
 		std::vector<Variant> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
-		m_context->m_current_scope = scope;
-		renderForStatement(statement, nodes, cb_nodes);
+		m_context->m_current_scope = fragment->scope;
+		renderForStatement(static_cast<ForStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
 		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
@@ -632,7 +645,7 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 			if (node) {
 				parent->add_child(node);
 				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-				nodes->push_back(result_node);
+				fragment->rendered_nodes->push_back(result_node);
 			}
 		}
 		
@@ -643,33 +656,40 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode &statement, std::ve
 	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
 		atom->add_callback(render_callback);
 	}
+
+	if (statement->range->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->range);
+		if (m_context->has_reactive_variable(range_expr.name)) {
+			m_context->reset_active_variable(range_expr.name);
+		}
+	}
 }
 
-void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
+void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
 	String iter_name;
 
-	if (statement.iter_name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		iter_name = static_cast<IdentifierNode &>(*statement.iter_name).name;
+	if (statement->iter_name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		iter_name = static_cast<IdentifierNode &>(*statement->iter_name).name;
 	} else {
-		printError("Cannot use non-identifier expressions in for-statement iterator", statement);
+		printError("Cannot use non-identifier expressions in for-statement iterator", *statement);
 		return;
 	}
 
 	String iter_name2;
 	bool has_iter2 = false;
 
-	if (statement.iter_name2) {
-		if (statement.iter_name2->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-			iter_name2 = static_cast<IdentifierNode &>(*statement.iter_name2).name;
+	if (statement->iter_name2) {
+		if (statement->iter_name2->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+			iter_name2 = static_cast<IdentifierNode &>(*statement->iter_name2).name;
 			has_iter2 = true;
 		} else {
-			printError("Cannot use non-identifier expressions in for-statement iterator", statement);
+			printError("Cannot use non-identifier expressions in for-statement iterator", *statement);
 			return;
 		}
 	}
 
 	Variant range_variant;
-	if (resolveExpression(range_variant, *statement.range, range_variant)) {
+	if (resolveExpression(range_variant, *statement->range, range_variant)) {
 		if (range_variant.get_type() == Variant::ARRAY) {
 			Array arr = range_variant;
 			for (int64_t i = 0; i < arr.size(); i++) {
@@ -680,7 +700,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 				} else {
 					m_context->get_scope()->set_variable(iter_name, item);
 				}
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
 					m_context->pop_active_context();
@@ -700,7 +720,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 				} else {
 					m_context->get_scope()->set_variable(iter_name, key);
 				}
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
 					m_context->pop_active_context();
@@ -713,7 +733,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 		} else {
 			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
 				m_context->get_scope()->set_variable(iter_name, i);
-				for (std::unique_ptr<NodeDefinitionNode> &item : statement.statements) {
+				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
 					m_context->pop_active_context();
@@ -725,35 +745,48 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode &statement, const 
 			}
 		}
 	} else {
-		printError("Cannot resolve range expression of for-statement", *statement.range);
+		printError("Cannot resolve range expression of for-statement", *statement->range);
 	}
 }
 
-void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vector<Variant> &out_nodes) {
-	std::shared_ptr<std::vector<Variant>> nodes = std::make_shared<std::vector<Variant>>();
-	std::shared_ptr<Scope> scope = m_context->m_current_scope;
-	Node* parent = m_context->get_scope()->get_parent_node();
-	
-	renderIfStatement(statement, nodes, out_nodes);
+void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vector<Variant> &out_nodes) {
+	std::shared_ptr<FragmentContext> fragment = std::make_shared<FragmentContext>();
+	fragment->rendered_nodes = std::make_shared<std::vector<Variant>>();
+	fragment->scope = m_context->m_current_scope;
+	fragment->parent_id = (ObjectID)m_context->get_scope()->get_parent_node()->get_instance_id();
+	fragment->statement = statement;
 
-	std::function<void()> render_callback = [parent, nodes, scope, &statement, this]() {
-		if (!parent) {
+	if (statement->expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->expression);
+		if (m_context->has_reactive_variable(range_expr.name)) {
+			m_context->set_active_variable(range_expr.name);
+		}
+	}
+	
+	renderIfStatement(statement, fragment->rendered_nodes, out_nodes);
+
+	std::function<void()> render_callback = [fragment, this]() {
+		Object *parent_obj = ObjectDB::get_instance(fragment->parent_id);
+		if (!parent_obj) {
+			print_line("Trying to render if-statement with non-existent or invalid parent node");
 			return;
 		}
 
-		for (Variant item : *nodes) {
+		Node *parent = Object::cast_to<Node>(parent_obj);
+
+		for (Variant item : *fragment->rendered_nodes) {
 			Node *node = Object::cast_to<Node>(item);
 			if (node) {
 				node->queue_free();
 			}
 		}
 
-		nodes->clear();
+		fragment->rendered_nodes->clear();
 
 		std::vector<Variant> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
-		m_context->m_current_scope = scope;
-		renderIfStatement(statement, nodes, cb_nodes);
+		m_context->m_current_scope = fragment->scope;
+		renderIfStatement(static_cast<IfStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
 		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
@@ -761,7 +794,7 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vect
 			if (node) {
 				parent->add_child(node);
 				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-				nodes->push_back(result_node);
+				fragment->rendered_nodes->push_back(result_node);
 			}
 		}
 		
@@ -772,13 +805,20 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode &statement, std::vect
 	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
 		atom->add_callback(render_callback);
 	}
+
+	if (statement->expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->expression);
+		if (m_context->has_reactive_variable(range_expr.name)) {
+			m_context->reset_active_variable(range_expr.name);
+		}
+	}
 }
 
-void TreeRendererVisitor::renderIfStatement(IfStatementNode &statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
+void TreeRendererVisitor::renderIfStatement(IfStatementNode *statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
 	Variant truthy_variant;
-	if (resolveExpression(truthy_variant, *statement.expression, truthy_variant)) {
+	if (resolveExpression(truthy_variant, *statement->expression, truthy_variant)) {
 		if (truthy_variant) {
-			for (std::unique_ptr<NodeDefinitionNode> &item : statement.if_statements) {
+			for (std::unique_ptr<NodeDefinitionNode> &item : statement->if_statements) {
 				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
 				m_context->pop_active_context();
@@ -788,7 +828,7 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode &statement, const st
 				}
 			}
 		} else {
-			for (std::unique_ptr<NodeDefinitionNode> &item : statement.else_statements) {
+			for (std::unique_ptr<NodeDefinitionNode> &item : statement->else_statements) {
 				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
 				m_context->pop_active_context();
@@ -799,7 +839,7 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode &statement, const st
 			}
 		}
 	} else {
-		printError("Cannot resolve if-statement expression", *statement.expression);
+		printError("Cannot resolve if-statement expression", *statement->expression);
 	}
 }
 
@@ -874,8 +914,8 @@ bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, V
 	}
 
 	if (!is_valid) {
-		if (m_context->has_variable(prop_key)) {
-			Ref<reactive::GDMLAtom> atom = m_context->get_variable(prop_key);
+		if (m_context->has_reactive_variable(prop_key)) {
+			Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(prop_key);
 			value = atom->get_value();
 			is_valid = true;
 			m_context->set_active_variable(prop_key);
@@ -996,7 +1036,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 	} else if (value_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		IdentifierNode &node = (IdentifierNode &)value_node;
 
-		if (m_context->has_variable(node.name)) {
+		if (m_context->has_reactive_variable(node.name)) {
 			subscribeToVariable(node.name, prop_key, variant);
 		}
 
@@ -1097,8 +1137,8 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		if (node.name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 			IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
 
-			if (m_context->has_variable(name_node->name)) {
-				Ref<reactive::GDMLAtom> atom = m_context->get_variable(name_node->name);
+			if (m_context->has_reactive_variable(name_node->name)) {
+				Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(name_node->name);
 				Variant value = atom->get_value();
 
 				if (value.get_type() == Variant::Type::CALLABLE) {
@@ -1530,7 +1570,7 @@ bool TreeRendererVisitor::doesExpressionHaveSelf(ExpressionNode &expr_node) {
 }
 
 void TreeRendererVisitor::subscribeToVariable(String &p_variable, String &p_prop, Variant &variant) {
-	Ref<reactive::GDMLAtom> atom = m_context->get_variable(p_variable);
+	Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(p_variable);
 	atom->add_dependency(variant, p_prop);
 }
 

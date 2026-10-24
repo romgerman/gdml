@@ -72,6 +72,12 @@ void GDMLNode::render_in_editor() {
 	if (_markup.is_valid()) {
 		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
 		_renderer_result->attach(m_nodes_preview_enabled);
+		if (m_nodes_preview_enabled) {
+			for (Variant item : _renderer_result->get_root()->get_children()) {
+				Node *node = cast_to<Node>(item);
+				node->set_process_mode(Node::ProcessMode::PROCESS_MODE_DISABLED);
+			}
+		}
 	}
 }
 
