@@ -24,175 +24,6 @@ using namespace parser;
 
 namespace traversal {
 
-void Scope::set_variable(godot::String p_name, godot::Variant p_value) {
-	Scope *current_scope = this;
-
-	do {
-		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
-			current_scope->m_local_variables[p_name] = p_value;
-			return;
-		}
-
-		current_scope = current_scope->m_parent_scope.get();
-	} while (current_scope != nullptr);
-
-	m_local_variables[p_name] = p_value;
-}
-
-bool Scope::has_variable(godot::String p_name) {
-	Scope *current_scope = this;
-
-	do {
-		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
-			return true;
-		}
-
-		current_scope = current_scope->m_parent_scope.get();
-	} while (current_scope != nullptr);
-
-	return false;
-}
-
-godot::Variant Scope::get_variable(godot::String p_name) {
-	Scope *current_scope = this;
-
-	do {
-		if (current_scope->m_local_variables.find(p_name) != current_scope->m_local_variables.end()) {
-			return current_scope->m_local_variables[p_name];
-		}
-
-		current_scope = current_scope->m_parent_scope.get();
-	} while (current_scope != nullptr);
-
-	return godot::Variant();
-}
-
-void Scope::set_parent_node(Node *p_node) {
-	m_parent_node = p_node;
-}
-
-Node *Scope::get_parent_node() {
-	Scope *current_scope = this;
-
-	do {
-		if (current_scope->m_parent_node) {
-			return current_scope->m_parent_node;
-		}
-
-		current_scope = current_scope->m_parent_scope.get();
-	} while (current_scope != nullptr);
-
-	return nullptr;
-}
-
-std::shared_ptr<Scope> Scope::get_parent_scope() {
-	return m_parent_scope;
-}
-
-std::shared_ptr<Scope> Scope::create_scope() {
-	std::shared_ptr<Scope> scope = std::make_shared<Scope>();
-	scope->m_parent_scope = shared_from_this();
-	return scope;
-}
-
-#pragma region Context
-
-void TreeRendererVisitorContext::set_reactive_variable(String &p_name, Variant p_value) {
-	if (m_variables.find(p_name) != m_variables.end()) {
-		Ref<reactive::GDMLAtom> atom = m_variables[p_name];
-		atom->set_value(p_value);
-	} else {
-		Ref<reactive::GDMLAtom> atom = Ref<reactive::GDMLAtom>(memnew(reactive::GDMLAtom()));
-		atom->create(p_name, p_value);
-		m_variables[p_name] = atom;
-	}
-}
-
-Ref<reactive::GDMLAtom> TreeRendererVisitorContext::get_reactive_variable(String &p_name) {
-	if (m_variables.find(p_name) != m_variables.end()) {
-		return m_variables[p_name];
-	} else {
-		return nullptr;
-	}
-}
-
-bool TreeRendererVisitorContext::has_reactive_variable(String &p_name) {
-	return m_variables.find(p_name) != m_variables.end();
-}
-
-bool TreeRendererVisitorContext::has_global_signal(godot::String &p_name) {
-	return m_signals.find(p_name) != m_signals.end();
-}
-
-void TreeRendererVisitorContext::push_active_context() {
-	m_active_variables.push_back(std::map<String, bool>());
-	m_active_context_index++;
-}
-
-void TreeRendererVisitorContext::pop_active_context() {
-	m_active_variables.pop_back();
-	m_active_context_index--;
-}
-
-void TreeRendererVisitorContext::set_active_variable(String &p_name) {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return;
-	}
-
-	m_active_variables[m_active_context_index][p_name] = true;
-}
-
-std::vector<Ref<reactive::GDMLAtom>> TreeRendererVisitorContext::get_active_variables() {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return std::vector<Ref<reactive::GDMLAtom>>();
-	}
-	
-	std::vector<Ref<reactive::GDMLAtom>> out;
-
-	for (std::pair<String, bool> pair : m_active_variables[m_active_context_index]) {
-		if (pair.second) {
-			out.push_back(get_reactive_variable(pair.first));
-		}
-	}
-
-	return out;
-}
-
-void TreeRendererVisitorContext::reset_active_variable(String &p_name) {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return;
-	}
-
-	m_active_variables[m_active_context_index][p_name] = false;
-}
-
-void TreeRendererVisitorContext::flush_deferred_properties() {
-	for (std::function<void()> &fn : m_deferred_properties) {
-		fn();
-	}
-
-	m_deferred_properties.clear();
-}
-
-Scope *TreeRendererVisitorContext::get_scope() {
-	return m_current_scope.get();
-}
-
-void TreeRendererVisitorContext::push_scope() {
-	m_current_scope = m_current_scope->create_scope();
-}
-
-void TreeRendererVisitorContext::pop_scope() {
-	m_current_scope = m_current_scope->get_parent_scope();
-}
-
-TreeRendererVisitorContext::TreeRendererVisitorContext() {
-	m_global_scope = std::make_shared<Scope>();
-	m_current_scope = m_global_scope;
-}
-
-#pragma endregion
-
 #pragma region Renderer
 
 TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result, godot::Node *p_root) {
@@ -243,14 +74,15 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
-		m_context->push_active_context();
+		ScopeGuard guard(*m_context);
+		//m_context->push_active_context();
 		{
-			visitSourceFile((SourceFileNode &)root_node, result);
-			m_context->flush_deferred_properties();
-			result.variables = m_context->m_variables;
-			result.signals = m_context->m_signals;
 		}
-		m_context->pop_active_context();
+		visitSourceFile((SourceFileNode &)root_node, result);
+		m_context->flush_deferred_properties();
+		result.variables = m_context->m_variables;
+		result.signals = m_context->m_signals;
+		//m_context->pop_active_context();
 		return result;
 	}
 
@@ -269,16 +101,11 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		case GDMLNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode *node_def = static_cast<const NodeDefinitionNode *>(definition->statement.get());
 
-			m_context->push_active_context();
-			m_context->push_scope();
-			{
-				Variant result_node = visitNodeDefinition(*node_def);
-				if (result_node) {
-					result.nodes.push_back(result_node);
-				}
+			ScopeGuard guard(*m_context);
+			Variant result_node = visitNodeDefinition(*node_def);
+			if (result_node) {
+				result.nodes.push_back(result_node);
 			}
-			m_context->pop_scope();
-			m_context->pop_active_context();
 		} break;
 		case GDMLNodeType::VARIABLE_DEFINITION: {
 			Variant value;
