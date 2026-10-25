@@ -244,14 +244,14 @@ Array GDMLResult::get_signals() {
 }
 
 void GDMLRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("renderString", "root_node", "source"), &GDMLRenderer::renderString);
-	ClassDB::bind_method(D_METHOD("renderMarkup", "root_node", "markup_script"), &GDMLRenderer::renderMarkup);
+	ClassDB::bind_method(D_METHOD("render_string", "root_node", "source"), &GDMLRenderer::render_string);
+	ClassDB::bind_method(D_METHOD("render_markup", "root_node", "markup_script"), &GDMLRenderer::render_markup);
 }
 
 GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source) {
+Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source) {
 	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
@@ -277,8 +277,8 @@ Ref<GDMLResult> GDMLRenderer::renderString(Node *p_root, const String &p_source)
 	return out;
 }
 
-Ref<GDMLResult> GDMLRenderer::renderMarkup(Node *p_root, GdmlScript *p_script) {
-	return renderString(p_root, p_script->get_source_code());
+Ref<GDMLResult> GDMLRenderer::render_markup(Node *p_root, GdmlScript *p_script) {
+	return render_string(p_root, p_script->get_source_code());
 }
 
 }

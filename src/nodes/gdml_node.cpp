@@ -70,7 +70,7 @@ void GDMLNode::_notification(int p_what) {
 
 void GDMLNode::render_in_editor() {
 	if (_markup.is_valid()) {
-		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
+		_renderer_result = _renderer->render_markup(this, _markup.ptr());
 		_renderer_result->attach(m_nodes_preview_enabled);
 		if (m_nodes_preview_enabled) {
 			for (Variant item : _renderer_result->get_root()->get_children()) {
@@ -83,7 +83,7 @@ void GDMLNode::render_in_editor() {
 
 void GDMLNode::render_in_game() {
 	if (_markup.is_valid()) {
-		_renderer_result = _renderer->renderMarkup(this, _markup.ptr());
+		_renderer_result = _renderer->render_markup(this, _markup.ptr());
 		on_signals_changed();
 		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 		_renderer_result->attach(true);

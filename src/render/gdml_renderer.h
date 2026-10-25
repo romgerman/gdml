@@ -66,8 +66,8 @@ protected:
 
 public:
 	GDMLRenderer();
-	Ref<GDMLResult> renderString(Node *p_root, const String &p_source);
-	Ref<GDMLResult> renderMarkup(Node *p_root, GdmlScript *p_script);
+	Ref<GDMLResult> render_string(Node *p_root, const String &p_source);
+	Ref<GDMLResult> render_markup(Node *p_root, GdmlScript *p_script);
 };
 
 } //namespace godot
