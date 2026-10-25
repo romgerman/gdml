@@ -29,43 +29,6 @@ namespace traversal {
 TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result, godot::Node *p_root) {
 	m_result = result;
 	m_root_node = p_root;
-	m_variant_type_map = {
-		{ "Vector2", Variant::Type::VECTOR2 },
-		{ "Vector2i", Variant::Type::VECTOR2I },
-		{ "Rect2", Variant::Type::RECT2 },
-		{ "Rect2i", Variant::Type::RECT2I },
-		{ "Vector3", Variant::Type::VECTOR3 },
-		{ "Vector3i", Variant::Type::VECTOR3I },
-		{ "Transform2D", Variant::Type::TRANSFORM2D },
-		{ "Vector4", Variant::Type::VECTOR4 },
-		{ "Vector4i", Variant::Type::VECTOR4I },
-		{ "Plane", Variant::Type::PLANE },
-		{ "Quaternion", Variant::Type::QUATERNION },
-		{ "AABB", Variant::Type::AABB },
-		{ "Basis", Variant::Type::BASIS },
-		{ "Transform3D", Variant::Type::TRANSFORM3D },
-		{ "Projection", Variant::Type::PROJECTION },
-
-		{ "Color", Variant::Type::COLOR },
-		{ "StringName", Variant::Type::STRING_NAME },
-		{ "NodePath", Variant::Type::NODE_PATH },
-		{ "RID", Variant::Type::RID },
-		{ "Callable", Variant::Type::CALLABLE },
-		{ "Signal", Variant::Type::SIGNAL },
-		{ "Dictionary", Variant::Type::DICTIONARY },
-		{ "Array", Variant::Type::ARRAY },
-
-		{ "PackedByteArray", Variant::Type::PACKED_BYTE_ARRAY },
-		{ "PackedInt32Array", Variant::Type::PACKED_INT32_ARRAY },
-		{ "PackedInt64Array", Variant::Type::PACKED_INT64_ARRAY },
-		{ "PackedFloat32Array", Variant::Type::PACKED_FLOAT32_ARRAY },
-		{ "PackedFloat64Array", Variant::Type::PACKED_FLOAT64_ARRAY },
-		{ "PackedStringArray", Variant::Type::PACKED_STRING_ARRAY },
-		{ "PackedVector2Array", Variant::Type::PACKED_VECTOR2_ARRAY },
-		{ "PackedVector3Array", Variant::Type::PACKED_VECTOR3_ARRAY },
-		{ "PackedColorArray", Variant::Type::PACKED_COLOR_ARRAY },
-		{ "PackedVector4Array", Variant::Type::PACKED_VECTOR4_ARRAY },
-	};
 }
 
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
@@ -75,14 +38,10 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
 		ScopeGuard guard(*m_context);
-		//m_context->push_active_context();
-		{
-		}
 		visitSourceFile((SourceFileNode &)root_node, result);
 		m_context->flush_deferred_properties();
 		result.variables = m_context->m_variables;
 		result.signals = m_context->m_signals;
-		//m_context->pop_active_context();
 		return result;
 	}
 
@@ -795,13 +754,9 @@ bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, MemberExpr
 		const StringName &value_name = prop_name->name;
 
 		// Check if it's a constant of a basic Variant type
-		if (m_variant_type_map.count(id_expr->name)) {
+		if (VariantRegistry::is_builtin(id_expr->name)) {
 			Variant ret;
-			internal::gdextension_interface_variant_get_constant_value(
-					(GDExtensionVariantType)m_variant_type_map[id_expr->name],
-					value_name._native_ptr(),
-					&ret);
-			if (ret.get_type() != Variant::NIL) {
+			if (VariantRegistry::get_constant(id_expr->name, value_name, ret)) {
 				value = ret;
 				return true;
 			}
@@ -919,16 +874,8 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
 		Variant resource_variant;
 
-		if (m_variant_type_map.count(node.name->name)) {
-			GDExtensionCallError error;
-			internal::gdextension_interface_variant_construct(
-					(GDExtensionVariantType)m_variant_type_map[node.name->name],
-					resource_variant._native_ptr(),
-					nullptr,
-					0,
-					&error);
-
-			if (error.error != GDEXTENSION_CALL_OK) {
+		if (VariantRegistry::is_builtin(node.name->name)) {
+			if (!VariantRegistry::construct(node.name->name, resource_variant)) {
 				print_error("Error constructing variant of type " + node.name->name);
 				return;
 			}
@@ -1112,16 +1059,8 @@ bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNod
 			ResourceDefinitionNode &node = static_cast<ResourceDefinitionNode &>(expr_node);
 			Variant resource_variant;
 
-			if (m_variant_type_map.count(node.name->name)) {
-				GDExtensionCallError error;
-				internal::gdextension_interface_variant_construct(
-						(GDExtensionVariantType)m_variant_type_map[node.name->name],
-						resource_variant._native_ptr(),
-						nullptr,
-						0,
-						&error);
-
-				if (error.error != GDEXTENSION_CALL_OK) {
+			if (VariantRegistry::is_builtin(node.name->name)) {
+				if (!VariantRegistry::construct(node.name->name, resource_variant)) {
 					print_error("Error constructing variant of type " + node.name->name);
 					return false;
 				}

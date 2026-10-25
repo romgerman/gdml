@@ -9,6 +9,7 @@
 #include "decorator_cache.h"
 #include "tree_renderer_scope.h"
 #include "tree_renderer_context.h"
+#include "variant_registry.h"
 
 #include <map>
 #include <set>
@@ -39,7 +40,6 @@ struct TreeRendererVisitorResult {
 };
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
-	std::map<godot::String, godot::Variant::Type> m_variant_type_map;
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 	godot::Ref<godot::GDMLResult> m_result;
 	godot::Node *m_root_node;
