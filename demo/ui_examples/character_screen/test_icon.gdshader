@@ -5,7 +5,8 @@ void vertex() {
 }
 
 void fragment() {
-	COLOR.rgb *= sin(TIME * 2.5) * cos(TIME * 2.5);
+	vec4 tex_col = texture(TEXTURE, UV + -sin(TIME) * sin(TIME) * cos(TIME) * 0.1);
+	COLOR.rgb = tex_col.rgb;
 }
 
 //void light() {

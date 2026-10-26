@@ -1,10 +1,10 @@
 let stats = {
-	health: 100;
-	mana: 100;
-	vitality: 150;
-	strength: 154;
-	defence: 145;
-	intellect: 15;
+	health: 100
+	mana: 100
+	vitality: 150
+	strength: 154
+	defence: 145
+	intellect: 15
 }
 
 signal minus_pressed
@@ -15,7 +15,7 @@ component StatItem(name, value) = PanelContainer {
 		alignment: BoxContainer.ALIGNMENT_CENTER
 		$separation: 10
 		
-		Button {
+		Button(meta("key", name)) {
 			name: "minus_" + name
 			text: " - "
 			@pressed: minus_pressed
@@ -29,7 +29,7 @@ component StatItem(name, value) = PanelContainer {
 			text: value
 		}
 		
-		Button {
+		Button(meta("key", name)) {
 			name: "plus_" + name
 			text: " + "
 			@pressed: plus_pressed

@@ -12,14 +12,14 @@ func _ready() -> void:
 		connect(\"plus_pressed\", _on_plus_pressed)
 
 func _on_minus_pressed(ctrl: Control) -> void:
-	var key: String = ctrl.name.replace(\"minus_\", \"\")
+	var key: String = ctrl.get_meta(\"key\")
 	
 	var stats: Dictionary = get_variable_value(\"stats\")
 	stats.set(key, stats.get(key, 0) - 1)
 	get_variable(\"stats\").value = stats
 
 func _on_plus_pressed(ctrl: Control) -> void:
-	var key: String = ctrl.name.replace(\"plus_\", \"\")
+	var key: String = ctrl.get_meta(\"key\")
 	
 	var stats: Dictionary = get_variable_value(\"stats\")
 	stats.set(key, stats.get(key, 0) + 1)

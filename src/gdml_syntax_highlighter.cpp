@@ -29,8 +29,6 @@ Dictionary GdmlSyntaxHighlighter::get_syntax_highlighting(const String &p_text, 
 	ts::Node root_node = ts::Node::getRootNode(tree.get());
 	std::vector<std::tuple<ts::Node, String, bool>> node_on_line = find_nodes_on_line(root_node, p_line);
 
-	//print_line(ts_node_string(root_node.raw()));
-
 	auto editor_settings = EditorInterface::get_singleton()->get_editor_settings();
 	Color error_color = editor_settings->get_setting("text_editor/theme/highlighting/error_underline_color");
 
@@ -77,7 +75,7 @@ std::vector<std::tuple<ts::Node, String, bool>> GdmlSyntaxHighlighter::find_node
 		}
 
 		if (node.getStartPoint().row == line) {
-			if (node.isType("string_fragment") || node.isType("escape_sequence")) {
+			if (node.isType("string_fragment") || node.isType("escape_sequence") || node.isType("\"")) {
 				return;
 			}
 
