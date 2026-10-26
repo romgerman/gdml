@@ -182,7 +182,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 		} break;
 		case godot::GDMLNodeType::NUMBER_EXPRESSION: {
 			godot::NumberNode node = static_cast<godot::NumberNode &>(expr);
-			out = godot::Variant(node.isFloat ? node.getFloat() : node.getInteger());
+			out = node.isFloat ? (godot::Variant)node.getFloat() : (godot::Variant)node.getInteger();
 		} break;
 		case godot::GDMLNodeType::BOOLEAN_EXPRESSION: {
 			godot::BooleanNode &node = static_cast<godot::BooleanNode &>(expr);

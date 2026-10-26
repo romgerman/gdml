@@ -3,6 +3,8 @@ extends GDMLDecorator
 class_name GDMLDecorator_anchors
 
 func modify(input: Variant, args: Array):
+	if args.is_empty():
+		return
 	var control: Control = input
 	control.anchor_left = args[0] if args[0] else 0.0
 	control.anchor_top = args[1] if args[1] else 0.0
