@@ -57,11 +57,11 @@ void GDMLNode::_notification(int p_what) {
 	switch (p_what)
 	{
 	case NOTIFICATION_ENTER_TREE: {
-		if (Engine::get_singleton()->is_editor_hint() && m_render_in_editor) {
-			render_in_editor();
-		}
-
-		if (!Engine::get_singleton()->is_editor_hint()) {
+		if (Engine::get_singleton()->is_editor_hint()) {
+			if (m_render_in_editor) {
+				render_in_editor();
+			}
+		} else {
 			render_in_game();
 		}
 	} break;

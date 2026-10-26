@@ -47,7 +47,7 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 		return result;
 	}
 
-	printError("Cannot render tree. The tree is malformed", root_node);
+	m_context->push_error("Cannot render tree. The tree is malformed", root_node);
 	return TreeRendererVisitorResult();
 }
 
@@ -76,7 +76,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 				if (m_prop_helper->resolve(value, *var->value, value)) {
 					m_context->set_reactive_variable(var->name->name, value);
 				} else {
-					printError("Couldn't resolve variable expression", *var);
+					m_context->push_error("Couldn't resolve variable expression", *var);
 				}
 			} else {
 				m_context->set_reactive_variable(var->name->name, Variant());
@@ -124,7 +124,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			Ref<PackedScene> scene = ResourceLoader::get_singleton()->load(import_path, "PackedScene");
 	
 			if (scene.is_null()) {
-				printError("Cannot load import path " + import_path, node);
+				m_context->push_error("Cannot load import path " + import_path, node);
 				return nullptr;
 			}
 	
@@ -134,7 +134,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		} else if (import_path.ends_with(".gd")) {
 			Ref<Script> script = ResourceLoader::get_singleton()->load(import_path, "Script");
 			if (script.is_null()) {
-				printError("Cannot load script associated with type '" + node_name + "' by path " + import_path, node);
+				m_context->push_error("Cannot load script associated with type '" + node_name + "' by path " + import_path, node);
 				return nullptr;
 			}
 			root_variant = ClassDB::instantiate(script->get_instance_base_type());
@@ -144,7 +144,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		} else if (import_path.ends_with(".gdml")) {
 			Ref<Script> script = ResourceLoader::get_singleton()->load(import_path, "Script");
 			if (script.is_null()) {
-				printError("Cannot load markup associated with type '" + node_name + "' by path " + import_path, node);
+				m_context->push_error("Cannot load markup associated with type '" + node_name + "' by path " + import_path, node);
 				return nullptr;
 			}
 			GdmlParser parser;
@@ -178,7 +178,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 								if (m_prop_helper->resolve(root_variant, *prop->value, out)) {
 									component_scope->set_variable(param_name, out);
 								} else {
-									printError("Cannot resolve expression while rendering a component", *prop);
+									m_context->push_error("Cannot resolve expression while rendering a component", *prop);
 								}
 							}
 						}
@@ -189,7 +189,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				root_variant = visitNodeDefinition(*component->node);
 				m_context->m_current_scope = current_scope;
 			} else {
-				printError("Cannot find an imported component with name '" + node_name + "' [" + import_path + "]", node);
+				m_context->push_error("Cannot find an imported component with name '" + node_name + "' [" + import_path + "]", node);
 				return nullptr;
 			}
 		}
@@ -207,7 +207,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 						if (m_prop_helper->resolve(root_variant, *prop->value, out)) {
 							component_scope->set_variable(param_name, out);
 						} else {
-							printError("Cannot resolve expression while rendering a component", *prop);
+							m_context->push_error("Cannot resolve expression while rendering a component", *prop);
 						}
 					}
 				}
@@ -229,14 +229,14 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			}
 	
 			if (class_info.is_empty()) {
-				printError("Class with name '" + node_name + "' is not found", node);
+				m_context->push_error("Class with name '" + node_name + "' is not found", node);
 				return nullptr;
 			}
 	
 			String path = class_info.get("path", "");
 			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
 			if (script.is_null()) {
-				printError("Cannot load script associated with type '" + node_name + "' by path " + path, node);
+				m_context->push_error("Cannot load script associated with type '" + node_name + "' by path " + path, node);
 				return nullptr;
 			}
 			root_variant = ClassDB::instantiate(script->get_instance_base_type());
@@ -245,7 +245,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			base_object->set_script(script);
 		} else {
 			if (!ClassDB::can_instantiate(node_name)) {
-				printError("Cannot construct node of type '" + node_name + "'", node);
+				m_context->push_error("Cannot construct node of type '" + node_name + "'", node);
 				return nullptr;
 			}
 	
@@ -260,7 +260,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 		if (obj_as_node) {
 			is_node = true;
 		} else {
-			printError("Object is not a node", node);
+			m_context->push_error("Object is not a node", node);
 			Object *obj = Object::cast_to<Object>(root_variant);
 			if (obj && !Object::cast_to<RefCounted>(obj)) {
 				memdelete(obj);
@@ -268,7 +268,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			return nullptr;
 		}
 	} else {
-		printError("Variant type is not an object", node);
+		m_context->push_error("Variant type is not an object", node);
 		return nullptr;
 	}
 
@@ -283,7 +283,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 					setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
 				}
 			} else {
-				printError("Trying to set theme override on a non-Control node", *property);
+				m_context->push_error("Trying to set theme override on a non-Control node", *property);
 			}
 		} else {
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -301,10 +301,10 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 					} else if (property->value->type == GDMLNodeType::STRING_EXPRESSION) {
 						connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
 					} else {
-						printError("Cannot connect signal. Callable name should be an identifier or a string", *property);
+						m_context->push_error("Cannot connect signal. Callable name should be an identifier or a string", *property);
 					}
 				} else {
-					printError("Cannot connect signal. Wrong name expression type", *property);
+					m_context->push_error("Cannot connect signal. Wrong name expression type", *property);
 				}
 			}
 		}
@@ -323,7 +323,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			Ref<gdml::GDMLDecorator> decorator = m_decorator_cache.store(dec_fn_name->name);
 
 			if (decorator.is_null()) {
-				printError("Decorator script for '" + dec_fn_name->name + "' not found", node);
+				m_context->push_error("Decorator script for '" + dec_fn_name->name + "' not found", node);
 				continue;
 			}
 
@@ -336,7 +336,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				if (m_prop_helper->resolve(root_variant, *arg_node, arg_value)) {
 					args.push_back(arg_value);
 				} else {
-					printError("Cannot resolve decorator argument", *arg_node);
+					m_context->push_error("Cannot resolve decorator argument", *arg_node);
 				}
 			}
 
@@ -459,7 +459,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 	if (statement->iter_name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		iter_name = static_cast<IdentifierNode &>(*statement->iter_name).name;
 	} else {
-		printError("Cannot use non-identifier expressions in for-statement iterator", *statement);
+		m_context->push_error("Cannot use non-identifier expressions in for-statement iterator", *statement);
 		return;
 	}
 
@@ -471,7 +471,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 			iter_name2 = static_cast<IdentifierNode &>(*statement->iter_name2).name;
 			has_iter2 = true;
 		} else {
-			printError("Cannot use non-identifier expressions in for-statement iterator", *statement);
+			m_context->push_error("Cannot use non-identifier expressions in for-statement iterator", *statement);
 			return;
 		}
 	}
@@ -533,7 +533,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 			}
 		}
 	} else {
-		printError("Cannot resolve range expression of for-statement", *statement->range);
+		m_context->push_error("Cannot resolve range expression of for-statement", *statement->range);
 	}
 }
 
@@ -627,7 +627,7 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode *statement, const st
 			}
 		}
 	} else {
-		printError("Cannot resolve if-statement expression", *statement->expression);
+		m_context->push_error("Cannot resolve if-statement expression", *statement->expression);
 	}
 }
 
@@ -716,7 +716,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 				}
 			}
 		} else {
-			printError("Cannot resolve expression", node);
+			m_context->push_error("Cannot resolve expression", node);
 		}
 	} else if (value_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
 		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
@@ -886,10 +886,6 @@ void TreeRendererVisitor::updateSignals() {
 			m_context->m_signals[pair.first].erase(id);
 		}
 	}
-}
-
-void TreeRendererVisitor::printError(const String p_error, const GdmlNode &node) {
-	print_error(p_error, " at ", node.location.start.line, ":", node.location.start.column);
 }
 
 #pragma endregion

@@ -183,7 +183,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			if (get_property(root, node.name, out_value)) {
 				out = out_value;
 			} else {
-				print_error("Couldn't access property \"" + node.name + "\" to get value");
+				m_context->push_error("Couldn't access property \"" + node.name + "\" to get value", node);
 				return false;
 			}
 		} break;
@@ -231,14 +231,14 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 
 			if (VariantRegistry::is_builtin(node.name->name)) {
 				if (!VariantRegistry::construct(node.name->name, resource_variant)) {
-					print_error("Error constructing variant of type " + node.name->name);
+					m_context->push_error("Error constructing variant of type " + node.name->name, node);
 					return false;
 				}
 			} else {
 				if (godot::ClassDB::class_exists(node.name->name)) {
 					resource_variant = godot::ClassDB::instantiate(node.name->name);
 				} else {
-					print_error("Error instantiating class of type " + node.name->name);
+					m_context->push_error("Error instantiating class of type " + node.name->name, node);
 					return false;
 				}
 			}
@@ -286,13 +286,13 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			
 			godot::Array args;
 	
-			for (const std::unique_ptr<godot::ExpressionNode> &expr : node.arguments) {
+			for (const std::unique_ptr<godot::ExpressionNode> &e : node.arguments) {
 				godot::Variant arg_value;
-				if (resolve(root, *expr.get(), arg_value)) {
+				if (resolve(root, *e.get(), arg_value)) {
 					args.push_back(arg_value);
-				} // else {
-				// 	print_error("Unsupported argument type '" + String::num_int64((int)expr->type) + "' in function call");
-				// }
+				} else {
+					m_context->push_error("Unsupported argument type '" + godot::String::num_int64((int)e->type) + "' in function call", expr);
+				}
 			}
 
 			if (node.name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -304,7 +304,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 				}
 
 				if (target.get_type() != godot::Variant::CALLABLE) {
-					// printError("Cannot call non-Callable",node);
+					m_context->push_error("Cannot call non-Callable", node);
 					return false;
 				}
 
@@ -315,7 +315,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 
 				godot::Variant target;
 				if (!resolve(root, *member_node->expression, target)) {
-					// printError("Cannot resolve function call", node);
+					m_context->push_error("Cannot resolve function call", node);
 					return false;
 				}
 
@@ -324,7 +324,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 					out = obj->callv(member_node->identifier->name, args);
 				}
 			} else {
-				// printError("Unsupported call target", node);
+				m_context->push_error("Unsupported call target", node);
 				return false;
 			}
 		} break;
@@ -435,10 +435,10 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 						break;
 					}
 				} else {
-					// printError("Cannot resolve right part of binary expression", node);
+					m_context->push_error("Cannot resolve right part of binary expression", node);
 				}
 			} else {
-				// printError("Cannot resolve left part of binary expression", node);
+				m_context->push_error("Cannot resolve left part of binary expression", node);
 			}
 
 		} break;
@@ -447,13 +447,13 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 
 			godot::Variant v_object;
 			if (!resolve(root, *node.object, v_object)) {
-				// printError("Cannot resolve object", node);
+				m_context->push_error("Cannot resolve object", node);
 				return false;
 			}
 
 			godot::Variant v_index;
 			if (!resolve(root, *node.index, v_index)) {
-				// printError("Cannot resolve index", node);
+				m_context->push_error("Cannot resolve index", node);
 				return false;
 			}
 			
@@ -467,7 +467,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			}
 		} break;
 		default: {
-			// printError("Cannot resolve unknown expression type", expr);
+			m_context->push_error("Cannot resolve unknown expression type", expr);
 			return false;
 		}
 	}

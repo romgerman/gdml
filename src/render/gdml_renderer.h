@@ -14,7 +14,7 @@
 #include <godot_cpp/variant/variant.hpp>
 
 namespace traversal {
-	class TreeRendererVisitor;
+class TreeRendererVisitor;
 }
 
 namespace gdml {

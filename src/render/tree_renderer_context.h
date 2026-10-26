@@ -52,6 +52,8 @@ struct TreeRendererVisitorContext {
 	void push_scope();
 	void pop_scope();
 
+	void push_error(const godot::String p_error, const godot::GdmlNode &node);
+
 	TreeRendererVisitorContext();
 };
 

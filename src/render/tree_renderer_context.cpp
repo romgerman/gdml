@@ -89,6 +89,13 @@ void TreeRendererVisitorContext::push_scope() {
 
 void TreeRendererVisitorContext::pop_scope() {
 	m_current_scope = m_current_scope->get_parent_scope();
+	if (!m_current_scope) {
+		godot::print_error("Trying to pop a scope beyond the global scope");
+	}
+}
+
+void TreeRendererVisitorContext::push_error(const godot::String p_error, const godot::GdmlNode &node) {
+	godot::print_error(p_error, " at [", node.location.start.line, ":", node.location.start.column, "]");
 }
 
 TreeRendererVisitorContext::TreeRendererVisitorContext() {

@@ -69,8 +69,6 @@ private:
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
 	void updateSignals();
-
-	void printError(const godot::String p_error, const godot::GdmlNode &node);
 };
 
 } //namespace traversal
