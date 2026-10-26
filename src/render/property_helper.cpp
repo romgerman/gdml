@@ -13,6 +13,8 @@
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
 
+using namespace godot;
+
 namespace traversal {
 
 PropertyHelper::PropertyHelper(TreeRendererVisitorContext *ctx, gdml::DecoratorCache *dec_cache) : m_context(ctx), m_decorator_cache(dec_cache) {
@@ -491,6 +493,57 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 	}
 
 	return true;
+}
+
+bool PropertyHelper::references_self(godot::ExpressionNode &expr) {
+	switch (expr.type)
+	{
+	case GDMLNodeType::IDENTIFIER_EXPRESSION: {
+		return static_cast<IdentifierNode &>(expr).name == "self";
+	} break;
+	case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
+		return references_self(*static_cast<MemberExpressionNode &>(expr).expression);
+	} break;
+	case GDMLNodeType::ARRAY_EXPRESSION: {
+		for (std::unique_ptr<ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr).values) {
+			if (references_self(*value)) {
+				return true;
+			}
+		}	
+	} break;
+	case GDMLNodeType::DICTIONARY_EXPRESSION: {
+		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<DictionaryExpressionNode &>(expr).values) {
+			if (references_self(*value->value)) {
+				return true;
+			}
+		}
+	} break;
+	case GDMLNodeType::RESOURCE_DEFINITION: {
+		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<ResourceDefinitionNode &>(expr).properties) {
+			if (references_self(*value->value)) {
+				return true;
+			}
+		}
+	} break;
+	case GDMLNodeType::FUNCTION_CALL: {
+		if (references_self(*static_cast<FunctionCallExpressionNode &>(expr).name)) {
+			return true;
+		}
+		for (std::unique_ptr<ExpressionNode> &value : static_cast<FunctionCallExpressionNode &>(expr).arguments) {
+			if (references_self(*value)) {
+				return true;
+			}
+		}
+	} break;
+	case GDMLNodeType::SUBSCRIPT_EXPRESSION: {
+		return references_self(*static_cast<SubscriptExpressionNode &>(expr).object) || references_self(*static_cast<SubscriptExpressionNode &>(expr).index);
+	} break;
+	case GDMLNodeType::BINARY_EXPRESSION: {
+		return references_self(*static_cast<BinaryExpressionNode &>(expr).left) || references_self(*static_cast<BinaryExpressionNode &>(expr).right);
+	} break;
+	}
+
+	return false;
 }
 
 }

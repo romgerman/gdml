@@ -640,7 +640,7 @@ void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &state
 }
 
 bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
-	if (doesExpressionHaveSelf(value_node)) {
+	if (PropertyHelper::references_self(value_node)) {
 		std::function<void()> deferred_set = [this, root_variant, variant, prop_key, &value_node]() {
 			m_prop_helper->set_property(const_cast<Variant &>(root_variant), const_cast<Variant &>(variant), const_cast<String &>(prop_key), value_node);
 		};
@@ -830,32 +830,6 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 		}
 	} else {
 		print_error("Trying to connect signal for non-Object type");
-	}
-
-	return false;
-}
-
-bool TreeRendererVisitor::doesExpressionHaveSelf(ExpressionNode &expr_node) {
-	if (expr_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		return static_cast<IdentifierNode &>(expr_node).name == "self";
-	} else if (expr_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-		return doesExpressionHaveSelf(*static_cast<MemberExpressionNode &>(expr_node).expression);
-	} else if (expr_node.type == GDMLNodeType::ARRAY_EXPRESSION) {
-		for (std::unique_ptr<ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr_node).values) {
-			return doesExpressionHaveSelf(*value);
-		}
-	} else if (expr_node.type == GDMLNodeType::DICTIONARY_EXPRESSION) {
-		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<DictionaryExpressionNode &>(expr_node).values) {
-			return doesExpressionHaveSelf(*value->value);
-		}
-	} else if (expr_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
-		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<ResourceDefinitionNode &>(expr_node).properties) {
-			return doesExpressionHaveSelf(*value->value);
-		}
-	} else if (expr_node.type == GDMLNodeType::FUNCTION_CALL) {
-		for (std::unique_ptr<ExpressionNode> &value : static_cast<FunctionCallExpressionNode &>(expr_node).arguments) {
-			return doesExpressionHaveSelf(*value);
-		}
 	}
 
 	return false;

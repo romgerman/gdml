@@ -24,6 +24,8 @@ public:
 	bool set_property(godot::Variant &root, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &expr);
 	bool set_deep_property(godot::Variant &root, godot::Variant &variant, godot::MemberExpressionNode &member_expression, godot::ExpressionNode &expr);
 	bool resolve(godot::Variant &root, godot::ExpressionNode &expr, godot::Variant &out);
+
+	static bool references_self(godot::ExpressionNode &expr);
 };
 
 }

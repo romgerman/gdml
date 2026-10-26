@@ -107,4 +107,4 @@ bool Cursor::gotoNextSibling() {
 	return ts_tree_cursor_goto_next_sibling(&m_cursor);
 }
 
-}
+} //namespace ts

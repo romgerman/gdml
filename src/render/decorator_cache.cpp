@@ -15,6 +15,18 @@ godot::Ref<GDMLDecorator> DecoratorCache::store(godot::String p_name) {
 
 	const String decorator_classname = "GDMLDecorator";
 
+	for (const String &class_name : ClassDB::get_class_list()) {
+		if (ClassDB::is_parent_class(class_name, decorator_classname)) {
+			Variant function_variant = ClassDB::instantiate(class_name);
+			Object *decorator_object = function_variant.get_validated_object();
+			if (String(decorator_object->call(StringName("get_decorator_name"))) == p_name) {
+				Ref<GDMLDecorator> dec = Ref<GDMLDecorator>(decorator_object);
+				m_decorators[p_name] = dec;
+				return dec;
+			}
+		}
+	}
+
 	Dictionary class_info;
 	Object *decorator_object = nullptr;
 

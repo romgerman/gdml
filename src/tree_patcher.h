@@ -13,4 +13,4 @@ public:
 	void patch(godot::Node *root_node, const std::vector<DiffItem> &diff);
 };
 
-}
+} //namespace gdml

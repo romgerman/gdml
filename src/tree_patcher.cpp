@@ -42,4 +42,4 @@ void gdml::TreePatcher::patch(godot::Node *root_node, const std::vector<DiffItem
 	}
 }
 
-}
+} //namespace gdml

@@ -3,7 +3,8 @@
 #include <godot_cpp/variant/packed_string_array.hpp>
 
 using namespace godot;
-using namespace traversal;
+
+namespace traversal {
 
 String GdmlPrinterVisitor::visit(const GdmlNode &root_node) {
 	return visitNode(root_node, 0);
@@ -163,6 +164,8 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 	}
 }
 
-String traversal::GdmlPrinterVisitor::depthPad(const String &text, uint32_t depth) {
+String GdmlPrinterVisitor::depthPad(const String &text, uint32_t depth) {
 	return text.lpad(text.length() + depth);
+}
+
 }

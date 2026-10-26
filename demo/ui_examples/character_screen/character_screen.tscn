@@ -7,16 +7,9 @@ script/source = "@tool
 extends GDMLNode
 
 func _ready() -> void:
-	await get_tree().create_timer(0.5).timeout
-	var stats := get_variable_value(\"stats\") as Dictionary
-	stats.erase(\"health\")
-	stats.erase(\"mana\")
-	stats[\"fuckality\"] = 350
-	get_variable(\"stats\").value = stats
-	print(get_variable_value(\"stats\"))
-	
-	connect(\"minus_pressed\", _on_minus_pressed)
-	connect(\"plus_pressed\", _on_plus_pressed)
+	if not Engine.is_editor_hint():
+		connect(\"minus_pressed\", _on_minus_pressed)
+		connect(\"plus_pressed\", _on_plus_pressed)
 
 func _on_minus_pressed(ctrl: Control) -> void:
 	var key: String = ctrl.name.replace(\"minus_\", \"\")
