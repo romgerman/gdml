@@ -1,12 +1,14 @@
 let stats = {
-	health: "100";
-	mana: "100";
-	vitality: "150";
-	strength: "154";
-	defence: "145";
-	intellect: "15";
+	health: 100;
+	mana: 100;
+	vitality: 150;
+	strength: 154;
+	defence: 145;
+	intellect: 15;
 }
 
+signal minus_pressed
+signal plus_pressed
 
 HBoxContainer(anchors(0, 0, 1, 1)) {
 	VBoxContainer {
@@ -14,15 +16,30 @@ HBoxContainer(anchors(0, 0, 1, 1)) {
 		size_flags_horizontal: Control.SIZE_EXPAND_FILL
 		
 		@for name, value in stats {
-			HBoxContainer {
-				alignment: BoxContainer.ALIGNMENT_CENTER
-				
-				Label {
-					text: name
-				}
-				
-				Label {
-					text: value
+			PanelContainer {
+				HBoxContainer {
+					alignment: BoxContainer.ALIGNMENT_CENTER
+					$separation: 10
+					
+					Button {
+						name: "minus_" + name
+						text: " - "
+						@pressed: minus_pressed
+					}
+					
+					Label {
+						text: name + ":"
+					}
+					
+					Label {
+						text: value
+					}
+					
+					Button {
+						name: "plus_" + name
+						text: " + "
+						@pressed: plus_pressed
+					}
 				}
 			}
 		}
