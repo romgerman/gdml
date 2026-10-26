@@ -9,6 +9,7 @@
 #include "tree_renderer_scope.h"
 #include "tree_renderer_context.h"
 #include "variant_registry.h"
+#include "property_helper.h"
 
 #include <map>
 #include <set>
@@ -43,6 +44,7 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	godot::Node *m_root_node;
 	gdml::GDMLDocument m_document;
 	gdml::DecoratorCache m_decorator_cache;
+	std::unique_ptr<PropertyHelper> m_prop_helper;
 
 public:
 	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> result, godot::Node *p_root);
@@ -59,16 +61,10 @@ private:
 	void visitImportStatement(godot::ImportStatementNode &statement);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
-	bool setVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
-	bool setVariantPropertyDeep(godot::Variant &root_variant, godot::Variant &variant, godot::MemberExpressionNode &member_expression, godot::ExpressionNode &value_node);
-	bool getPropertyValue(godot::Variant &variant, godot::String &prop_key, godot::Variant &value);
-	bool getDeepPropertyValue(godot::Variant &root_variant, godot::MemberExpressionNode &member_expression, godot::Variant &value);
-
 	void setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node);
 
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::String &callable_name);
 
-	bool resolveExpression(godot::Variant &root_variant, godot::ExpressionNode &expr_node, godot::Variant &value);
 	bool doesExpressionHaveSelf(godot::ExpressionNode &expr_node);
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);

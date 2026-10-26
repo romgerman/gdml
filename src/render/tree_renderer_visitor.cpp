@@ -35,6 +35,7 @@ TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result, godot::No
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
 	m_context->get_scope()->set_parent_node(m_root_node);
+	m_prop_helper = std::make_unique<PropertyHelper>(m_context.get(), &m_decorator_cache);
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
@@ -72,7 +73,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
 
 			if (var->value) {
-				if (resolveExpression(value, *var->value, value)) {
+				if (m_prop_helper->resolve(value, *var->value, value)) {
 					m_context->set_reactive_variable(var->name->name, value);
 				} else {
 					printError("Couldn't resolve variable expression", *var);
@@ -174,7 +175,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 							IdentifierNode &prop_name = static_cast<IdentifierNode &>(*prop->name);
 							if (prop_name.name == param_name) {
 								Variant out;
-								if (resolveExpression(root_variant, *prop->value, out)) {
+								if (m_prop_helper->resolve(root_variant, *prop->value, out)) {
 									component_scope->set_variable(param_name, out);
 								} else {
 									printError("Cannot resolve expression while rendering a component", *prop);
@@ -203,7 +204,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 					IdentifierNode &prop_name = static_cast<IdentifierNode &>(*prop->name);
 					if (prop_name.name == param_name) {
 						Variant out;
-						if (resolveExpression(root_variant, *prop->value, out)) {
+						if (m_prop_helper->resolve(root_variant, *prop->value, out)) {
 							component_scope->set_variable(param_name, out);
 						} else {
 							printError("Cannot resolve expression while rendering a component", *prop);
@@ -290,7 +291,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 				trySetVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				setVariantPropertyDeep(root_variant, root_variant, *member_access, *property->value.get());
+				m_prop_helper->set_deep_property(root_variant, root_variant, *member_access, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::SIGNAL_EXPRESSION) {
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
 				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -311,7 +312,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 
 	for (const std::unique_ptr<VariableDefinitionNode> &var : node.variables) {
 		Variant value;
-		if (resolveExpression(value, *var, value)) {
+		if (m_prop_helper->resolve(value, *var, value)) {
 			m_context->get_scope()->set_variable(var->name->name, value);
 		}
 	}
@@ -332,7 +333,7 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			Array args;
 			for (std::unique_ptr<ExpressionNode> &arg_node : dec_fn->arguments) {
 				Variant arg_value;
-				if (resolveExpression(root_variant, *arg_node, arg_value)) {
+				if (m_prop_helper->resolve(root_variant, *arg_node, arg_value)) {
 					args.push_back(arg_value);
 				} else {
 					printError("Cannot resolve decorator argument", *arg_node);
@@ -476,7 +477,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 	}
 
 	Variant range_variant;
-	if (resolveExpression(range_variant, *statement->range, range_variant)) {
+	if (m_prop_helper->resolve(range_variant, *statement->range, range_variant)) {
 		if (range_variant.get_type() == Variant::ARRAY) {
 			Array arr = range_variant;
 			for (int64_t i = 0; i < arr.size(); i++) {
@@ -603,7 +604,7 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 
 void TreeRendererVisitor::renderIfStatement(IfStatementNode *statement, const std::shared_ptr<std::vector<Variant>> &nodes, std::vector<Variant> &out_nodes) {
 	Variant truthy_variant;
-	if (resolveExpression(truthy_variant, *statement->expression, truthy_variant)) {
+	if (m_prop_helper->resolve(truthy_variant, *statement->expression, truthy_variant)) {
 		if (truthy_variant) {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement->if_statements) {
 				m_context->push_active_context();
@@ -641,168 +642,14 @@ void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &state
 bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
 	if (doesExpressionHaveSelf(value_node)) {
 		std::function<void()> deferred_set = [this, root_variant, variant, prop_key, &value_node]() {
-			setVariantProperty(const_cast<Variant &>(root_variant), const_cast<Variant &>(variant), const_cast<String &>(prop_key), value_node);
+			m_prop_helper->set_property(const_cast<Variant &>(root_variant), const_cast<Variant &>(variant), const_cast<String &>(prop_key), value_node);
 		};
 
 		m_context->m_deferred_properties.push_back(deferred_set);
 		return true;
 	} else{
-		return setVariantProperty(root_variant, variant, prop_key, value_node);
+		return m_prop_helper->set_property(root_variant, variant, prop_key, value_node);
 	}
-}
-
-bool TreeRendererVisitor::setVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
-	Variant out_value;
-	if (resolveExpression(root_variant, value_node, out_value)) {
-		variant.set(prop_key, out_value);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-bool TreeRendererVisitor::setVariantPropertyDeep(Variant &root_variant, Variant &variant, MemberExpressionNode &member_expression, ExpressionNode &value_node) {
-	Variant previous_variant;
-	Variant current_variant = variant;
-
-	bool is_valid = false;
-	// for (auto it = path.begin(); it != path.end() - 1; ++it) {
-	// 	previous_variant = current_variant;
-	// 	current_variant = current_variant.get(it->get()->name, &is_valid);
-
-	// 	if (!is_valid) {
-	// 		print_error("Cannot get property " + it->get()->name + " in path");
-	// 		return false;
-	// 	}
-	// }
-
-	// String &variant_property = path.back()->name;
-	// if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
-	// 	const String &previous_property = (path.end() - 2)->get()->name;
-	// 	previous_variant.set(previous_property, current_variant, &is_valid);
-	// }
-
-	return is_valid;
-}
-
-bool TreeRendererVisitor::getPropertyValue(Variant &variant, String &prop_key, Variant &value) {
-	if (prop_key == "self") {
-		value = variant;
-		return true;
-	}
-
-	bool is_valid = false;
-
-	if (!is_valid) {
-		if (m_context->get_scope()->has_variable(prop_key)) {
-			value = m_context->get_scope()->get_variable(prop_key);
-			is_valid = true;
-		}
-	}
-
-	if (!is_valid) {
-		if (m_context->has_reactive_variable(prop_key)) {
-			Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(prop_key);
-			value = atom->get_value();
-			is_valid = true;
-			m_context->set_active_variable(prop_key);
-		}
-	}
-
-	if (!is_valid) {
-		const Variant prop_value = variant.get(prop_key, &is_valid);
-		if (is_valid) {
-			value = prop_value;
-		}
-	}
-
-	if (!is_valid) {
-		Dictionary class_info;
-	
-		for (const Dictionary &ci : ProjectSettings::get_singleton()->get_global_class_list()) {
-			if (String(ci.get("class", "")) == prop_key) {
-				class_info = ci;
-				break;
-			}
-		}
-
-		if (!class_info.is_empty()) {
-			String path = class_info.get("path", "");
-			Ref<Script> script = ResourceLoader::get_singleton()->load(path, "Script");
-			if (script.is_valid()) {
-				value = script;
-				is_valid = true;
-			}
-		}
-	}
-
-	if (!is_valid) {
-		if (Engine::get_singleton()->has_singleton(prop_key)) {
-			value = Engine::get_singleton()->get_singleton(prop_key);
-			is_valid = true;
-		}
-	}
-
-	return is_valid;
-}
-
-bool TreeRendererVisitor::getDeepPropertyValue(Variant &root_variant, MemberExpressionNode &member_expression, Variant &value) {
-	std::unique_ptr<ExpressionNode> &expression = member_expression.expression;
-	std::unique_ptr<IdentifierNode> &prop_name = member_expression.identifier;
-	
-	if (expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode *id_expr = static_cast<IdentifierNode *>(expression.get());
-		const StringName &value_name = prop_name->name;
-
-		// Check if it's a constant of a basic Variant type
-		if (VariantRegistry::is_builtin(id_expr->name)) {
-			Variant ret;
-			if (VariantRegistry::get_constant(id_expr->name, value_name, ret)) {
-				value = ret;
-				return true;
-			}
-		}
-
-		// Check if it's a class and has the next path segment as a constant
-		if (ClassDB::class_exists(id_expr->name)) {
-			if (ClassDB::class_has_integer_constant(id_expr->name, value_name)) {
-				value = ClassDB::class_get_integer_constant(id_expr->name, value_name);
-				return true;
-			}
-		}
-	}
-
-	Variant base_variant;
-
-	if (expression) {
-		if (!resolveExpression(root_variant, *expression, base_variant)) {
-			return false;
-		}
-	} else {
-		return false;
-	}
-
-	bool is_valid = false;
-	
-	// We have a value go check next
-	Variant next_value = base_variant.get(prop_name->name, &is_valid);
-
-	if (is_valid) {
-		value = next_value;
-		return true;
-	}
-
-	Object *obj = base_variant.get_validated_object();
-	if (obj) {
-		const String class_name = obj->get_class();
-
-		if (ClassDB::class_has_integer_constant(class_name, prop_name->name)) {
-			value = ClassDB::class_get_integer_constant(class_name, prop_name->name);
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
@@ -824,7 +671,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		}
 
 		Variant out_value;
-		if (getPropertyValue(root_variant, node.name, out_value)) {
+		if (m_prop_helper->get_property(root_variant, node.name, out_value)) {
 			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
 				if (control->has_theme_constant(prop_key)) {
 					control->add_theme_constant_override(prop_key, out_value);
@@ -848,7 +695,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 	} else if (value_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 		MemberExpressionNode &node = (MemberExpressionNode &)value_node;
 		Variant out_value;
-		if (getDeepPropertyValue(root_variant, node, out_value)) {
+		if (m_prop_helper->get_deep_property(root_variant, node, out_value)) {
 			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
 				if (control->has_theme_constant(prop_key)) {
 					control->add_theme_constant_override(prop_key, out_value);
@@ -892,10 +739,10 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-				setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
+				m_prop_helper->set_property(root_variant, resource_variant, identifier->name, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
 				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				setVariantPropertyDeep(root_variant, resource_variant, *member_access, *property->value.get());
+				m_prop_helper->set_deep_property(root_variant, resource_variant, *member_access, *property->value.get());
 			}
 		}
 
@@ -922,7 +769,7 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 
 					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
 						Variant arg_value;
-						if (resolveExpression(root_variant, *expr.get(), arg_value)) {
+						if (m_prop_helper->resolve(root_variant, *expr.get(), arg_value)) {
 							args.push_back(arg_value);
 						} else {
 							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
@@ -986,328 +833,6 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 	}
 
 	return false;
-}
-
-bool TreeRendererVisitor::resolveExpression(Variant &root_variant, ExpressionNode &expr_node, Variant &value) {
-	switch (expr_node.type) {
-		case GDMLNodeType::STRING_EXPRESSION: {
-			StringNode &node = static_cast<StringNode &>(expr_node);
-			value = node.value;
-		} break;
-		case GDMLNodeType::NUMBER_EXPRESSION: {
-			NumberNode node = static_cast<NumberNode &>(expr_node);
-			value = Variant(node.isFloat ? node.getFloat() : node.getInteger());
-		} break;
-		case GDMLNodeType::BOOLEAN_EXPRESSION: {
-			BooleanNode &node = static_cast<BooleanNode &>(expr_node);
-			value = node.value;
-		} break;
-		case GDMLNodeType::IDENTIFIER_EXPRESSION: {
-			IdentifierNode &node = static_cast<IdentifierNode &>(expr_node);
-			if (node.name == "self") {
-				value = root_variant;
-				return true;
-			}
-
-			Variant out_value;
-			if (getPropertyValue(root_variant, node.name, out_value)) {
-				value = out_value;
-			} else {
-				print_error("Couldn't access property \"" + node.name + "\" to get value");
-				return false;
-			}
-		} break;
-		case GDMLNodeType::ARRAY_EXPRESSION: {
-			ArrayExpressionNode &node = static_cast<ArrayExpressionNode &>(expr_node);
-			Array out_arr;
-
-			for (const std::unique_ptr<ExpressionNode> &item_node : node.values) {
-				Variant out_value;
-				if (resolveExpression(root_variant, *item_node, out_value)) {
-					out_arr.push_back(out_value);
-				}
-			}
-
-			value = out_arr;
-		} break;
-		case GDMLNodeType::DICTIONARY_EXPRESSION: {
-			DictionaryExpressionNode &node = static_cast<DictionaryExpressionNode &>(expr_node);
-			Dictionary out_dict;
-
-			for (const std::unique_ptr<PropertyDefinitionNode> &item_node : node.values) {
-				if (item_node->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-					String &name = static_cast<IdentifierNode *>(item_node->name.get())->name;
-					Variant out_value;
-					if (resolveExpression(root_variant, *item_node->value.get(), out_value)) {
-						out_dict[name] = out_value;
-					}
-				}
-			}
-
-			value = out_dict;
-		} break;
-		case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
-			MemberExpressionNode &node = static_cast<MemberExpressionNode &>(expr_node);
-			Variant out_value;
-			if (getDeepPropertyValue(root_variant, node, out_value)) {
-				value = out_value;
-			} else {
-				printError("Cannot resolve member expression", node);
-				return false;
-			}
-		} break;
-		case GDMLNodeType::RESOURCE_DEFINITION: {
-			ResourceDefinitionNode &node = static_cast<ResourceDefinitionNode &>(expr_node);
-			Variant resource_variant;
-
-			if (VariantRegistry::is_builtin(node.name->name)) {
-				if (!VariantRegistry::construct(node.name->name, resource_variant)) {
-					print_error("Error constructing variant of type " + node.name->name);
-					return false;
-				}
-			} else {
-				if (ClassDB::class_exists(node.name->name)) {
-					resource_variant = ClassDB::instantiate(node.name->name);
-				} else {
-					print_error("Error instantiating class of type " + node.name->name);
-					return false;
-				}
-			}
-
-			for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-				if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-					setVariantProperty(root_variant, resource_variant, identifier->name, *property->value.get());
-				} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-					MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-					setVariantPropertyDeep(root_variant, resource_variant, *member_access, *property->value.get());
-				}
-			}
-
-			for (const std::unique_ptr<FunctionCallExpressionNode> &dec_fn : node.decorators) {
-				if (dec_fn->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-					IdentifierNode *dec_fn_name = static_cast<IdentifierNode *>(dec_fn->name.get());
-					godot::Ref<gdml::GDMLDecorator> decorator = m_decorator_cache.store(dec_fn_name->name);
-
-					Array call_args;
-					call_args.push_back(resource_variant);
-					
-					Array args;
-					for (std::unique_ptr<ExpressionNode> &arg_node : dec_fn->arguments) {
-						Variant arg_value;
-						if (resolveExpression(root_variant, *arg_node, arg_value)) {
-							args.push_back(arg_value);
-						} else {
-							printError("Cannot resolve decorator argument", *arg_node);
-						}
-					}
-
-					call_args.push_back(args);
-
-					if (!decorator->has_method(StringName("modify_resource"))) {
-						printError("Decorator doesn't have a 'modify_resource' method", *dec_fn);
-						continue;
-					} else {
-						decorator->callv(StringName("modify_resource"), call_args);
-					}
-				}
-			}
-
-			value = resource_variant;
-		} break;
-		case GDMLNodeType::FUNCTION_CALL: {
-			const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)expr_node;
-			
-			Array args;
-	
-			for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-				Variant arg_value;
-				if (resolveExpression(root_variant, *expr.get(), arg_value)) {
-					args.push_back(arg_value);
-				} else {
-					print_error("Unsupported argument type '" + String::num_int64((int)expr->type) + "' in function call");
-				}
-			}
-
-			if (node.name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-				IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
-
-				Variant target;
-				if (!resolveExpression(root_variant, *node.name, target)) {
-					printError("Cannot resolve function call", node);
-					return false;
-				}
-
-				if (target.get_type() != Variant::CALLABLE) {
-					printError("Cannot call non-Callable",node);
-					return false;
-				}
-
-				Callable callable = target;
-				value = callable.callv(args);
-			} else if (node.name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				MemberExpressionNode *member_node = static_cast<MemberExpressionNode *>(node.name.get());
-
-				Variant target;
-				if (!resolveExpression(root_variant, *member_node->expression, target)) {
-					printError("Cannot resolve function call", node);
-					return false;
-				}
-
-				Object *obj = target.get_validated_object();
-				if (obj) {
-					value = obj->callv(member_node->identifier->name, args);
-				}
-			} else {
-				printError("Unsupported call target", node);
-				return false;
-			}
-		} break;
-		case GDMLNodeType::BINARY_EXPRESSION: {
-			BinaryExpressionNode &node = static_cast<BinaryExpressionNode &>(expr_node);
-			
-			Variant left;
-			if (resolveExpression(root_variant, *node.left, left)) {
-				Variant right;
-				if (resolveExpression(root_variant, *node.right, right)) {
-					switch (node.op)
-					{
-					case GDMLOperator::AND:
-						value = left && right;
-						break;
-					case GDMLOperator::OR:
-						value = left || right;
-						break;
-					case GDMLOperator::PLUS:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left + (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left + (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left + (float_t)right;
-						} else if (left.get_type() == Variant::STRING || right.get_type() == Variant::STRING) {
-							value = String(left) + String(right);
-						}
-						break;
-					case GDMLOperator::MINUS:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left - (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left - (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left - (float_t)right;
-						}
-						break;
-					case GDMLOperator::MUL:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left * (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left * (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left * (float_t)right;
-						}
-						break;
-					case GDMLOperator::DIV:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left / (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left / (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left / (float_t)right;
-						}
-						break;
-					case GDMLOperator::LESS_THAN:
-						value = left < right;
-						break;
-					case GDMLOperator::LESS_OR_EQUAL_THAN:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left <= (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left <= (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left <= (float_t)right;
-						}
-						break;
-					case GDMLOperator::GREATER_THAN:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left > (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left > (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left > (float_t)right;
-						}
-						break;
-					case GDMLOperator::GREATER_OR_EQUAL_THAN:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left >= (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left >= (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left >= (float_t)right;
-						}
-						break;
-					case GDMLOperator::EQUAL:
-						if (left.get_type() == Variant::INT && right.get_type() == Variant::INT)  {
-							value = (int64_t)left == (int64_t)right;
-						} else if (left.get_type() == Variant::FLOAT && right.get_type() == Variant::FLOAT) {
-							value = (float_t)left == (float_t)right;
-						} else if ((left.get_type() == Variant::INT && right.get_type() == Variant::FLOAT) ||
-									(left.get_type() == Variant::FLOAT && right.get_type() == Variant::INT)) {
-							value = (float_t)left == (float_t)right;
-						} else {
-							value = left == right;
-						}
-						break;
-					case GDMLOperator::NOT_EQUAL:
-						value = left != right;
-						break;
-					}
-				} else {
-					printError("Cannot resolve right part of binary expression", node);
-				}
-			} else {
-				printError("Cannot resolve left part of binary expression", node);
-			}
-
-		} break;
-		case GDMLNodeType::SUBSCRIPT_EXPRESSION: {
-			const SubscriptExpressionNode &node = (SubscriptExpressionNode &)expr_node;
-
-			Variant v_object;
-			if (!resolveExpression(root_variant, *node.object, v_object)) {
-				printError("Cannot resolve object", node);
-				return false;
-			}
-
-			Variant v_index;
-			if (!resolveExpression(root_variant, *node.index, v_index)) {
-				printError("Cannot resolve index", node);
-				return false;
-			}
-			
-			if (v_object.get_type() == Variant::ARRAY) {
-				Array obj = v_object;
-				int64_t index = v_index;
-				value = obj[index];
-			} else if (v_object.get_type() == Variant::DICTIONARY) {
-				Dictionary obj = v_object;
-				value = obj[v_index];
-			}
-		} break;
-		default: {
-			printError("Cannot resolve unknown expression type", expr_node);
-			return false;
-		}
-	}
-
-	return true;
 }
 
 bool TreeRendererVisitor::doesExpressionHaveSelf(ExpressionNode &expr_node) {
