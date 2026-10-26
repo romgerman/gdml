@@ -33,6 +33,7 @@ HBoxContainer(anchors(0, 0, 1, 1)) {
 		size_flags_horizontal: Control.SIZE_EXPAND_FILL
 		
 		TextureRect {
+			expand_mode: TextureRect.EXPAND_FIT_HEIGHT
 			texture: load("res://icon.svg")
 		}
 	}

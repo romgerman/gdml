@@ -5,6 +5,7 @@
 #include "tree_renderer_context.h"
 #include "variant_registry.h"
 #include "decorator_cache.h"
+#include "function_cache.h"
 
 #include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
@@ -14,7 +15,9 @@
 
 namespace traversal {
 
-PropertyHelper::PropertyHelper(TreeRendererVisitorContext *ctx, gdml::DecoratorCache *dec_cache) : m_context(ctx), m_decorator_cache(dec_cache) {}
+PropertyHelper::PropertyHelper(TreeRendererVisitorContext *ctx, gdml::DecoratorCache *dec_cache) : m_context(ctx), m_decorator_cache(dec_cache) {
+	m_function_cache = std::make_shared<gdml::FunctionCache>();
+}
 
 bool traversal::PropertyHelper::get_property(godot::Variant &root, godot::String &prop_key, godot::Variant &out) {
 	if (prop_key == "self") {
@@ -66,6 +69,13 @@ bool traversal::PropertyHelper::get_property(godot::Variant &root, godot::String
 	// Check if it's a singleton
 	if (godot::Engine::get_singleton()->has_singleton(prop_key)) {
 		out = godot::Engine::get_singleton()->get_singleton(prop_key);
+		return true;
+	}
+
+	// Check if it's a global function
+	godot::Ref<gdml::GDMLFunction> fn = m_function_cache->get(prop_key);
+	if (!fn.is_null()) {
+		out = fn;
 		return true;
 	}
 
@@ -183,7 +193,7 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			if (get_property(root, node.name, out_value)) {
 				out = out_value;
 			} else {
-				m_context->push_error("Couldn't access property \"" + node.name + "\" to get value", node);
+				m_context->push_error("Cannot access property '" + node.name + "'", node);
 				return false;
 			}
 		} break;
@@ -303,6 +313,14 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 					return false;
 				}
 
+				if (target.get_type() == godot::Variant::OBJECT) {
+					godot::Object *target_obj = target.get_validated_object();
+					if (target_obj && target_obj->is_class("GDMLFunction")) {
+						out = target_obj->call(godot::StringName("execute"), args);
+						return true;
+					}
+				}
+				
 				if (target.get_type() != godot::Variant::CALLABLE) {
 					m_context->push_error("Cannot call non-Callable", node);
 					return false;

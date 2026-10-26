@@ -6,6 +6,7 @@
 
 namespace gdml {
 class DecoratorCache;
+class FunctionCache;
 }
 
 namespace traversal {
@@ -15,6 +16,7 @@ class TreeRendererVisitorContext;
 class PropertyHelper {
 	TreeRendererVisitorContext *m_context;
 	gdml::DecoratorCache *m_decorator_cache;
+	std::shared_ptr<gdml::FunctionCache> m_function_cache;
 public:
 	PropertyHelper(TreeRendererVisitorContext *ctx, gdml::DecoratorCache *dec_cache);
 	bool get_property(godot::Variant &root, godot::String &prop_key, godot::Variant &out);

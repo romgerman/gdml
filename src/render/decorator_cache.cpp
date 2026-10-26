@@ -43,7 +43,9 @@ godot::Ref<GDMLDecorator> DecoratorCache::store(godot::String p_name) {
 			}
 
 			if (String(decorator_object->call(StringName("get_decorator_name"))) == p_name) {
-				return Ref<GDMLDecorator>(decorator_object);
+				Ref<GDMLDecorator> dec = Ref<GDMLDecorator>(decorator_object);
+				m_decorators[p_name] = dec;
+				return dec;
 			}
 		}
 	}

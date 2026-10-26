@@ -20,9 +20,14 @@ env.Append(CPPPATH=[
     "grammar/src",
     "grammar/bindings/c"
 ])
-sources = Glob("src/*.cpp") + Glob("src/render/*.cpp") + Glob("src/nodes/*.cpp") + [
-    "grammar/src/parser.c"
-]
+sources = Glob("src/*.cpp") \
+	+ Glob("src/render/*.cpp") \
+    + Glob("src/nodes/*.cpp") \
+    + Glob("src/built-in/*.cpp") \
+	+ Glob("src/built-in/functions/*.cpp") \
+    + [
+    	"grammar/src/parser.c"
+	]
 
 tree_sitter_library = env.StaticLibrary("demo/addons/gdml/bin/tree-sitter", ["tree-sitter/lib/src/lib.c"])
 env.Append(LIBS=[tree_sitter_library])
