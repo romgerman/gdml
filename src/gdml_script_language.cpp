@@ -118,9 +118,15 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 			node_stack.push_back(node->statement.get());
 		} else if (current_node->type == GDMLNodeType::NODE_DEFINITION) {
 			NodeDefinitionNode *node = (NodeDefinitionNode *)current_node;
+			for (const std::unique_ptr<PropertyDefinitionNode> &prop : node->properties) {
+				node_stack.push_back(prop.get());
+			}
 			for (const std::unique_ptr<StatementNode> &statement : node->statements) {
 				node_stack.push_back(statement.get());
 			}
+		} else if (current_node->type == GDMLNodeType::PROPERTY_DEFINITION) {
+			PropertyDefinitionNode *node = (PropertyDefinitionNode *)current_node;
+			node_stack.push_back(node->value.get());
 		} else if (current_node->type == GDMLNodeType::FOR_STATEMENT) {
 			ForStatementNode*node = (ForStatementNode *)current_node;
 			for (const std::unique_ptr<NodeDefinitionNode> &statement : node->statements) {
@@ -200,6 +206,29 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_NODE_PATH;
 						complete_option["display"] = name;
 						complete_option["insert_text"] = name;
+						complete_option["default_value"] = Variant();
+						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+					
+						options.push_back(complete_option);
+					}
+				}
+			}
+		} else if (context_node->type== GDMLNodeType::RESOURCE_DEFINITION) {
+			ResourceDefinitionNode *node = (ResourceDefinitionNode *)context_node;
+			String node_name = node->name->name;
+
+			if (ClassDB::class_exists(node_name)) {
+				TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+	
+				for (Dictionary prop_info : props) {
+					uint64_t usage = (uint64_t)prop_info["usage"];
+					if (usage != PropertyUsageFlags::PROPERTY_USAGE_GROUP
+						|| usage != PropertyUsageFlags::PROPERTY_USAGE_SUBGROUP
+						|| usage != PropertyUsageFlags::PROPERTY_USAGE_CATEGORY) {
+						Dictionary complete_option;
+						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
+						complete_option["display"] = prop_info.get("name", "");
+						complete_option["insert_text"] = prop_info.get("name", "");
 						complete_option["default_value"] = Variant();
 						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
 					

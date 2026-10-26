@@ -10,37 +10,42 @@ let stats = {
 signal minus_pressed
 signal plus_pressed
 
+component StatItem(name, value) = PanelContainer {
+	HBoxContainer {
+		alignment: BoxContainer.ALIGNMENT_CENTER
+		$separation: 10
+		
+		Button {
+			name: "minus_" + name
+			text: " - "
+			@pressed: minus_pressed
+		}
+		
+		Label {
+			text: name + ":"
+		}
+		
+		Label {
+			text: value
+		}
+		
+		Button {
+			name: "plus_" + name
+			text: " + "
+			@pressed: plus_pressed
+		}
+	}
+}
+
 HBoxContainer(anchors(0, 0, 1, 1)) {
 	VBoxContainer {
 		alignment: BoxContainer.ALIGNMENT_CENTER
 		size_flags_horizontal: Control.SIZE_EXPAND_FILL
 		
 		@for name, value in stats {
-			PanelContainer {
-				HBoxContainer {
-					alignment: BoxContainer.ALIGNMENT_CENTER
-					$separation: 10
-					
-					Button {
-						name: "minus_" + name
-						text: " - "
-						@pressed: minus_pressed
-					}
-					
-					Label {
-						text: name + ":"
-					}
-					
-					Label {
-						text: value
-					}
-					
-					Button {
-						name: "plus_" + name
-						text: " + "
-						@pressed: plus_pressed
-					}
-				}
+			StatItem {
+				name: name
+				value: value
 			}
 		}
 	}
@@ -52,6 +57,9 @@ HBoxContainer(anchors(0, 0, 1, 1)) {
 		TextureRect {
 			expand_mode: TextureRect.EXPAND_FIT_HEIGHT
 			texture: load("res://icon.svg")
+			material: ShaderMaterial {
+				shader: load("res://ui_examples/character_screen/test_icon.gdshader")
+			}
 		}
 	}
 }
