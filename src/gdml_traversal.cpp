@@ -25,7 +25,11 @@ String GdmlPrinterVisitor::visitNode(const GdmlNode &node, uint32_t depth) {
 		} break;
 		case GDMLNodeType::NODE_DEFINITION: {
 			const NodeDefinitionNode &self = static_cast<const NodeDefinitionNode &>(node);
-			String out = self.name->name + " {\n";
+			String out = self.name->name + "(";
+			for (const std::unique_ptr<FunctionCallExpressionNode> &dec : self.decorators) {
+				out += depthPad(visitNode(*dec, depth + 1) + "\n", depth);
+			}
+			out += ") {\n";
 			for (const std::unique_ptr<PropertyDefinitionNode> &prop : self.properties) {
 				out += depthPad(visitNode(*prop, depth + 1) + "\n", depth);
 			}

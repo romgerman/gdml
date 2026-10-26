@@ -18,6 +18,7 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/packed_scene.hpp>
 
 using namespace godot;
 using namespace parser;
@@ -26,7 +27,7 @@ namespace traversal {
 
 #pragma region Renderer
 
-TreeRendererVisitor::TreeRendererVisitor(Ref<GDMLResult> result, godot::Node *p_root) {
+TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result, godot::Node *p_root) {
 	m_result = result;
 	m_root_node = p_root;
 }

@@ -14,7 +14,7 @@
 using namespace godot;
 using namespace parser;
 
-namespace godot {
+namespace gdml {
 
 void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_variable_list"), &GDMLResult::get_variable_list);

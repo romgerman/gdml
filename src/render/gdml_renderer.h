@@ -14,27 +14,27 @@
 #include <godot_cpp/variant/variant.hpp>
 
 namespace traversal {
-class TreeRendererVisitor;
+	class TreeRendererVisitor;
 }
 
-namespace godot {
+namespace gdml {
 
-class GDMLResult : public RefCounted {
+class GDMLResult : public godot::RefCounted {
 	friend class GDMLRenderer;
-	GDCLASS(GDMLResult, RefCounted)
+	GDCLASS(GDMLResult, godot::RefCounted)
 
 	template<typename... Args>
-	void on_defined_signal(Args ...args, String signal_name, Variant target);
-	void on_defined_signal0(String signal_name, Variant target);
-	void on_defined_signal1(Variant arg1, String signal_name, Variant target);
-	void on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target);
-	void on_defined_signal3(Variant arg1, Variant arg2, Variant arg3, String signal_name, Variant target);
+	void on_defined_signal(Args ...args, godot::String signal_name, godot::Variant target);
+	void on_defined_signal0(godot::String signal_name, godot::Variant target);
+	void on_defined_signal1(godot::Variant arg1, godot::String signal_name, godot::Variant target);
+	void on_defined_signal2(godot::Variant arg1, godot::Variant arg2, godot::String signal_name, godot::Variant target);
+	void on_defined_signal3(godot::Variant arg1, godot::Variant arg2, godot::Variant arg3, godot::String signal_name, godot::Variant target);
 
 protected:
-	Dictionary m_variables;
-	Array m_signals;
-	Node *m_root;
-	Array m_nodes;
+	godot::Dictionary m_variables;
+	godot::Array m_signals;
+	godot::Node *m_root;
+	godot::Array m_nodes;
 	bool is_first_renderer = true;
 	
 	static void _bind_methods();
@@ -42,23 +42,23 @@ protected:
 public:
 	GDMLResult();
 	
-	void add_variable(String &p_name, Ref<reactive::GDMLAtom> atom);
-	void connect_signal(String signal_name, ObjectID target, StringName target_signal);
+	void add_variable(godot::String &p_name, godot::Ref<reactive::GDMLAtom> atom);
+	void connect_signal(godot::String signal_name, godot::ObjectID target, godot::StringName target_signal);
 	void attach(bool p_set_owner = true);
-	Node *get_root();
+	godot::Node *get_root();
 
 	// API
 
-	Array get_variable_list();
-	Ref<reactive::GDMLAtom> get_variable(String p_name);
+	godot::Array get_variable_list();
+	godot::Ref<reactive::GDMLAtom> get_variable(godot::String p_name);
 	
-	Array get_signals();
+	godot::Array get_signals();
 };
 
-class GDMLRenderer : public RefCounted {
-	GDCLASS(GDMLRenderer, RefCounted)
+class GDMLRenderer : public godot::RefCounted {
+	GDCLASS(GDMLRenderer, godot::RefCounted)
 
-	std::unique_ptr<GdmlParser> m_parser;
+	std::unique_ptr<godot::GdmlParser> m_parser;
 	std::unique_ptr<traversal::TreeRendererVisitor> m_visitor;
 
 protected:
@@ -66,8 +66,8 @@ protected:
 
 public:
 	GDMLRenderer();
-	Ref<GDMLResult> render_string(Node *p_root, const String &p_source);
-	Ref<GDMLResult> render_markup(Node *p_root, GdmlScript *p_script);
+	godot::Ref<GDMLResult> render_string(godot::Node *p_root, const godot::String &p_source);
+	godot::Ref<GDMLResult> render_markup(godot::Node *p_root, godot::GdmlScript *p_script);
 };
 
 } //namespace godot

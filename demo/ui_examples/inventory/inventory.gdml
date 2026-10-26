@@ -59,7 +59,6 @@ GridContainer(anchors(0, 0, 1, 1)) {
 			offset_transform_enabled: true
 			$panel: stylebox
 			
-			
 			DropTarget {
 				name: "DropTarget"
 				index: i

@@ -45,7 +45,7 @@ void GDMLNode::_bind_methods() {
 }
 
 GDMLNode::GDMLNode() {
-	_renderer = Ref<GDMLRenderer>(memnew(GDMLRenderer));
+	_renderer = Ref<gdml::GDMLRenderer>(memnew(gdml::GDMLRenderer));
 }
 
 GDMLNode::~GDMLNode() {

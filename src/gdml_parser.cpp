@@ -406,42 +406,43 @@ std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, Cha
 }
 
 std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, CharString &text) {
+	if (node.isType("expression")) {
+		for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+			ts::Node child_node = node.getNamedChild(i);
+			if (child_node.isType("comment") || child_node.isError()) {
+				continue;
+			}
+			return visitExpression(child_node, text);
+		}
+	} else if (node.isType("identifier")) {
+			return visitIdentifier(node, text);
+	} else if (node.isType("self")) {
+		return visitIdentifier(node, text);
+	} else if (node.isType("number")) {
+		return visitNumber(node, text);
+	} else if (node.isType("boolean")) {
+		return visitBoolean(node, text);
+	} else if (node.isType("string")) {
+		return visitString(node, text);
+	} else if (node.isType("array_expression")) {
+		return visitArrayExpression(node, text);
+	} else if (node.isType("dictionary_expression")) {
+		return visitDictionaryExpression(node, text);
+	} else if (node.isType("member_expression")) {
+		return visitMemberExpression(node, text);
+	} else if (node.isType("function_call")) {
+		return visitFunctionCallExpression(node, text);
+	} else if (node.isType("binary_expression")) {
+		return visitBinaryExpression(node, text);
+	} else if (node.isType("subscript_expression")) {
+		return visitSubscriptExpression(node, text);
+	} else {
+		pushError("Unknown node " + String(node.getType()) + " while parsing expression", node);
+	}
+
 	std::unique_ptr<ExpressionNode> out = std::make_unique<ExpressionNode>();
 	out->type = GDMLNodeType::UNKNOWN;
 	out->location = parser::GdmlSourceLocation(node);
-
-	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
-		ts::Node child_node = node.getNamedChild(i);
-
-		if (child_node.isType("identifier")) {
-			return visitIdentifier(child_node, text);
-		} else if (child_node.isType("self")) {
-			return visitIdentifier(child_node, text);
-		} else if (child_node.isType("number")) {
-			return visitNumber(child_node, text);
-		} else if (child_node.isType("boolean")) {
-			return visitBoolean(child_node, text);
-		} else if (child_node.isType("string")) {
-			return visitString(child_node, text);
-		} else if (child_node.isType("array_expression")) {
-			return visitArrayExpression(child_node, text);
-		} else if (child_node.isType("dictionary_expression")) {
-			return visitDictionaryExpression(child_node, text);
-		} else if (child_node.isType("member_expression")) {
-			return visitMemberExpression(child_node, text);
-		} else if (child_node.isType("function_call")) {
-			return visitFunctionCallExpression(child_node, text);
-		} else if (child_node.isType("binary_expression")) {
-			return visitBinaryExpression(child_node, text);
-		} else if (child_node.isType("subscript_expression")) {
-			return visitSubscriptExpression(child_node, text);
-		} else if (child_node.isType("comment") || child_node.isError()) {
-			continue;
-		} else {
-			pushError("Unknown node " + String(child_node.getType()) + " while parsing expression", child_node);
-		}
-	}
-
 	return out;
 }
 
@@ -532,9 +533,7 @@ std::unique_ptr<FunctionCallExpressionNode> GdmlParser::visitFunctionCallExpress
 
 	ts::Node name_node = node.getChildByFieldName("name");
 	if (!name_node.isNull()) {
-		if (name_node.isType("expression")) {
-			out->name = visitExpression(name_node, text);
-		}
+		out->name = visitExpression(name_node, text);
 	}
 
 	ts::Node arguments_node = node.getChildByFieldName("arguments");
@@ -544,6 +543,8 @@ std::unique_ptr<FunctionCallExpressionNode> GdmlParser::visitFunctionCallExpress
 
 			if (child_node.isType("expression")) {
 				out->arguments.push_back(visitExpression(child_node, text));
+			} else if (child_node.isType("comment") || child_node.isError()) {
+				continue;
 			} else {
 				pushError("Unknown node " + String(child_node.getType()) + " while parsing function call expression", child_node);
 			}

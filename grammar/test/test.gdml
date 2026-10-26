@@ -1,81 +1,38 @@
-import ItemCmp from "res://ui_examples/inventory/item_component.gdml"
-
-let item_size = Vector2 {
-	x: 100
-	y: 100
+let stats = {
+	health: "100";
+	mana: "100";
+	vitality: "150";
+	strength: "154";
+	defence: "145";
+	intellect: "15";
 }
 
-let stylebox = StyleBoxFlat {
-	bg_color: Color.BLACK
-}
-
-let dt_stylebox = StyleBoxFlat(
-	border(2, 2, 2, 2, Color.YELLOW),
-	expand_margin(2, 2, 2, 2)
-) { }
-
-let columns = 5
-let inventory = []
-let item_refs = {}
-
-signal item_gui_input
-
-component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
-	name: "Item"
-	mouse_filter: Control.MOUSE_FILTER_PASS
-	@gui_input: item_gui_input
-	
-	ColorRect {
-		color: Color {
-			r: 0; g: 0; b: 0;
-			a: 0.5;
-		}
-		mouse_filter: Control.MOUSE_FILTER_IGNORE
-	}
-	
-	TextureRect(anchors(0, 0, 1, 1)) {
-		texture: item_info.item_icon
-		expand_mode: TextureRect.EXPAND_FIT_HEIGHT_PROPORTIONAL
-		mouse_filter: Control.MOUSE_FILTER_IGNORE
-	}
-	
-	Button(anchors(0, 0, 1, 1)) {
-		$normal: StyleBoxEmpty {}
-		mouse_filter: Control.MOUSE_FILTER_PASS
+HBoxContainer(anchors(0, 0, 1, 1)) {
+	VBoxContainer {
+		alignment: BoxContainer.ALIGNMENT_CENTER
+		size_flags_horizontal: Control.SIZE_EXPAND_FILL
 		
-		Label {
-			text: item_info.item_name
-		}
-	}
-}
-
-GridContainer(anchors(0, 0, 1, 1)) {
-	columns: columns
-	
-	@for i, stack in inventory {
-		PanelContainer(ref(item_refs, i)) {
-			custom_minimum_size: item_size
-			mouse_filter: Control.MOUSE_FILTER_PASS
-			offset_transform_enabled: true
-			$panel: stylebox
-			
-			
-			DropTarget {
-				name: "DropTarget"
-				index: i
-				mouse_filter: Control.MOUSE_FILTER_PASS
+		@for name, value in stats {
+			HBoxContainer {
+				alignment: BoxContainer.ALIGNMENT_CENTER
 				
-			
-				@if stack.item {
-					#Item {
-					#	item_info: stack.item
-					#	offset_transform_enabled: true
-					#}
-					ItemCmp {
-						item_info: stack.item
-					}
+				Label {
+					text: name
+				}
+				
+				Label {
+					text: value
 				}
 			}
+		}
+	}
+	
+	VBoxContainer {
+		alignment: BoxContainer.ALIGNMENT_CENTER
+		size_flags_horizontal: Control.SIZE_EXPAND_FILL
+		
+		TextureRect {
+			texture: load("res://icon.svg");
 		}
 	}
 }

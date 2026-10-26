@@ -849,21 +849,33 @@
       ]
     },
     "member_expression": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "SYMBOL",
-          "name": "expression"
-        },
-        {
-          "type": "STRING",
-          "value": "."
-        },
-        {
-          "type": "SYMBOL",
-          "name": "identifier"
-        }
-      ]
+      "type": "PREC_LEFT",
+      "value": "member",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "object",
+            "content": {
+              "type": "SYMBOL",
+              "name": "expression"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "."
+          },
+          {
+            "type": "FIELD",
+            "name": "property",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          }
+        ]
+      }
     },
     "array_expression": {
       "type": "SEQ",
@@ -953,39 +965,64 @@
       ]
     },
     "function_call": {
-      "type": "SEQ",
+      "type": "PREC_LEFT",
+      "value": "call",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_callee"
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "("
+          },
+          {
+            "type": "FIELD",
+            "name": "arguments",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "argument_list"
+                },
+                {
+                  "type": "BLANK"
+                }
+              ]
+            }
+          },
+          {
+            "type": "STRING",
+            "value": ")"
+          }
+        ]
+      }
+    },
+    "_callee": {
+      "type": "CHOICE",
       "members": [
         {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
-            "type": "SYMBOL",
-            "name": "expression"
-          }
+          "type": "SYMBOL",
+          "name": "identifier"
         },
         {
-          "type": "STRING",
-          "value": "("
+          "type": "SYMBOL",
+          "name": "member_expression"
         },
         {
-          "type": "FIELD",
-          "name": "arguments",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "argument_list"
-              },
-              {
-                "type": "BLANK"
-              }
-            ]
-          }
+          "type": "SYMBOL",
+          "name": "function_call"
         },
         {
-          "type": "STRING",
-          "value": ")"
+          "type": "SYMBOL",
+          "name": "subscript_expression"
         }
       ]
     },
@@ -1416,7 +1453,7 @@
       ]
     },
     "subscript_expression": {
-      "type": "PREC_RIGHT",
+      "type": "PREC_LEFT",
       "value": "member",
       "content": {
         "type": "SEQ",
@@ -1603,7 +1640,16 @@
       "flags": "u"
     }
   ],
-  "conflicts": [],
+  "conflicts": [
+    [
+      "resource_definition",
+      "_callee"
+    ],
+    [
+      "node_definition",
+      "_callee"
+    ]
+  ],
   "precedences": [
     [
       {
@@ -1611,8 +1657,8 @@
         "value": "member"
       },
       {
-        "type": "SYMBOL",
-        "name": "function_call"
+        "type": "STRING",
+        "value": "call"
       },
       {
         "type": "STRING",
@@ -1637,40 +1683,6 @@
       {
         "type": "STRING",
         "value": "logical_or"
-      }
-    ],
-    [
-      {
-        "type": "SYMBOL",
-        "name": "node_definition"
-      },
-      {
-        "type": "SYMBOL",
-        "name": "_primary_expression"
-      }
-    ],
-    [
-      {
-        "type": "SYMBOL",
-        "name": "resource_definition"
-      },
-      {
-        "type": "SYMBOL",
-        "name": "_primary_expression"
-      }
-    ],
-    [
-      {
-        "type": "STRING",
-        "value": "member"
-      },
-      {
-        "type": "SYMBOL",
-        "name": "function_call"
-      },
-      {
-        "type": "SYMBOL",
-        "name": "expression"
       }
     ]
   ],

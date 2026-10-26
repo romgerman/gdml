@@ -17,7 +17,7 @@ module.exports = grammar({
   precedences: $ => [
     [
       'member',
-      $.function_call,
+      'call',
       'binary_times',
       'binary_plus',
       'binary_relation',
@@ -25,9 +25,10 @@ module.exports = grammar({
       'logical_and',
       'logical_or',
     ],
-    [$.node_definition, $._primary_expression],
-    [$.resource_definition, $._primary_expression],
-    ['member', $.function_call, $.expression]
+  ],
+  conflicts: $ => [
+    [$.resource_definition, $._callee],
+    [$.node_definition, $._callee]
   ],
   rules: {
     source_file: $ => seq(
@@ -163,11 +164,11 @@ module.exports = grammar({
       $.function_call,
       $.subscript_expression
     ),
-    member_expression: $ => seq(
-      $.expression,
+    member_expression: $ => prec.left('member', seq(
+      field('object', $.expression),
       '.',
-      $.identifier
-    ),
+      field('property', $.identifier)
+    )),
     array_expression: $ => seq(
       '[',
       optional(seq(
@@ -188,11 +189,17 @@ module.exports = grammar({
       '@',
       $.identifier
     ),
-    function_call: $ => seq(
-      field('name', $.expression),
+    function_call: $ => prec.left('call', seq(
+      field('name', $._callee),
       '(',
       field('arguments', optional($.argument_list)),
       ')'
+    )),
+    _callee: $ => choice(
+      $.identifier,
+      $.member_expression,
+      $.function_call,
+      $.subscript_expression
     ),
     argument_list: $ => seq(
       $.expression,
@@ -221,7 +228,7 @@ module.exports = grammar({
         field("right", $.expression)
       )))
     ),
-    subscript_expression: $ => prec.right('member', seq(
+    subscript_expression: $ => prec.left('member', seq(
       field('object', choice($.expression)),
       '[',
       field('index', $.expression),

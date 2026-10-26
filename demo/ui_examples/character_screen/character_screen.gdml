@@ -7,6 +7,7 @@ let stats = {
 	intellect: "15";
 }
 
+
 HBoxContainer(anchors(0, 0, 1, 1)) {
 	VBoxContainer {
 		alignment: BoxContainer.ALIGNMENT_CENTER
@@ -14,6 +15,8 @@ HBoxContainer(anchors(0, 0, 1, 1)) {
 		
 		@for name, value in stats {
 			HBoxContainer {
+				alignment: BoxContainer.ALIGNMENT_CENTER
+				
 				Label {
 					text: name
 				}
@@ -22,6 +25,15 @@ HBoxContainer(anchors(0, 0, 1, 1)) {
 					text: value
 				}
 			}
+		}
+	}
+	
+	VBoxContainer {
+		alignment: BoxContainer.ALIGNMENT_CENTER
+		size_flags_horizontal: Control.SIZE_EXPAND_FILL
+		
+		TextureRect {
+			texture: load("res://icon.svg")
 		}
 	}
 }

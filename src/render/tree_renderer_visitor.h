@@ -2,7 +2,6 @@
 
 #include "gdml_parser.h"
 #include "gdml_script.h"
-#include "gdml_script_language.h"
 #include "gdml_traversal.h"
 #include "gdml_atom.h"
 #include "gdml_document.h"
@@ -16,11 +15,10 @@
 #include <memory>
 #include <vector>
 
-#include <godot_cpp/classes/packed_scene.hpp>
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>
 
-namespace godot {
+namespace gdml {
 	class GDMLResult;
 }
 
@@ -41,13 +39,13 @@ struct TreeRendererVisitorResult {
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
-	godot::Ref<godot::GDMLResult> m_result;
+	godot::Ref<gdml::GDMLResult> m_result;
 	godot::Node *m_root_node;
 	gdml::GDMLDocument m_document;
 	gdml::DecoratorCache m_decorator_cache;
 
 public:
-	TreeRendererVisitor(godot::Ref<godot::GDMLResult> result, godot::Node *p_root);
+	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> result, godot::Node *p_root);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:

@@ -4,19 +4,22 @@
 
 #include "gdml_atom.h"
 
+namespace gdml {
+	class GDMLRenderer;
+	class GDMLResult;
+}
+
 namespace godot {
 
 class GdmlScript;
-class GDMLRenderer;
-class GDMLResult;
 
 class GDMLNode : public Control {
 	GDCLASS(GDMLNode, Control)
 
 private:
 	Ref<GdmlScript> _markup;
-	Ref<GDMLRenderer> _renderer;
-	Ref<GDMLResult> _renderer_result;
+	Ref<gdml::GDMLRenderer> _renderer;
+	Ref<gdml::GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
 	bool m_nodes_preview_enabled = false;
 
