@@ -6,15 +6,16 @@ component StatBar(title, fill_color, value) = VBoxContainer {
 		max_value: 100
 		value: value
 		show_percentage: false
-		custom_minimum_size: Vector2 {
-			x: 0
-			y: 22
-		}
+		#custom_minimum_size: Vector2 {
+		#	x: 0
+		#	y: 22
+		#}
+		custom_minimum_size.y: 22
 		
 		$fill: StyleBoxFlat {
 			bg_color: fill_color
 		}
-		$background: StyleBoxFlat {
+		$background: &StyleBoxFlat {
 			bg_color: Color.BLACK
 		}
 	}

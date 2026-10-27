@@ -149,27 +149,26 @@ bool PropertyHelper::set_property(godot::Variant &root, godot::Variant &variant,
 	}
 }
 
-bool PropertyHelper::set_deep_property(godot::Variant &root, godot::Variant &variant, godot::MemberExpressionNode &member_expression, godot::ExpressionNode &expr) {
+bool PropertyHelper::set_deep_property(godot::Variant &root, godot::Variant &variant, godot::PropertyPathNode &path_expr, godot::ExpressionNode &expr) {
 	godot::Variant previous_variant;
 	godot::Variant current_variant = variant;
 
-	// TODO:
 	bool is_valid = false;
-	// for (auto it = path.begin(); it != path.end() - 1; ++it) {
-	// 	previous_variant = current_variant;
-	// 	current_variant = current_variant.get(it->get()->name, &is_valid);
+	for (auto it = path_expr.path.begin(); it != path_expr.path.end() - 1; ++it) {
+		previous_variant = current_variant;
+		current_variant = current_variant.get(it->get()->name, &is_valid);
 
-	// 	if (!is_valid) {
-	// 		print_error("Cannot get property " + it->get()->name + " in path");
-	// 		return false;
-	// 	}
-	// }
+		if (!is_valid) {
+			print_error("Cannot get property " + it->get()->name + " in path");
+			return false;
+		}
+	}
 
-	// String &variant_property = path.back()->name;
-	// if (setVariantProperty(root_variant, current_variant, variant_property, value_node)) {
-	// 	const String &previous_property = (path.end() - 2)->get()->name;
-	// 	previous_variant.set(previous_property, current_variant, &is_valid);
-	// }
+	String &variant_property = path_expr.path.back()->name;
+	if (set_property(root, current_variant, variant_property, expr)) {
+		const String &previous_property = (path_expr.path.end() - 2)->get()->name;
+		previous_variant.set(previous_property, current_variant, &is_valid);
+	}
 
 	return is_valid;
 }
@@ -259,9 +258,9 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 				if (property->name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					godot::IdentifierNode *identifier = static_cast<godot::IdentifierNode *>(property->name.get());
 					set_property(root, resource_variant, identifier->name, *property->value.get());
-				} else if (property->name->type == godot::GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-					godot::MemberExpressionNode *member_access = static_cast<godot::MemberExpressionNode *>(property->name.get());
-					set_deep_property(root, resource_variant, *member_access, *property->value.get());
+				} else if (property->name->type == godot::GDMLNodeType::PROPERTY_PATH) {
+					godot::PropertyPathNode *path = static_cast<godot::PropertyPathNode *>(property->name.get());
+					set_deep_property(root, resource_variant, *path, *property->value.get());
 				}
 			}
 

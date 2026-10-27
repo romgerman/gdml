@@ -560,7 +560,7 @@
             "named": true
           },
           {
-            "type": "member_expression",
+            "type": "property_path",
             "named": true
           },
           {
@@ -583,6 +583,21 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "property_path",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -628,6 +643,16 @@
           {
             "type": "property_definition",
             "named": true
+          }
+        ]
+      },
+      "shared": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "&",
+            "named": false
           }
         ]
       }
@@ -815,6 +840,10 @@
   },
   {
     "type": "$",
+    "named": false
+  },
+  {
+    "type": "&",
     "named": false
   },
   {

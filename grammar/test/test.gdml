@@ -1,38 +1,74 @@
-let stats = {
-	health: "100";
-	mana: "100";
-	vitality: "150";
-	strength: "154";
-	defence: "145";
-	intellect: "15";
+component StatBar(title, fill_color, value) = VBoxContainer {
+	Label {
+		text: title
+	}
+	ProgressBar {
+		max_value: 100
+		value: value
+		show_percentage: false
+		custom_minimum_size: Vector2 {
+			x: 0
+			y: 22
+		}
+		
+		$fill: StyleBoxFlat {
+			bg_color: fill_color
+		}
+		$background: StyleBoxFlat {
+			bg_color: Color.BLACK
+		}
+	}
 }
 
-HBoxContainer(anchors(0, 0, 1, 1)) {
-	VBoxContainer {
-		alignment: BoxContainer.ALIGNMENT_CENTER
-		size_flags_horizontal: Control.SIZE_EXPAND_FILL
-		
-		@for name, value in stats {
-			HBoxContainer {
-				alignment: BoxContainer.ALIGNMENT_CENTER
-				
-				Label {
-					text: name
-				}
-				
-				Label {
-					text: value
-				}
+let total_bullets = 10
+
+MarginContainer(anchors(0, 0, 1, 1)) {
+	$margin_bottom: 12
+	$margin_left: 12
+	$margin_top: 12
+	$margin_right: 12
+	
+	Control {
+		VBoxContainer(anchors(0, 0, 0.35, 1)) {
+			StatBar {
+				title: "Health"
+				fill_color: Color.LIME_GREEN
+				value: 75
+			}
+			
+			StatBar {
+				title: "Mana"
+				fill_color: Color.DARK_BLUE
+				value: 45
 			}
 		}
 	}
 	
-	VBoxContainer {
-		alignment: BoxContainer.ALIGNMENT_CENTER
-		size_flags_horizontal: Control.SIZE_EXPAND_FILL
-		
-		TextureRect {
-			texture: load("res://icon.svg");
+	Control {
+		VBoxContainer(anchors(0.8, 0.9, 1, 1)) {
+			grow_vertical: Control.GROW_DIRECTION_BEGIN
+			
+			HBoxContainer {
+				@for i in total_bullets {
+					ColorRect {
+						color: Color.WHITE
+						custom_minimum_size: Vector2 { x: 16; y: 16; }
+
+						transition.enter: GDMLTransition {
+							delay: i * 0.1
+							duration: 0.35
+							props: {
+								self_modulate: Color.TRANSPARENT
+								position.y: 10
+							}
+						}
+					}
+				}
+			}
+			
+			Label {
+				text: 10 + "/" + total_bullets
+			}
 		}
 	}
 }

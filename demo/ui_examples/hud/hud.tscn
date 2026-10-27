@@ -14,18 +14,6 @@ bg_color = Color(0, 0, 0, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vtsbv"]
 bg_color = Color(0, 0, 0.54509807, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_h5fuf"]
-bg_color = Color(0, 0, 0, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0a3of"]
-bg_color = Color(0.19607843, 0.8039216, 0.19607843, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yc8gl"]
-bg_color = Color(0, 0, 0, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a01dx"]
-bg_color = Color(0, 0, 0.54509807, 1)
-
 [node name="HUD" type="GDMLNode" unique_id=1569183078]
 markup = ExtResource("1_p42aq")
 is_nodes_preview_enabled = true
@@ -35,7 +23,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="@MarginContainer@22438" type="MarginContainer" parent="." unique_id=579877604]
+[node name="@MarginContainer@23326" type="MarginContainer" parent="." unique_id=406336941]
 process_mode = 4
 layout_mode = 0
 anchor_right = 1.0
@@ -45,48 +33,46 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="@Control@22423" type="Control" parent="@MarginContainer@22438" unique_id=1283390458]
+[node name="@Control@23311" type="Control" parent="@MarginContainer@23326" unique_id=805396671]
 layout_mode = 2
 
-[node name="@VBoxContainer@22422" type="VBoxContainer" parent="@MarginContainer@22438/@Control@22423" unique_id=39373648]
+[node name="@VBoxContainer@23310" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311" unique_id=580353505]
 layout_mode = 0
 anchor_right = 0.35
 anchor_bottom = 1.0
 
-[node name="@VBoxContainer@22418" type="VBoxContainer" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422" unique_id=2117644602]
+[node name="@VBoxContainer@23306" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310" unique_id=1218968662]
 layout_mode = 2
 
-[node name="@Label@22416" type="Label" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422/@VBoxContainer@22418" unique_id=1145383328]
+[node name="@Label@23304" type="Label" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23306" unique_id=868394745]
 layout_mode = 2
 text = "Health"
 
-[node name="@ProgressBar@22417" type="ProgressBar" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422/@VBoxContainer@22418" unique_id=174455905]
-custom_minimum_size = Vector2(0, 22)
+[node name="@ProgressBar@23305" type="ProgressBar" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23306" unique_id=135565401]
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_p42aq")
 theme_override_styles/fill = SubResource("StyleBoxFlat_ntprt")
 value = 75.0
 show_percentage = false
 
-[node name="@VBoxContainer@22421" type="VBoxContainer" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422" unique_id=620560748]
+[node name="@VBoxContainer@23309" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310" unique_id=2103207765]
 layout_mode = 2
 
-[node name="@Label@22419" type="Label" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422/@VBoxContainer@22421" unique_id=1094591375]
+[node name="@Label@23307" type="Label" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23309" unique_id=549504169]
 layout_mode = 2
 text = "Mana"
 
-[node name="@ProgressBar@22420" type="ProgressBar" parent="@MarginContainer@22438/@Control@22423/@VBoxContainer@22422/@VBoxContainer@22421" unique_id=2109046308]
-custom_minimum_size = Vector2(0, 22)
+[node name="@ProgressBar@23308" type="ProgressBar" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23309" unique_id=843079607]
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_ja8yt")
 theme_override_styles/fill = SubResource("StyleBoxFlat_vtsbv")
 value = 45.0
 show_percentage = false
 
-[node name="@Control@22437" type="Control" parent="@MarginContainer@22438" unique_id=1934946231]
+[node name="@Control@23325" type="Control" parent="@MarginContainer@23326" unique_id=1489586861]
 layout_mode = 2
 
-[node name="@VBoxContainer@22436" type="VBoxContainer" parent="@MarginContainer@22438/@Control@22437" unique_id=617931320]
+[node name="@VBoxContainer@23324" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23325" unique_id=515082502]
 layout_mode = 0
 anchor_left = 0.8
 anchor_top = 0.9
@@ -94,155 +80,49 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_vertical = 0
 
-[node name="@HBoxContainer@22434" type="HBoxContainer" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436" unique_id=787366785]
+[node name="@HBoxContainer@23322" type="HBoxContainer" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324" unique_id=928471737]
 layout_mode = 2
 
-[node name="@ColorRect@22424" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=211018922]
+[node name="@ColorRect@23312" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=154583491]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22425" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=669542235]
+[node name="@ColorRect@23313" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1806905572]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22426" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=531484115]
+[node name="@ColorRect@23314" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=546247200]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22427" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=747679411]
+[node name="@ColorRect@23315" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1834363396]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22428" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=575661045]
+[node name="@ColorRect@23316" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1906033456]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22429" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=127080691]
+[node name="@ColorRect@23317" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=989053657]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22430" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=323466735]
+[node name="@ColorRect@23318" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1110325555]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22431" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=155621201]
+[node name="@ColorRect@23319" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1812232810]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22432" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=1566906699]
+[node name="@ColorRect@23320" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=32156119]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@22433" type="ColorRect" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436/@HBoxContainer@22434" unique_id=1402897532]
+[node name="@ColorRect@23321" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=709282300]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@Label@22435" type="Label" parent="@MarginContainer@22438/@Control@22437/@VBoxContainer@22436" unique_id=615395157]
-layout_mode = 2
-text = "10.0/10"
-
-[node name="@MarginContainer@22470" type="MarginContainer" parent="." unique_id=520001469]
-process_mode = 4
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="@Control@22455" type="Control" parent="@MarginContainer@22470" unique_id=1287231711]
-layout_mode = 2
-
-[node name="@VBoxContainer@22454" type="VBoxContainer" parent="@MarginContainer@22470/@Control@22455" unique_id=2110582646]
-layout_mode = 0
-anchor_right = 0.35
-anchor_bottom = 1.0
-
-[node name="@VBoxContainer@22450" type="VBoxContainer" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454" unique_id=932721317]
-layout_mode = 2
-
-[node name="@Label@22448" type="Label" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454/@VBoxContainer@22450" unique_id=364126755]
-layout_mode = 2
-text = "Health"
-
-[node name="@ProgressBar@22449" type="ProgressBar" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454/@VBoxContainer@22450" unique_id=541466703]
-custom_minimum_size = Vector2(0, 22)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_h5fuf")
-theme_override_styles/fill = SubResource("StyleBoxFlat_0a3of")
-value = 75.0
-show_percentage = false
-
-[node name="@VBoxContainer@22453" type="VBoxContainer" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454" unique_id=234403893]
-layout_mode = 2
-
-[node name="@Label@22451" type="Label" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454/@VBoxContainer@22453" unique_id=1620020292]
-layout_mode = 2
-text = "Mana"
-
-[node name="@ProgressBar@22452" type="ProgressBar" parent="@MarginContainer@22470/@Control@22455/@VBoxContainer@22454/@VBoxContainer@22453" unique_id=1343358003]
-custom_minimum_size = Vector2(0, 22)
-layout_mode = 2
-theme_override_styles/background = SubResource("StyleBoxFlat_yc8gl")
-theme_override_styles/fill = SubResource("StyleBoxFlat_a01dx")
-value = 45.0
-show_percentage = false
-
-[node name="@Control@22469" type="Control" parent="@MarginContainer@22470" unique_id=316537215]
-layout_mode = 2
-
-[node name="@VBoxContainer@22468" type="VBoxContainer" parent="@MarginContainer@22470/@Control@22469" unique_id=471993297]
-layout_mode = 0
-anchor_left = 0.8
-anchor_top = 0.9
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_vertical = 0
-
-[node name="@HBoxContainer@22466" type="HBoxContainer" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468" unique_id=1089152393]
-layout_mode = 2
-
-[node name="@ColorRect@22456" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=218990859]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22457" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=867002678]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22458" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=1006314024]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22459" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=1060424985]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22460" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=1851971282]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22461" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=651774943]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22462" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=1281258315]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22463" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=659449752]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22464" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=368162021]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@ColorRect@22465" type="ColorRect" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468/@HBoxContainer@22466" unique_id=1670094971]
-custom_minimum_size = Vector2(16, 16)
-layout_mode = 2
-
-[node name="@Label@22467" type="Label" parent="@MarginContainer@22470/@Control@22469/@VBoxContainer@22468" unique_id=1914746853]
+[node name="@Label@23323" type="Label" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324" unique_id=1242419904]
 layout_mode = 2
 text = "10/10"

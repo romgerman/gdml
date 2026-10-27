@@ -199,10 +199,10 @@ std::unique_ptr<PropertyDefinitionNode> GdmlParser::visitProperty(ts::Node node,
 	if (!name_node.isNull()) {
 		if (name_node.isType("identifier")) {
 			out->name = visitIdentifier(name_node, text);
-		} else if (name_node.isType("member_expression")) {
-			out->name = visitMemberExpression(name_node, text);
 		} else if (name_node.isType("signal_expression")) {
 			out->name = visitSignalExpression(name_node, text);
+		} else if (name_node.isType("property_path")) {
+			out->name = visitPropertyPath(name_node, text);
 		}
 	}
 
@@ -222,6 +222,11 @@ std::unique_ptr<ResourceDefinitionNode> GdmlParser::visitResource(ts::Node node,
 	std::unique_ptr<ResourceDefinitionNode> out = std::make_unique<ResourceDefinitionNode>();
 	out->type = GDMLNodeType::RESOURCE_DEFINITION;
 	out->location = parser::GdmlSourceLocation(node);
+
+	ts::Node shared_node = node.getChildByFieldName("shared");
+	if (!shared_node.isNull()) {
+		out->is_shared = true;
+	}
 
 	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
 		ts::Node child_node = node.getNamedChild(i);
@@ -399,6 +404,24 @@ std::unique_ptr<IfStatementNode> GdmlParser::visitIfStatement(ts::Node node, Cha
 			} else if (child_node.isType("comment") || child_node.isError()) {
 				continue;
 			}
+		}
+	}
+
+	return out;
+}
+
+std::unique_ptr<PropertyPathNode> GdmlParser::visitPropertyPath(ts::Node node, CharString &text) {
+	std::unique_ptr<PropertyPathNode> out = std::make_unique<PropertyPathNode>();
+	out->type = GDMLNodeType::PROPERTY_PATH;
+	out->location = parser::GdmlSourceLocation(node);
+
+	for (uint32_t i = 0; i < node.getNamedChildCount(); i++) {
+		ts::Node child_node = node.getNamedChild(i);
+
+		if (child_node.isType("identifier")) {
+			out->path.push_back(visitIdentifier(child_node, text));
+		} else if (child_node.isError()) {
+			continue;
 		}
 	}
 

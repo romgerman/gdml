@@ -289,9 +289,9 @@ Variant TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node)
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				trySetVariantProperty(root_variant, root_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				m_prop_helper->set_deep_property(root_variant, root_variant, *member_access, *property->value.get());
+			} else if (property->name->type == GDMLNodeType::PROPERTY_PATH) {
+				PropertyPathNode *path = static_cast<PropertyPathNode *>(property->name.get());
+				m_prop_helper->set_deep_property(root_variant, root_variant, *path, *property->value.get());
 			} else if (property->name->type == GDMLNodeType::SIGNAL_EXPRESSION) {
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
 				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -740,9 +740,9 @@ void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
 				m_prop_helper->set_property(root_variant, resource_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-				MemberExpressionNode *member_access = static_cast<MemberExpressionNode *>(property->name.get());
-				m_prop_helper->set_deep_property(root_variant, resource_variant, *member_access, *property->value.get());
+			} else if (property->name->type == GDMLNodeType::PROPERTY_PATH) {
+				PropertyPathNode *path = static_cast<PropertyPathNode *>(property->name.get());
+				m_prop_helper->set_deep_property(root_variant, resource_variant, *path, *property->value.get());
 			}
 		}
 

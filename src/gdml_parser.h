@@ -68,6 +68,7 @@ enum class GDMLNodeType {
 	FUNCTION_CALL,
 	BINARY_EXPRESSION,
 	SUBSCRIPT_EXPRESSION,
+	PROPERTY_PATH,
 	FOR_STATEMENT,
 	IF_STATEMENT,
 	VARIABLE_DEFINITION,
@@ -196,6 +197,10 @@ struct SignalDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 };
 
+struct PropertyPathNode : public ExpressionNode {
+	std::vector<std::unique_ptr<IdentifierNode>> path;
+};
+
 struct PropertyDefinitionNode : public StatementNode {
 	std::unique_ptr<ExpressionNode> name;
 	std::unique_ptr<ExpressionNode> value;
@@ -206,6 +211,7 @@ struct ResourceDefinitionNode : public StatementNode {
 	std::unique_ptr<IdentifierNode> name;
 	std::vector<std::unique_ptr<PropertyDefinitionNode>> properties;
 	std::vector<std::unique_ptr<FunctionCallExpressionNode>> decorators;
+	bool is_shared;
 };
 
 struct NodeDefinitionNode : public StatementNode {
@@ -260,7 +266,8 @@ private:
 	std::unique_ptr<ComponentDefinitionNode> visitComponentDefinition(ts::Node node, CharString &text);
 	std::unique_ptr<ForStatementNode> visitForStatement(ts::Node node, CharString &text);
 	std::unique_ptr<IfStatementNode> visitIfStatement(ts::Node node, CharString &text);
-
+	
+	std::unique_ptr<PropertyPathNode> visitPropertyPath(ts::Node node, CharString &text);
 	std::unique_ptr<ExpressionNode> visitExpression(ts::Node node, CharString &text);
 	std::unique_ptr<MemberExpressionNode> visitMemberExpression(ts::Node node, CharString &text);
 	std::unique_ptr<ArrayExpressionNode> visitArrayExpression(ts::Node node, CharString &text);

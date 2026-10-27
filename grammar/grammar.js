@@ -28,7 +28,7 @@ module.exports = grammar({
   ],
   conflicts: $ => [
     [$.resource_definition, $._callee],
-    [$.node_definition, $._callee]
+    //[$.node_definition, $._callee]
   ],
   rules: {
     source_file: $ => seq(
@@ -64,6 +64,7 @@ module.exports = grammar({
       '}'
     ),
     resource_definition: $ => seq(
+      field('shared', optional(token('&'))),
       field('name', $.identifier),
       field('decorators', optional(seq(
         '(',
@@ -75,10 +76,17 @@ module.exports = grammar({
       '}'
     ),
     property_definition: $ => seq(
-      field("name", choice($.signal_expression, $.identifier, $.member_expression)),
+      field("name", choice($.signal_expression, $.identifier, $.property_path)),
       ':',
       field("value", choice($.expression, $.resource_definition)),
       choice('\n', ';')
+    ),
+    property_path: $ => seq(
+      $.identifier,
+      repeat1(seq(
+        '.',
+        $.identifier
+      ))
     ),
     theme_property_definition: $ => seq(
       '$',
