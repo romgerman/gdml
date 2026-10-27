@@ -402,7 +402,8 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 	}
 	
 	m_fragments_stack.push_back(fragment);
-	renderForStatement(statement, fragment->rendered_nodes, out_nodes);
+	renderForStatement(statement, fragment->rendered_nodes);
+	out_nodes = *fragment->rendered_nodes;
 	m_fragments_stack.pop_back();
 
 	std::weak_ptr<FragmentContext> weak_fragment = fragment;
@@ -424,8 +425,7 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 
 		fragment->dispose_children();
 
-		for (Variant item : *fragment->rendered_nodes) {
-			Node *node = Object::cast_to<Node>(item);
+		for (Node *node : *fragment->rendered_nodes) {
 			if (node) {
 				node->queue_free();
 			}
@@ -433,20 +433,17 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 
 		fragment->rendered_nodes->clear();
 
-		std::vector<Node *> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
 		m_fragments_stack.push_back(fragment);
-		renderForStatement(static_cast<ForStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
+		renderForStatement(static_cast<ForStatementNode*>(fragment->statement), fragment->rendered_nodes);
 		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
-		for (auto result_node : cb_nodes) {
-			Node *node = Object::cast_to<Node>(result_node);
+		for (Node *node : *fragment->rendered_nodes) {
 			if (node) {
 				parent->add_child(node);
 				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-				fragment->rendered_nodes->push_back(node);
 			}
 		}
 		
@@ -459,7 +456,7 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 	}
 }
 
-void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes, std::vector<godot::Node *> &out_nodes) {
+void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes) {
 	String iter_name;
 
 	if (statement->iter_name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -497,7 +494,6 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
-						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
 					}
 				}
@@ -515,7 +511,6 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
-						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
 					}
 				}
@@ -526,7 +521,6 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
-						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
 					}
 				}
@@ -552,7 +546,8 @@ void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, st
 	}
 	
 	m_fragments_stack.push_back(fragment);
-	renderIfStatement(statement, fragment->rendered_nodes, out_nodes);
+	renderIfStatement(statement, fragment->rendered_nodes);
+	out_nodes = *fragment->rendered_nodes;
 	m_fragments_stack.pop_back();
 
 	std::weak_ptr<FragmentContext> weak_fragment = fragment;
@@ -587,16 +582,13 @@ void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, st
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
 		m_fragments_stack.push_back(fragment);
-		renderIfStatement(static_cast<IfStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
+		renderIfStatement(static_cast<IfStatementNode*>(fragment->statement), fragment->rendered_nodes);
 		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
-		for (auto result_node : cb_nodes) {
-			Node *node = Object::cast_to<Node>(result_node);
+		for (Node *node : cb_nodes) {
 			if (node) {
-				parent->add_child(node);
 				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
-				fragment->rendered_nodes->push_back(node);
 			}
 		}
 		
@@ -609,14 +601,13 @@ void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, st
 	}
 }
 
-void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes, std::vector<godot::Node *> &out_nodes) {
+void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes) {
 	Variant truthy_variant;
 	if (m_prop_helper->resolve(truthy_variant, *statement->expression, truthy_variant)) {
 		if (truthy_variant) {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement->if_statements) {
 				Node *result_node = visitNodeDefinition(*item);
 				if (result_node) {
-					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
 				}
 			}
@@ -624,7 +615,6 @@ void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, c
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement->else_statements) {
 				Node *result_node = visitNodeDefinition(*item);
 				if (result_node) {
-					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
 				}
 			}
