@@ -18,6 +18,7 @@
 
 #include <godot_cpp/variant/string.hpp>
 #include <godot_cpp/variant/variant.hpp>
+#include <godot_cpp/classes/node.hpp>
 
 namespace gdml {
 	class GDMLResult;
@@ -28,7 +29,7 @@ namespace traversal {
 struct FragmentContext;
 
 struct TreeRendererVisitorResult {
-	std::vector<godot::Variant> nodes;
+	std::vector<godot::Node *> nodes;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> variables;
 	std::map<godot::String, TreeRendererVisitorContext::SignalTarget> signals;
 };
@@ -48,11 +49,11 @@ public:
 
 private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
-	godot::Variant visitNodeDefinition(const godot::NodeDefinitionNode &node);
-	void visitForStatement(godot::ForStatementNode *statement, std::vector<godot::Variant> &out_nodes);
-	void renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
-	void visitIfStatement(godot::IfStatementNode *statement, std::vector<godot::Variant> &out_nodes);
-	void renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Variant>> &nodes, std::vector<godot::Variant> &out_nodes);
+	godot::Node *visitNodeDefinition(const godot::NodeDefinitionNode &node);
+	void visitForStatement(godot::ForStatementNode *statement, std::vector<godot::Node *> &out_nodes);
+	void renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes, std::vector<godot::Node *> &out_nodes);
+	void visitIfStatement(godot::IfStatementNode *statement, std::vector<godot::Node *> &out_nodes);
+	void renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes, std::vector<godot::Node *> &out_nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 	void visitImportStatement(godot::ImportStatementNode &statement);
 
