@@ -25,12 +25,7 @@ namespace gdml {
 
 namespace traversal {
 
-struct FragmentContext {
-	godot::ObjectID parent_id;
-	std::shared_ptr<Scope> scope;
-	godot::StatementNode *statement;
-	std::shared_ptr<std::vector<godot::Variant>> rendered_nodes;
-};
+struct FragmentContext;
 
 struct TreeRendererVisitorResult {
 	std::vector<godot::Variant> nodes;
@@ -45,6 +40,7 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	gdml::GDMLDocument m_document;
 	gdml::DecoratorCache m_decorator_cache;
 	std::unique_ptr<PropertyHelper> m_prop_helper;
+	std::vector<std::shared_ptr<FragmentContext>> m_fragments_stack;
 
 public:
 	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> result, godot::Node *p_root);

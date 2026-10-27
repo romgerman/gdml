@@ -43,7 +43,7 @@ bool GDMLAtom::has_dependency(Variant &p_variant, StringName p_prop) {
 	Object *object = Object::cast_to<Object>(p_variant);
 	ObjectID object_id = (ObjectID)object->get_instance_id();
 
-	if (m_dependencies.find(object_id) == m_dependencies.end()) {
+	if (m_dependencies.find(object_id) != m_dependencies.end()) {
 		return m_dependencies[object_id].count(p_prop);
 	}
 	
@@ -61,14 +61,15 @@ void GDMLAtom::remove_dependency(Variant &p_variant, StringName p_prop) {
 	}
 }
 
-void GDMLAtom::add_callback(std::function<void()> p_callback) {
-	m_callbacks.push_back(p_callback);
+void GDMLAtom::add_callback(std::weak_ptr<void> p_owner, std::function<void()> p_callback) {
+	m_callbacks.push_back(std::pair(p_owner, std::move(p_callback)));
 }
 
 void GDMLAtom::set_value(Variant p_value) {
 	m_value = p_value;
 
-	for (std::pair<ObjectID, std::set<StringName>> pair : m_dependencies) {
+	auto deps_copy = m_dependencies;
+	for (std::pair<ObjectID, std::set<StringName>> pair : deps_copy) {
 		Object *object = ObjectDB::get_instance(pair.first);
 		if (object) {
 			for (StringName prop : pair.second) {
@@ -77,9 +78,23 @@ void GDMLAtom::set_value(Variant p_value) {
 		}
 	}
 
-	for (std::function<void()> fn : m_callbacks) {
-		fn();
+	auto callbacks_copy = m_callbacks;
+	for (std::pair<std::weak_ptr<void>, std::function<void()>> &pair : callbacks_copy) {
+		if (pair.first.lock()) {
+			pair.second();
+		}
 	}
+
+	m_callbacks.erase(
+		std::remove_if(
+			m_callbacks.begin(),
+			m_callbacks.end(),
+			[](const std::pair<std::weak_ptr<void>, std::function<void()>> &pair) {
+				return pair.first.expired();
+			}
+		),
+		m_callbacks.end()
+	);
 
 	emit_signal("changed");
 }

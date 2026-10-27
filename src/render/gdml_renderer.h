@@ -15,6 +15,7 @@
 
 namespace traversal {
 class TreeRendererVisitor;
+class FragmentContext;
 }
 
 namespace gdml {
@@ -53,6 +54,8 @@ public:
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String p_name);
 	
 	godot::Array get_signals();
+
+	std::vector<std::shared_ptr<traversal::FragmentContext>> m_owned_fragments;
 };
 
 class GDMLRenderer : public godot::RefCounted {

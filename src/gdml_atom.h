@@ -17,7 +17,7 @@ private:
 	godot::StringName m_name;
 
 	std::map<godot::ObjectID, std::set<godot::StringName>> m_dependencies;
-	std::vector<std::function<void()>> m_callbacks;
+	std::vector<std::pair<std::weak_ptr<void>, std::function<void()>>> m_callbacks;
 
 protected:
 	static void _bind_methods();
@@ -28,7 +28,7 @@ public:
 	bool has_dependency(godot::Variant &p_variant, godot::StringName p_prop);
 	void remove_dependency(godot::Variant &p_variant, godot::StringName p_prop);
 
-	void add_callback(std::function<void()> p_callback);
+	void add_callback(std::weak_ptr<void> p_owner, std::function<void()> p_callback);
 
 	void set_value(godot::Variant p_value);
 	godot::Variant get_value();

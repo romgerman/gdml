@@ -1,6 +1,7 @@
 #include "tree_renderer_visitor.h"
 #include "gdml_renderer.h"
 #include "gdml_decorator.h"
+#include "fragment.hpp"
 
 #include <cassert>
 #include <functional>
@@ -24,8 +25,6 @@ using namespace godot;
 using namespace parser;
 
 namespace traversal {
-
-#pragma region Renderer
 
 TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result, godot::Node *p_root) {
 	m_result = result;
@@ -395,16 +394,26 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 	fragment->parent_id = (ObjectID)m_context->get_scope()->get_parent_node()->get_instance_id();
 	fragment->statement = statement;
 
-	if (statement->range->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->range);
-		if (m_context->has_reactive_variable(range_expr.name)) {
-			m_context->get_scope()->set_reactive_variable_active(range_expr.name);
-		}
+	// Store the fragment as a child of the parent fragment if any
+	if (!m_fragments_stack.empty()) {
+		m_fragments_stack.back()->children.push_back(fragment);
+	} else {
+		m_result->m_owned_fragments.push_back(fragment);
 	}
 	
+	m_fragments_stack.push_back(fragment);
 	renderForStatement(statement, fragment->rendered_nodes, out_nodes);
+	m_fragments_stack.pop_back();
 
-	std::function<void()> render_callback = [fragment, this]() {
+	std::weak_ptr<FragmentContext> weak_fragment = fragment;
+
+	std::function<void()> render_callback = [weak_fragment, this]() {
+		std::shared_ptr<FragmentContext> fragment = weak_fragment.lock();
+
+		if (!fragment) {
+			return;
+		}
+
 		Object *parent_obj = ObjectDB::get_instance(fragment->parent_id);
 		if (!parent_obj) {
 			print_line("Trying to render for-statement with non-existent or invalid parent node");
@@ -412,6 +421,8 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 		}
 
 		Node *parent = Object::cast_to<Node>(parent_obj);
+
+		fragment->dispose_children();
 
 		for (Variant item : *fragment->rendered_nodes) {
 			Node *node = Object::cast_to<Node>(item);
@@ -425,7 +436,9 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 		std::vector<Variant> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
+		m_fragments_stack.push_back(fragment);
 		renderForStatement(static_cast<ForStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
+		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
@@ -442,8 +455,7 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 	};
 
 	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
-		Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(var_name);
-		atom->add_callback(render_callback);
+		m_context->get_reactive_variable(var_name)->add_callback(fragment, render_callback);
 	}
 }
 
@@ -532,16 +544,26 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 	fragment->parent_id = (ObjectID)m_context->get_scope()->get_parent_node()->get_instance_id();
 	fragment->statement = statement;
 
-	if (statement->expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &cond_expr = static_cast<IdentifierNode &>(*statement->expression);
-		if (m_context->has_reactive_variable(cond_expr.name)) {
-			m_context->get_scope()->set_reactive_variable_active(cond_expr.name);
-		}
+	// Store the fragment as a child of the parent fragment if any
+	if (!m_fragments_stack.empty()) {
+		m_fragments_stack.back()->children.push_back(fragment);
+	} else {
+		m_result->m_owned_fragments.push_back(fragment);
 	}
 	
+	m_fragments_stack.push_back(fragment);
 	renderIfStatement(statement, fragment->rendered_nodes, out_nodes);
+	m_fragments_stack.pop_back();
 
-	std::function<void()> render_callback = [fragment, this]() {
+	std::weak_ptr<FragmentContext> weak_fragment = fragment;
+
+	std::function<void()> render_callback = [weak_fragment, this]() {
+		std::shared_ptr<traversal::FragmentContext> fragment = weak_fragment.lock();
+
+		if (!fragment) {
+			return;
+		}
+
 		Object *parent_obj = ObjectDB::get_instance(fragment->parent_id);
 		if (!parent_obj) {
 			print_line("Trying to render if-statement with non-existent or invalid parent node");
@@ -549,6 +571,8 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 		}
 
 		Node *parent = Object::cast_to<Node>(parent_obj);
+
+		fragment->dispose_children();
 
 		for (Variant item : *fragment->rendered_nodes) {
 			Node *node = Object::cast_to<Node>(item);
@@ -562,7 +586,9 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 		std::vector<Variant> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
+		m_fragments_stack.push_back(fragment);
 		renderIfStatement(static_cast<IfStatementNode*>(fragment->statement), fragment->rendered_nodes, cb_nodes);
+		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
 		for (auto result_node : cb_nodes) {
@@ -579,8 +605,7 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 	};
 
 	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
-		Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(var_name);
-		atom->add_callback(render_callback);
+		m_context->get_reactive_variable(var_name)->add_callback(fragment, render_callback);
 	}
 }
 
@@ -839,7 +864,5 @@ void TreeRendererVisitor::updateSignals() {
 		}
 	}
 }
-
-#pragma endregion
 
 } //namespace traversal
