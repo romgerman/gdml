@@ -37,7 +37,7 @@ bool traversal::PropertyHelper::get_property(godot::Variant &root, godot::String
 	if (m_context->has_reactive_variable(prop_key)) {
 		godot::Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(prop_key);
 		out = atom->get_value();
-		m_context->set_active_variable(prop_key);
+		m_context->get_scope()->set_reactive_variable_active(prop_key);
 		return true;
 	}
 

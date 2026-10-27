@@ -398,7 +398,7 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 	if (statement->range->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->range);
 		if (m_context->has_reactive_variable(range_expr.name)) {
-			m_context->set_active_variable(range_expr.name);
+			m_context->get_scope()->set_reactive_variable_active(range_expr.name);
 		}
 	}
 	
@@ -441,15 +441,9 @@ void TreeRendererVisitor::visitForStatement(ForStatementNode *statement, std::ve
 		updateSignals();
 	};
 
-	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
+	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
+		Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(var_name);
 		atom->add_callback(render_callback);
-	}
-
-	if (statement->range->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->range);
-		if (m_context->has_reactive_variable(range_expr.name)) {
-			m_context->reset_active_variable(range_expr.name);
-		}
 	}
 }
 
@@ -489,9 +483,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 					m_context->get_scope()->set_variable(iter_name, item);
 				}
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
-					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
-					m_context->pop_active_context();
 					if (result_node) {
 						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
@@ -509,9 +501,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 					m_context->get_scope()->set_variable(iter_name, key);
 				}
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
-					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
-					m_context->pop_active_context();
 					if (result_node) {
 						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
@@ -522,9 +512,7 @@ void TreeRendererVisitor::renderForStatement(ForStatementNode *statement, const 
 			for (int32_t i = 0; i < (int32_t)range_variant; i++) {
 				m_context->get_scope()->set_variable(iter_name, i);
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
-					m_context->push_active_context();
 					Variant result_node = visitNodeDefinition(*item);
-					m_context->pop_active_context();
 					if (result_node) {
 						out_nodes.push_back(result_node);
 						nodes->push_back(result_node);
@@ -545,9 +533,9 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 	fragment->statement = statement;
 
 	if (statement->expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->expression);
-		if (m_context->has_reactive_variable(range_expr.name)) {
-			m_context->set_active_variable(range_expr.name);
+		IdentifierNode &cond_expr = static_cast<IdentifierNode &>(*statement->expression);
+		if (m_context->has_reactive_variable(cond_expr.name)) {
+			m_context->get_scope()->set_reactive_variable_active(cond_expr.name);
 		}
 	}
 	
@@ -590,15 +578,9 @@ void TreeRendererVisitor::visitIfStatement(IfStatementNode *statement, std::vect
 		updateSignals();
 	};
 
-	for (Ref<reactive::GDMLAtom> atom : m_context->get_active_variables()) {
+	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
+		Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(var_name);
 		atom->add_callback(render_callback);
-	}
-
-	if (statement->expression->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &range_expr = static_cast<IdentifierNode &>(*statement->expression);
-		if (m_context->has_reactive_variable(range_expr.name)) {
-			m_context->reset_active_variable(range_expr.name);
-		}
 	}
 }
 
@@ -607,9 +589,7 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode *statement, const st
 	if (m_prop_helper->resolve(truthy_variant, *statement->expression, truthy_variant)) {
 		if (truthy_variant) {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement->if_statements) {
-				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
-				m_context->pop_active_context();
 				if (result_node) {
 					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);
@@ -617,9 +597,7 @@ void TreeRendererVisitor::renderIfStatement(IfStatementNode *statement, const st
 			}
 		} else {
 			for (std::unique_ptr<NodeDefinitionNode> &item : statement->else_statements) {
-				m_context->push_active_context();
 				Variant result_node = visitNodeDefinition(*item);
-				m_context->pop_active_context();
 				if (result_node) {
 					out_nodes.push_back(result_node);
 					nodes->push_back(result_node);

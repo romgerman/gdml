@@ -25,6 +25,7 @@ sources = Glob("src/*.cpp") \
     + Glob("src/nodes/*.cpp") \
     + Glob("src/built-in/*.cpp") \
 	+ Glob("src/built-in/functions/*.cpp") \
+	+ Glob("src/built-in/decorators/*.cpp") \
     + [
     	"grammar/src/parser.c"
 	]

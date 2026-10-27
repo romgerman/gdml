@@ -15,6 +15,7 @@ class TreeRendererVisitorContext;
 
 class Scope : public std::enable_shared_from_this<Scope> {
 	std::map<godot::String, godot::Variant> m_local_variables;
+	std::set<godot::String> m_reactive_variables;
 	std::shared_ptr<Scope> m_parent_scope;
 	godot::Node* m_parent_node;
 	
@@ -22,6 +23,10 @@ public:
 	void set_variable(godot::String p_name, godot::Variant p_value);
 	bool has_variable(godot::String p_name);
 	godot::Variant get_variable(godot::String p_name);
+
+	void set_reactive_variable_active(godot::String p_name);
+	bool has_reactive_variable_active(godot::String p_name);
+	std::vector<godot::String> get_active_reactive_variables();
 
 	void set_parent_node(godot::Node *p_node);
 	godot::Node* get_parent_node();

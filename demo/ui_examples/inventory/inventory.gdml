@@ -69,11 +69,6 @@ GridContainer(anchors(0, 0, 1, 1)) {
 						item_info: stack.item
 						offset_transform_enabled: true
 					}
-					
-					
-					#ItemCmp {
-					#	item_info: stack.item
-					#}
 				}
 			}
 		}

@@ -29,48 +29,6 @@ bool TreeRendererVisitorContext::has_global_signal(godot::String &p_name) {
 	return m_signals.find(p_name) != m_signals.end();
 }
 
-void TreeRendererVisitorContext::push_active_context() {
-	m_active_variables.push_back(std::map<godot::String, bool>());
-	m_active_context_index++;
-}
-
-void TreeRendererVisitorContext::pop_active_context() {
-	m_active_variables.pop_back();
-	m_active_context_index--;
-}
-
-void TreeRendererVisitorContext::set_active_variable(godot::String &p_name) {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return;
-	}
-
-	m_active_variables[m_active_context_index][p_name] = true;
-}
-
-std::vector<godot::Ref<reactive::GDMLAtom>> TreeRendererVisitorContext::get_active_variables() {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return std::vector<godot::Ref<reactive::GDMLAtom>>();
-	}
-	
-	std::vector<godot::Ref<reactive::GDMLAtom>> out;
-
-	for (std::pair<godot::String, bool> pair : m_active_variables[m_active_context_index]) {
-		if (pair.second) {
-			out.push_back(get_reactive_variable(pair.first));
-		}
-	}
-
-	return out;
-}
-
-void TreeRendererVisitorContext::reset_active_variable(godot::String &p_name) {
-	if (m_active_context_index < 0 || m_active_context_index >= m_active_variables.size()) {
-		return;
-	}
-
-	m_active_variables[m_active_context_index][p_name] = false;
-}
-
 void TreeRendererVisitorContext::flush_deferred_properties() {
 	for (std::function<void()> &fn : m_deferred_properties) {
 		fn();
