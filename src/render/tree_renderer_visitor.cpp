@@ -26,14 +26,12 @@ using namespace parser;
 
 namespace traversal {
 
-TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result, godot::Node *p_root) {
+TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result) {
 	m_result = result;
-	m_root_node = p_root;
 }
 
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
-	m_context->get_scope()->set_parent_node(m_root_node);
 	m_prop_helper = std::make_unique<PropertyHelper>(m_context.get(), &m_decorator_cache);
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
@@ -94,15 +92,13 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		} break;
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
-			m_context->push_scope();
+			ScopeGuard guard(*m_context);
 			visitForStatement(statement, result.nodes);
-			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::IF_STATEMENT: {
 			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
-			m_context->push_scope();
+			ScopeGuard guard(*m_context);
 			visitIfStatement(statement, result.nodes);
-			m_context->pop_scope();
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
@@ -443,7 +439,6 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 		for (Node *node : *fragment->rendered_nodes) {
 			if (node) {
 				parent->add_child(node);
-				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
 			}
 		}
 		
@@ -578,7 +573,6 @@ void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, st
 
 		fragment->rendered_nodes->clear();
 
-		std::vector<Node *> cb_nodes;
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
 		m_fragments_stack.push_back(fragment);
@@ -586,9 +580,9 @@ void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, st
 		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
-		for (Node *node : cb_nodes) {
+		for (Node *node : *fragment->rendered_nodes) {
 			if (node) {
-				node->set_owner(parent->get_owner() ? parent->get_owner() : parent);
+				parent->add_child(node);
 			}
 		}
 		

@@ -37,14 +37,13 @@ struct TreeRendererVisitorResult {
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	std::unique_ptr<TreeRendererVisitorContext> m_context;
 	godot::Ref<gdml::GDMLResult> m_result;
-	godot::Node *m_root_node;
 	gdml::GDMLDocument m_document;
 	gdml::DecoratorCache m_decorator_cache;
 	std::unique_ptr<PropertyHelper> m_prop_helper;
 	std::vector<std::shared_ptr<FragmentContext>> m_fragments_stack;
 
 public:
-	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> result, godot::Node *p_root);
+	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> result);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:

@@ -261,7 +261,7 @@ Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source
 	}
 
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
-	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out, p_root);
+	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out);
 	traversal::TreeRendererVisitorResult &visitor_result = m_visitor->visit(*result);
 
 	for (std::pair<String, Ref<reactive::GDMLAtom>> pair : visitor_result.variables) {
@@ -270,8 +270,8 @@ Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source
 
 	out->m_root = p_root;
 	
-	for (Variant item : visitor_result.nodes) {
-		out->m_nodes.push_back(item);
+	for (Node *node : visitor_result.nodes) {
+		out->m_nodes.push_back(node);
 	}
 
 	return out;
