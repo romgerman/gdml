@@ -2,7 +2,7 @@
 
 namespace gdml {
 
-void gdml::TreePatcher::patch(godot::Node *root_node, const std::vector<DiffItem> &diff) {
+void gdml::TreePatcher::patch(const std::vector<DiffItem> &diff) {
 	// deletions
 	for (const DiffItem &item : diff) {
 		if (item.type == DiffType::DELETE) {

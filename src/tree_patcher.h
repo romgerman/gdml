@@ -10,7 +10,7 @@ namespace gdml {
 
 class TreePatcher {
 public:
-	void patch(godot::Node *root_node, const std::vector<DiffItem> &diff);
+	void patch(const std::vector<DiffItem> &diff);
 };
 
 } //namespace gdml

@@ -4,6 +4,7 @@
 #include "gdml_atom.h"
 #include "tree_renderer_scope.h"
 #include "gdml_renderer.h"
+#include "gdml_decorator.h"
 
 #include <vector>
 #include <map>
@@ -62,6 +63,20 @@ class DeferredSignalUpdate: public DeferredAction {
 	godot::Ref<gdml::GDMLResult> m_result;
 public:
 	DeferredSignalUpdate(TreeRendererVisitorContext *p_context, godot::Ref<gdml::GDMLResult> p_result);
+	void apply() override;
+};
+
+class DeferredDecoratorCall: public DeferredAction {
+	godot::Array m_args;
+	godot::Ref<gdml::GDMLDecorator> m_decorator;
+public:
+	godot::ObjectID m_node;
+	
+	DeferredDecoratorCall(
+		godot::Array p_args,
+		godot::ObjectID p_node,
+		godot::Ref<gdml::GDMLDecorator> p_decorator
+	);
 	void apply() override;
 };
 

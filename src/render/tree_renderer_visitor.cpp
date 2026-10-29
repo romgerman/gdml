@@ -2,6 +2,8 @@
 #include "gdml_renderer.h"
 #include "gdml_decorator.h"
 #include "fragment.hpp"
+#include "diff.h"
+#include "tree_patcher.h"
 
 #include <cassert>
 #include <functional>
@@ -316,9 +318,6 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 				m_context->push_error("Decorator script for '" + dec_fn_name->name + "' not found", node);
 				continue;
 			}
-
-			Array call_args;
-			call_args.push_back(obj_as_node);
 			
 			Array args;
 			for (std::unique_ptr<ExpressionNode> &arg_node : dec_fn->arguments) {
@@ -330,11 +329,11 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 				}
 			}
 
-			call_args.push_back(args);
-
-			if (decorator->has_method(StringName("modify"))) {
-				decorator->callv(StringName("modify"), call_args);
-			}
+			m_context->m_deferred_actions.push_back(std::make_unique<DeferredDecoratorCall>(
+				args,
+				(ObjectID)obj_as_node->get_instance_id(),
+				decorator
+			));
 		}
 	}
 
@@ -393,6 +392,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 	
 	Node *anchor = memnew(Node);
 	anchor->set_name(StringName("GDML_Anchor"));
+	anchor->set_meta(godot::StringName("__gdml_anchor"), true);
 	fragment->anchor_id = (ObjectID)anchor->get_instance_id();
 	out_nodes.push_back(anchor);
 
@@ -414,14 +414,14 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		Node *parent = Object::cast_to<Node>(parent_obj);
 		Node *anchor = Object::cast_to<Node>(ObjectDB::get_instance(fragment->anchor_id));
 
-		fragment->dispose_children();
-
-		for (Node *node : *fragment->rendered_nodes) {
-			if (node) {
-				node->queue_free();
-			}
+		if (!parent || !anchor) {
+			print_line("Something went wrong when rendering a statement: parent or anchor is null");
+			return;
 		}
 
+		fragment->dispose_children();
+
+		std::vector<Node *> old_nodes = *fragment->rendered_nodes;
 		fragment->rendered_nodes->clear();
 
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
@@ -435,9 +435,49 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
-		for (Node *node : *fragment->rendered_nodes) {
-			if (node) {
-				parent->add_child(node);
+		std::vector<gdml::DiffItem> diff;
+		std::map<godot::ObjectID, godot::ObjectID> remaps;
+		gdml::Differ differ;
+		differ.diff(old_nodes, *fragment->rendered_nodes, parent, diff, remaps);
+
+		std::vector<FragmentContext *> fragment_stack;
+		fragment_stack.push_back(fragment.get());
+		while (!fragment_stack.empty()) {
+			FragmentContext *f = fragment_stack.back();
+			fragment_stack.pop_back();
+
+			auto it = remaps.find(f->parent_id);
+			if (it != remaps.end()) {
+				f->parent_id = it->second;
+			}
+
+			it = remaps.find(f->anchor_id);
+			if (it != remaps.end()) {
+				f->anchor_id = it->second;
+			}
+
+			for (Node *&n : *f->rendered_nodes) {
+				it = remaps.find((ObjectID)n->get_instance_id());
+				if (it != remaps.end()) {
+					n = Object::cast_to<Node>(ObjectDB::get_instance(it->second));
+				}
+			}
+
+			for (std::shared_ptr<traversal::FragmentContext> &c : f->children) {
+				fragment_stack.push_back(c.get());
+			}
+		}
+
+		gdml::TreePatcher patcher;
+		patcher.patch(diff);
+
+		for (std::pair<const godot::ObjectID, godot::ObjectID> it : remaps) {
+			Object *o = ObjectDB::get_instance(it.first);
+			if (o) {
+				Node *n = Object::cast_to<Node>(o);
+				if (n) {
+					n->queue_free();
+				}
 			}
 		}
 
@@ -449,11 +489,24 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 			}
 			idx++;
 		}
+
+		old_nodes.clear();
 		
 		m_context->m_deferred_actions.push_back(std::make_unique<DeferredSignalUpdate>(
 			m_context.get(),
 			m_result
 		));
+
+		for (std::unique_ptr<DeferredAction> &a : m_context->m_deferred_actions) {
+			auto dec_action = dynamic_cast<DeferredDecoratorCall *>(a.get());
+			if (dec_action) {
+				auto it = remaps.find(dec_action->m_node);
+				if (it != remaps.end()) {
+					dec_action->m_node = it->second;
+				}
+			}
+		}
+
 		m_context->flush_deferred_actions();
 	};
 

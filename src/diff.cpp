@@ -1,14 +1,24 @@
 #include "diff.h"
 
 #include <cassert>
-#include <map>
+
 #include <algorithm>
 
 #include <godot_cpp/core/print_string.hpp>
 
 namespace gdml {
 
-void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::Node*> &nodes_b, godot::Node *parent_a, std::vector<DiffItem> &out_diff) {
+void gdml::Differ::diff(
+	std::vector<godot::Node*> &nodes_a,
+	std::vector<godot::Node*> &nodes_b,
+	godot::Node *parent_a,
+	std::vector<DiffItem> &out_diff,
+	std::map<godot::ObjectID, godot::ObjectID> &remaps
+) {
+	if (nodes_a.empty() && nodes_b.empty()) {
+		return;
+	}
+
 	// myers diff algo
 	// https://docs.moonbitlang.com/en/latest/example/myers-diff/myers-diff.html
 
@@ -84,7 +94,6 @@ void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::N
 		while (x > prev_x && y > prev_y) {
 			godot::Node *a = nodes_a[x - 1];
 			godot::Node *b = nodes_b[y - 1];
-			int32_t b_index = b->get_index() == 0xFFFFFFFF ? 0 : b->get_index();
 
 			matches.push_back({ a, b });
 
@@ -148,8 +157,8 @@ void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::N
 			children_b.push_back(godot::Object::cast_to<godot::Node>(item));
 		}
 
-
-		diff(children_a, children_b, it->first, out_diff);
+		remaps[(godot::ObjectID)it->second->get_instance_id()] = it->first->get_instance_id();
+		diff(children_a, children_b, it->first, out_diff, remaps);
 	}
 }
 
@@ -159,13 +168,22 @@ bool Differ::is_node_equal(godot::Node *a, godot::Node *b) {
 	if (aa || ba) {
 		return aa && ba;
 	}
-	return a->get_class() == b->get_class() && a->get_meta(godot::StringName("__gdml_key")) == a->get_meta(godot::StringName("__gdml_key"));
+	if (a->get_class() == b->get_class()) {
+		if (a->has_meta(godot::StringName("__gdml_key")) && b->has_meta(godot::StringName("__gdml_key"))) {
+			return a->get_meta(godot::StringName("__gdml_key")) == b->get_meta(godot::StringName("__gdml_key"));
+		} else {
+			return true;
+		}
+	} else {
+		return false;
+	}
 }
 
 void Differ::diff_node_props(godot::Node *a, godot::Node *b, std::vector<godot::StringName> &out_props) {
 	for (godot::Variant item : a->get_property_list()) {
 		godot::Dictionary prop_info = (godot::Dictionary)item;
-		if ((int64_t)prop_info["usage"] == 6) {
+		int64_t usage = (int64_t)prop_info["usage"];
+		if (usage & godot::PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
 			godot::StringName prop_key = prop_info["name"];
 			if (a->get(prop_key) != b->get(prop_key)) {
 				out_props.push_back(prop_key);

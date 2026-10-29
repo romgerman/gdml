@@ -118,4 +118,23 @@ void DeferredSignalUpdate::apply() {
 	}
 }
 
+DeferredDecoratorCall::DeferredDecoratorCall(godot::Array p_args, godot::ObjectID p_node, godot::Ref<gdml::GDMLDecorator> p_decorator):
+	m_args(p_args), m_node(p_node), m_decorator(p_decorator) {
+}
+
+void DeferredDecoratorCall::apply() {
+	godot::Node *node = godot::Object::cast_to<godot::Node>(godot::ObjectDB::get_instance(m_node));
+	if (!node) {
+		return;
+	}
+
+	godot::Array call_args;
+	call_args.push_back(node);
+	call_args.push_back(m_args);
+
+	if (m_decorator->has_method(godot::StringName("modify"))) {
+		m_decorator->callv(godot::StringName("modify"), call_args);
+	}
+}
+
 } //namespace traversal

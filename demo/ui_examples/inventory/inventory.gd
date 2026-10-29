@@ -75,6 +75,7 @@ func _item_gui_input(target: Control, event: InputEvent) -> void:
 							var tw := create_tween().set_trans(Tween.TRANS_QUAD)
 							tw.parallel().tween_property(my_target, "modulate", Color.WHITE, 1.0)
 							var item_ctrl := my_target.get_node(^"DropTarget/Item") as Control
+
 							item_ctrl.offset_transform_scale = Vector2.ONE * 0.9
 							tw.parallel().tween_property(item_ctrl, "offset_transform_scale", Vector2.ONE, 0.35)
 						).call_deferred()
