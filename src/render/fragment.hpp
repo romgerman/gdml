@@ -13,6 +13,7 @@ namespace traversal {
 
 struct FragmentContext {
 	godot::ObjectID parent_id;
+	godot::ObjectID anchor_id;
 	std::shared_ptr<Scope> scope;
 	godot::StatementNode *statement;
 	std::shared_ptr<std::vector<godot::Node *>> rendered_nodes;

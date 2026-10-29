@@ -49,9 +49,8 @@ public:
 private:
 	void visitSourceFile(const godot::SourceFileNode &source_node, TreeRendererVisitorResult &result);
 	godot::Node *visitNodeDefinition(const godot::NodeDefinitionNode &node);
-	void visitForStatement(godot::ForStatementNode *statement, std::vector<godot::Node *> &out_nodes);
+	void visitStatement(godot::StatementNode *statement, std::vector<godot::Node *> &out_nodes);
 	void renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes);
-	void visitIfStatement(godot::IfStatementNode *statement, std::vector<godot::Node *> &out_nodes);
 	void renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes);
 	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
 	void visitImportStatement(godot::ImportStatementNode &statement);

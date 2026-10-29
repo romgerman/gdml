@@ -93,12 +93,12 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		case GDMLNodeType::FOR_STATEMENT: {
 			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
 			ScopeGuard guard(*m_context);
-			visitForStatement(statement, result.nodes);
+			visitStatement(statement, result.nodes);
 		} break;
 		case GDMLNodeType::IF_STATEMENT: {
 			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
 			ScopeGuard guard(*m_context);
-			visitIfStatement(statement, result.nodes);
+			visitStatement(statement, result.nodes);
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
@@ -361,7 +361,7 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
 			std::vector<Node *> nodes;
 			m_context->push_scope();
-			visitForStatement(for_node, nodes);
+			visitStatement(for_node, nodes);
 			m_context->pop_scope();
 
 			for (Node *node : nodes) {
@@ -371,7 +371,7 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 			IfStatementNode *if_node = static_cast<IfStatementNode *>(statement.get());
 			std::vector<Node *> nodes;
 			m_context->push_scope();
-			visitIfStatement(if_node, nodes);
+			visitStatement(if_node, nodes);
 			m_context->pop_scope();
 
 			for (Node *node : nodes) {
@@ -383,7 +383,7 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 	return obj_as_node;
 }
 
-void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, std::vector<godot::Node *> &out_nodes) {
+void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::vector<godot::Node *> &out_nodes) {
 	std::shared_ptr<FragmentContext> fragment = std::make_shared<FragmentContext>();
 	fragment->rendered_nodes = std::make_shared<std::vector<Node *>>();
 	fragment->scope = m_context->m_current_scope;
@@ -398,9 +398,18 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 	}
 	
 	m_fragments_stack.push_back(fragment);
-	renderForStatement(statement, fragment->rendered_nodes);
+	if (statement->type == GDMLNodeType::FOR_STATEMENT) {
+		renderForStatement(static_cast<ForStatementNode *>(statement), fragment->rendered_nodes);
+	} else if (statement->type == GDMLNodeType::IF_STATEMENT) {
+		renderIfStatement(static_cast<IfStatementNode *>(statement), fragment->rendered_nodes);
+	}
 	out_nodes = *fragment->rendered_nodes;
 	m_fragments_stack.pop_back();
+	
+	Node *anchor = memnew(Node);
+	anchor->set_name(StringName("GDML_Anchor"));
+	fragment->anchor_id = (ObjectID)anchor->get_instance_id();
+	out_nodes.push_back(anchor);
 
 	std::weak_ptr<FragmentContext> weak_fragment = fragment;
 
@@ -418,6 +427,7 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 		}
 
 		Node *parent = Object::cast_to<Node>(parent_obj);
+		Node *anchor = Object::cast_to<Node>(ObjectDB::get_instance(fragment->anchor_id));
 
 		fragment->dispose_children();
 
@@ -432,7 +442,11 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
 		m_context->m_current_scope = fragment->scope;
 		m_fragments_stack.push_back(fragment);
-		renderForStatement(static_cast<ForStatementNode*>(fragment->statement), fragment->rendered_nodes);
+		if (fragment->statement->type == GDMLNodeType::FOR_STATEMENT) {
+			renderForStatement(static_cast<ForStatementNode *>(fragment->statement), fragment->rendered_nodes);
+		} else if (fragment->statement->type == GDMLNodeType::IF_STATEMENT) {
+			renderIfStatement(static_cast<IfStatementNode *>(fragment->statement), fragment->rendered_nodes);
+		}
 		m_fragments_stack.pop_back();
 		m_context->m_current_scope = prev_scope;
 
@@ -440,6 +454,15 @@ void TreeRendererVisitor::visitForStatement(godot::ForStatementNode *statement, 
 			if (node) {
 				parent->add_child(node);
 			}
+		}
+
+		int32_t base_index = anchor->get_index() - fragment->rendered_nodes->size();
+		int32_t idx = 0;
+		for (Node *node : *fragment->rendered_nodes) {
+			if (node) {
+				parent->move_child(node, base_index + idx);
+			}
+			idx++;
 		}
 		
 		m_context->flush_deferred_properties();
@@ -523,75 +546,6 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 		}
 	} else {
 		m_context->push_error("Cannot resolve range expression of for-statement", *statement->range);
-	}
-}
-
-void TreeRendererVisitor::visitIfStatement(godot::IfStatementNode *statement, std::vector<godot::Node *> &out_nodes) {
-	std::shared_ptr<FragmentContext> fragment = std::make_shared<FragmentContext>();
-	fragment->rendered_nodes = std::make_shared<std::vector<Node *>>();
-	fragment->scope = m_context->m_current_scope;
-	fragment->parent_id = (ObjectID)m_context->get_scope()->get_parent_node()->get_instance_id();
-	fragment->statement = statement;
-
-	// Store the fragment as a child of the parent fragment if any
-	if (!m_fragments_stack.empty()) {
-		m_fragments_stack.back()->children.push_back(fragment);
-	} else {
-		m_result->m_owned_fragments.push_back(fragment);
-	}
-	
-	m_fragments_stack.push_back(fragment);
-	renderIfStatement(statement, fragment->rendered_nodes);
-	out_nodes = *fragment->rendered_nodes;
-	m_fragments_stack.pop_back();
-
-	std::weak_ptr<FragmentContext> weak_fragment = fragment;
-
-	std::function<void()> render_callback = [weak_fragment, this]() {
-		std::shared_ptr<traversal::FragmentContext> fragment = weak_fragment.lock();
-
-		if (!fragment) {
-			return;
-		}
-
-		Object *parent_obj = ObjectDB::get_instance(fragment->parent_id);
-		if (!parent_obj) {
-			print_line("Trying to render if-statement with non-existent or invalid parent node");
-			return;
-		}
-
-		Node *parent = Object::cast_to<Node>(parent_obj);
-
-		fragment->dispose_children();
-
-		for (Variant item : *fragment->rendered_nodes) {
-			Node *node = Object::cast_to<Node>(item);
-			if (node) {
-				node->queue_free();
-			}
-		}
-
-		fragment->rendered_nodes->clear();
-
-		std::shared_ptr<Scope> prev_scope = m_context->m_current_scope;
-		m_context->m_current_scope = fragment->scope;
-		m_fragments_stack.push_back(fragment);
-		renderIfStatement(static_cast<IfStatementNode*>(fragment->statement), fragment->rendered_nodes);
-		m_fragments_stack.pop_back();
-		m_context->m_current_scope = prev_scope;
-
-		for (Node *node : *fragment->rendered_nodes) {
-			if (node) {
-				parent->add_child(node);
-			}
-		}
-		
-		m_context->flush_deferred_properties();
-		updateSignals();
-	};
-
-	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
-		m_context->get_reactive_variable(var_name)->add_callback(fragment, render_callback);
 	}
 }
 

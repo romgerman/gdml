@@ -154,7 +154,12 @@ void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::N
 }
 
 bool Differ::is_node_equal(godot::Node *a, godot::Node *b) {
-	return a->get_class() == b->get_class();
+	bool aa = a->has_meta(godot::StringName("__gdml_anchor"));
+	bool ba = b->has_meta(godot::StringName("__gdml_anchor"));
+	if (aa || ba) {
+		return aa && ba;
+	}
+	return a->get_class() == b->get_class() && a->get_meta(godot::StringName("__gdml_key")) == a->get_meta(godot::StringName("__gdml_key"));
 }
 
 void Differ::diff_node_props(godot::Node *a, godot::Node *b, std::vector<godot::StringName> &out_props) {
