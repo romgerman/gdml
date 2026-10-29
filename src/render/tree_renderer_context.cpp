@@ -1,4 +1,6 @@
 #include "tree_renderer_context.h"
+#include "property_helper.h"
+#include "fragment.hpp"
 
 namespace traversal {
 
@@ -29,12 +31,12 @@ bool TreeRendererVisitorContext::has_global_signal(godot::String &p_name) {
 	return m_signals.find(p_name) != m_signals.end();
 }
 
-void TreeRendererVisitorContext::flush_deferred_properties() {
-	for (std::function<void()> &fn : m_deferred_properties) {
-		fn();
+void TreeRendererVisitorContext::flush_deferred_actions() {
+	for (std::unique_ptr<DeferredAction> &action : m_deferred_actions) {
+		action->apply();
 	}
 
-	m_deferred_properties.clear();
+	m_deferred_actions.clear();
 }
 
 Scope *TreeRendererVisitorContext::get_scope() {
@@ -61,4 +63,59 @@ TreeRendererVisitorContext::TreeRendererVisitorContext() {
 	m_current_scope = m_global_scope;
 }
 
+DeferredSetPropertyAction::DeferredSetPropertyAction(
+	PropertyHelper *p_prop_helper,
+	godot::Variant &p_root_variant,
+	godot::Variant &p_variant,
+	godot::String &p_prop_key,
+	godot::ExpressionNode &p_expr
+): m_prop_helper(p_prop_helper), m_root_variant(p_root_variant), m_variant(p_variant), m_prop_key(p_prop_key), m_expr(p_expr) {
 }
+
+void DeferredSetPropertyAction::apply() {
+	m_prop_helper->set_property(m_root_variant, m_variant, m_prop_key, m_expr);
+}
+
+DeferredAtomRenderCallbackAction::DeferredAtomRenderCallbackAction(
+	TreeRendererVisitorContext *p_context,
+	godot::String &p_var_name,
+	std::weak_ptr<FragmentContext> p_fragment,
+	std::function<void()> p_render_callback
+): m_context(p_context), m_var_name(p_var_name), m_fragment(std::move(p_fragment)), m_render_callback(std::move(p_render_callback)) {
+}
+
+void DeferredAtomRenderCallbackAction::apply() {
+	if (m_fragment.lock()) {
+		m_context->get_reactive_variable(m_var_name)->add_callback(m_fragment, m_render_callback);
+	}
+}
+
+DeferredSignalUpdate::DeferredSignalUpdate(
+	TreeRendererVisitorContext *p_context,
+	godot::Ref<gdml::GDMLResult> p_result
+): m_context(p_context), m_result(p_result) {
+}
+
+void DeferredSignalUpdate::apply() {
+	for (std::pair<godot::String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
+		std::vector<godot::ObjectID> to_remove;
+
+		for (std::pair<godot::ObjectID, std::set<godot::StringName>> target_pair : pair.second) {
+			godot::Object *target_obj = godot::ObjectDB::get_instance(target_pair.first);
+
+			if (target_obj) {
+				for (godot::StringName target_signal : target_pair.second) {
+					m_result->connect_signal(pair.first, target_pair.first, target_signal);
+				}
+			} else {
+				to_remove.push_back(target_pair.first);
+			}
+		}
+
+		for (godot::ObjectID id : to_remove) {
+			m_context->m_signals[pair.first].erase(id);
+		}
+	}
+}
+
+} //namespace traversal

@@ -61,7 +61,6 @@ private:
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::String &callable_name);
 
 	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
-	void updateSignals();
 };
 
 } //namespace traversal

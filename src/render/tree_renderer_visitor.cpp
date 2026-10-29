@@ -38,7 +38,7 @@ TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) 
 		TreeRendererVisitorResult result;
 		ScopeGuard guard(*m_context);
 		visitSourceFile((SourceFileNode &)root_node, result);
-		m_context->flush_deferred_properties();
+		m_context->flush_deferred_actions();
 		result.variables = m_context->m_variables;
 		result.signals = m_context->m_signals;
 		return result;
@@ -90,15 +90,10 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 
 			m_context->m_components[component->name->name] = component_item;
 		} break;
-		case GDMLNodeType::FOR_STATEMENT: {
-			ForStatementNode *statement = static_cast<ForStatementNode *>(definition->statement.get());
-			ScopeGuard guard(*m_context);
-			visitStatement(statement, result.nodes);
-		} break;
+		case GDMLNodeType::FOR_STATEMENT:
 		case GDMLNodeType::IF_STATEMENT: {
-			IfStatementNode *statement = static_cast<IfStatementNode *>(definition->statement.get());
 			ScopeGuard guard(*m_context);
-			visitStatement(statement, result.nodes);
+			visitStatement(definition->statement.get(), result.nodes);
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
@@ -357,21 +352,10 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 				assert(child_node);
 				obj_as_node->add_child(child_node);
 			}
-		} else if (statement->type == GDMLNodeType::FOR_STATEMENT) {
-			ForStatementNode *for_node = static_cast<ForStatementNode *>(statement.get());
+		} else if (statement->type == GDMLNodeType::FOR_STATEMENT || statement->type == GDMLNodeType::IF_STATEMENT) {
 			std::vector<Node *> nodes;
 			m_context->push_scope();
-			visitStatement(for_node, nodes);
-			m_context->pop_scope();
-
-			for (Node *node : nodes) {
-				obj_as_node->add_child(node);
-			}
-		} else if (statement->type == GDMLNodeType::IF_STATEMENT) {
-			IfStatementNode *if_node = static_cast<IfStatementNode *>(statement.get());
-			std::vector<Node *> nodes;
-			m_context->push_scope();
-			visitStatement(if_node, nodes);
+			visitStatement(statement.get(), nodes);
 			m_context->pop_scope();
 
 			for (Node *node : nodes) {
@@ -397,6 +381,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		m_result->m_owned_fragments.push_back(fragment);
 	}
 	
+	// First time render
 	m_fragments_stack.push_back(fragment);
 	if (statement->type == GDMLNodeType::FOR_STATEMENT) {
 		renderForStatement(static_cast<ForStatementNode *>(statement), fragment->rendered_nodes);
@@ -465,12 +450,20 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 			idx++;
 		}
 		
-		m_context->flush_deferred_properties();
-		updateSignals();
+		m_context->m_deferred_actions.push_back(std::make_unique<DeferredSignalUpdate>(
+			m_context.get(),
+			m_result
+		));
+		m_context->flush_deferred_actions();
 	};
 
 	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
-		m_context->get_reactive_variable(var_name)->add_callback(fragment, render_callback);
+		m_context->m_deferred_actions.push_back(std::make_unique<DeferredAtomRenderCallbackAction>(
+			m_context.get(),
+			var_name,
+			fragment,
+			render_callback
+		));
 	}
 }
 
@@ -582,11 +575,13 @@ void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &state
 
 bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
 	if (PropertyHelper::references_self(value_node)) {
-		std::function<void()> deferred_set = [this, root_variant, variant, prop_key, &value_node]() {
-			m_prop_helper->set_property(const_cast<Variant &>(root_variant), const_cast<Variant &>(variant), const_cast<String &>(prop_key), value_node);
-		};
-
-		m_context->m_deferred_properties.push_back(deferred_set);
+		m_context->m_deferred_actions.push_back(std::make_unique<DeferredSetPropertyAction>(
+			m_prop_helper.get(),
+			root_variant,
+			variant,
+			prop_key,
+			value_node
+		));
 		return true;
 	} else{
 		return m_prop_helper->set_property(root_variant, variant, prop_key, value_node);
@@ -779,28 +774,6 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 void TreeRendererVisitor::subscribeToVariable(String &p_variable, String &p_prop, Variant &variant) {
 	Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(p_variable);
 	atom->add_dependency(variant, p_prop);
-}
-
-void TreeRendererVisitor::updateSignals() {
-	for (std::pair<String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
-		std::vector<ObjectID> to_remove;
-
-		for (std::pair<ObjectID, std::set<StringName>> target_pair : pair.second) {
-			Object *target_obj = ObjectDB::get_instance(target_pair.first);
-
-			if (target_obj) {
-				for (StringName target_signal : target_pair.second) {
-					m_result->connect_signal(pair.first, target_pair.first, target_signal);
-				}
-			} else {
-				to_remove.push_back(target_pair.first);
-			}
-		}
-
-		for (ObjectID id : to_remove) {
-			m_context->m_signals[pair.first].erase(id);
-		}
-	}
 }
 
 } //namespace traversal
