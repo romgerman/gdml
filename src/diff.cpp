@@ -154,9 +154,7 @@ void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::N
 }
 
 bool Differ::is_node_equal(godot::Node *a, godot::Node *b) {
-	int32_t a_index = a->get_index() == 0xFFFFFFFF ? 0 : a->get_index();
-	int32_t b_index = b->get_index() == 0xFFFFFFFF ? 0 : b->get_index();
-	return a->get_class() == b->get_class() && a_index == b_index;
+	return a->get_class() == b->get_class();
 }
 
 void Differ::diff_node_props(godot::Node *a, godot::Node *b, std::vector<godot::StringName> &out_props) {
