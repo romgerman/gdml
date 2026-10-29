@@ -2,7 +2,7 @@
 extends GDMLDecorator
 class_name GDMLDecorator_anchors
 
-func modify(input: Variant, args: Array):
+func modify(input: Variant, args: Array, _context: GDMLResult):
 	if args.is_empty():
 		return
 	var control: Control = input

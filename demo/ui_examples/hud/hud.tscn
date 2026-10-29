@@ -23,7 +23,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="@MarginContainer@23326" type="MarginContainer" parent="." unique_id=406336941]
+[node name="@MarginContainer@24963" type="MarginContainer" parent="." unique_id=680537065]
 process_mode = 4
 layout_mode = 0
 anchor_right = 1.0
@@ -33,46 +33,48 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="@Control@23311" type="Control" parent="@MarginContainer@23326" unique_id=805396671]
+[node name="@Control@24948" type="Control" parent="@MarginContainer@24963" unique_id=1265342547]
 layout_mode = 2
 
-[node name="@VBoxContainer@23310" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311" unique_id=580353505]
+[node name="@VBoxContainer@24947" type="VBoxContainer" parent="@MarginContainer@24963/@Control@24948" unique_id=690834410]
 layout_mode = 0
 anchor_right = 0.35
 anchor_bottom = 1.0
 
-[node name="@VBoxContainer@23306" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310" unique_id=1218968662]
+[node name="@VBoxContainer@24943" type="VBoxContainer" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947" unique_id=1428800885]
 layout_mode = 2
 
-[node name="@Label@23304" type="Label" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23306" unique_id=868394745]
+[node name="@Label@24941" type="Label" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947/@VBoxContainer@24943" unique_id=1362274807]
 layout_mode = 2
 text = "Health"
 
-[node name="@ProgressBar@23305" type="ProgressBar" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23306" unique_id=135565401]
+[node name="@ProgressBar@24942" type="ProgressBar" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947/@VBoxContainer@24943" unique_id=1573244854]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_p42aq")
 theme_override_styles/fill = SubResource("StyleBoxFlat_ntprt")
 value = 75.0
 show_percentage = false
 
-[node name="@VBoxContainer@23309" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310" unique_id=2103207765]
+[node name="@VBoxContainer@24946" type="VBoxContainer" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947" unique_id=1755007526]
 layout_mode = 2
 
-[node name="@Label@23307" type="Label" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23309" unique_id=549504169]
+[node name="@Label@24944" type="Label" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947/@VBoxContainer@24946" unique_id=919216432]
 layout_mode = 2
 text = "Mana"
 
-[node name="@ProgressBar@23308" type="ProgressBar" parent="@MarginContainer@23326/@Control@23311/@VBoxContainer@23310/@VBoxContainer@23309" unique_id=843079607]
+[node name="@ProgressBar@24945" type="ProgressBar" parent="@MarginContainer@24963/@Control@24948/@VBoxContainer@24947/@VBoxContainer@24946" unique_id=1857216394]
+custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 theme_override_styles/background = SubResource("StyleBoxFlat_ja8yt")
 theme_override_styles/fill = SubResource("StyleBoxFlat_vtsbv")
 value = 45.0
 show_percentage = false
 
-[node name="@Control@23325" type="Control" parent="@MarginContainer@23326" unique_id=1489586861]
+[node name="@Control@24962" type="Control" parent="@MarginContainer@24963" unique_id=1969590438]
 layout_mode = 2
 
-[node name="@VBoxContainer@23324" type="VBoxContainer" parent="@MarginContainer@23326/@Control@23325" unique_id=515082502]
+[node name="@VBoxContainer@24961" type="VBoxContainer" parent="@MarginContainer@24963/@Control@24962" unique_id=375831143]
 layout_mode = 0
 anchor_left = 0.8
 anchor_top = 0.9
@@ -80,49 +82,52 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_vertical = 0
 
-[node name="@HBoxContainer@23322" type="HBoxContainer" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324" unique_id=928471737]
+[node name="@HBoxContainer@24959" type="HBoxContainer" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961" unique_id=1325186930]
 layout_mode = 2
 
-[node name="@ColorRect@23312" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=154583491]
+[node name="@ColorRect@24949" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1744488578]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23313" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1806905572]
+[node name="@ColorRect@24950" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1724575197]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23314" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=546247200]
+[node name="@ColorRect@24951" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=273043453]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23315" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1834363396]
+[node name="@ColorRect@24952" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1309216508]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23316" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1906033456]
+[node name="@ColorRect@24953" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1645184785]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23317" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=989053657]
+[node name="@ColorRect@24954" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1250362485]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23318" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1110325555]
+[node name="@ColorRect@24955" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1314750601]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23319" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=1812232810]
+[node name="@ColorRect@24956" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1841915782]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23320" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=32156119]
+[node name="@ColorRect@24957" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1407200729]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@ColorRect@23321" type="ColorRect" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324/@HBoxContainer@23322" unique_id=709282300]
+[node name="@ColorRect@24958" type="ColorRect" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1244403792]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 
-[node name="@Label@23323" type="Label" parent="@MarginContainer@23326/@Control@23325/@VBoxContainer@23324" unique_id=1242419904]
+[node name="GDML_Anchor" type="Node" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961/@HBoxContainer@24959" unique_id=1159641277]
+metadata/__gdml_anchor = true
+
+[node name="@Label@24960" type="Label" parent="@MarginContainer@24963/@Control@24962/@VBoxContainer@24961" unique_id=995361720]
 layout_mode = 2
 text = "10/10"

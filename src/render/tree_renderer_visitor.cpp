@@ -332,7 +332,8 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 			m_context->m_deferred_actions.push_back(std::make_unique<DeferredDecoratorCall>(
 				args,
 				(ObjectID)obj_as_node->get_instance_id(),
-				decorator
+				decorator,
+				m_result
 			));
 		}
 	}

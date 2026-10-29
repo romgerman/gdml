@@ -69,13 +69,15 @@ public:
 class DeferredDecoratorCall: public DeferredAction {
 	godot::Array m_args;
 	godot::Ref<gdml::GDMLDecorator> m_decorator;
+	godot::Ref<gdml::GDMLResult> m_result;
 public:
 	godot::ObjectID m_node;
 	
 	DeferredDecoratorCall(
 		godot::Array p_args,
 		godot::ObjectID p_node,
-		godot::Ref<gdml::GDMLDecorator> p_decorator
+		godot::Ref<gdml::GDMLDecorator> p_decorator,
+		godot::Ref<gdml::GDMLResult> p_result
 	);
 	void apply() override;
 };

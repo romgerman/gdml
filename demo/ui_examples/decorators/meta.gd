@@ -2,7 +2,7 @@
 extends GDMLDecorator
 class_name GDMLDecorator_meta
 
-func modify(control: Variant, args: Array) -> void:
+func modify(control: Variant, args: Array, _context: GDMLResult) -> void:
 	if args.size() < 2:
 		return
 	
