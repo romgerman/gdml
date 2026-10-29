@@ -88,19 +88,12 @@ void gdml::Differ::diff(std::vector<godot::Node*> &nodes_a, std::vector<godot::N
 
 			matches.push_back({ a, b });
 
-			if (a->get_index() != b_index) {
-				DiffItem item;
-				item.type = DiffType::MOVE;
-				item.node = a;
-				item.index = b_index;
-				item.parent = parent_a;
-				diffs.push_back(item);
-			} else {
-				DiffItem item;
-				item.type = DiffType::UPDATE;
-				item.node = b;
-				item.old_node = a;
-				diff_node_props(a, b, item.props);
+			DiffItem item;
+			item.type = DiffType::UPDATE;
+			item.node = b;
+			item.old_node = a;
+			diff_node_props(a, b, item.props);
+			if (!item.props.empty()) {
 				diffs.push_back(item);
 			}
 

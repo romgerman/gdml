@@ -27,11 +27,7 @@ void gdml::TreePatcher::patch(godot::Node *root_node, const std::vector<DiffItem
 
 	// move and update
 	for (const DiffItem &item : diff) {
-		if (item.type == DiffType::MOVE) {
-			if (item.node) {
-				item.parent->move_child(item.node, item.index);
-			}
-		} else if (item.type == DiffType::UPDATE) {
+		if (item.type == DiffType::UPDATE) {
 			if (item.old_node && item.node) {
 				for (godot::StringName prop_key : item.props) {
 					item.old_node->set(prop_key, item.node->get(prop_key));
