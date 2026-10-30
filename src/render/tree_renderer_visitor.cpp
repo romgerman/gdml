@@ -28,13 +28,15 @@ using namespace parser;
 
 namespace traversal {
 
-TreeRendererVisitor::TreeRendererVisitor(Ref<gdml::GDMLResult> result) {
-	m_result = result;
+TreeRendererVisitor::TreeRendererVisitor(godot::Ref<gdml::GDMLResult> p_result, godot::Node *p_parent) {
+	m_result = p_result;
+	m_parent = p_parent;
 }
 
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
 	m_prop_helper = std::make_unique<PropertyHelper>(m_context.get(), &m_decorator_cache);
+	m_context->get_scope()->set_parent_node(m_parent);
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;

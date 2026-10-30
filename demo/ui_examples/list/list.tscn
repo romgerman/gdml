@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://bhitixkf73dt8"]
+
+[ext_resource type="Script" uid="uid://blc3cj3q32f7b" path="res://ui_examples/list/list.gdml" id="1_6lq72"]
+[ext_resource type="Script" uid="uid://q4ajj0v74ox4" path="res://ui_examples/list/list.gd" id="2_dtw3d"]
+
+[node name="List" type="GDMLNode" unique_id=1907562150]
+markup = ExtResource("1_6lq72")
+anchors_preset = -1
+anchor_left = 0.25
+anchor_right = 0.75
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_dtw3d")

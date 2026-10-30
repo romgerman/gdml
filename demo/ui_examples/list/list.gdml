@@ -1,0 +1,59 @@
+let items = [1, 2, 3, 4, 5]
+let item_refs = {}
+
+let handle_sb = StyleBoxFlat {
+	bg_color: Color.WHITE
+}
+
+signal item_drag_handle_input
+signal add_items
+
+component DragHandle = Control {
+	name: "DragHandle"
+	custom_minimum_size.x: 32
+	mouse_filter: Control.MOUSE_FILTER_PASS
+	@gui_input: item_drag_handle_input
+	
+	VBoxContainer(anchors(0, 0, 1, 1)) {
+		alignment: BoxContainer.ALIGNMENT_CENTER
+		mouse_filter: Control.MOUSE_FILTER_IGNORE
+		
+		@for _ in 3 {
+			Panel {
+				custom_minimum_size.y: 1
+				custom_minimum_size.x: 10
+				size_flags_horizontal: Container.SIZE_SHRINK_CENTER
+				mouse_filter: Control.MOUSE_FILTER_IGNORE
+				$panel: handle_sb
+			}
+		}
+	}
+}
+
+VBoxContainer(anchors(0, 0, 1, 1)) {
+	@for i, value in items {
+		PanelContainer(ref(item_refs, i)) {
+			offset_transform_enabled: true
+			mouse_filter: Control.MOUSE_FILTER_PASS
+			
+			HBoxContainer {
+				Label {
+					text: value
+					size_flags_horizontal: Container.SIZE_EXPAND_FILL
+				}
+				
+				DragHandle {}
+			}
+		}
+	}
+	
+	PanelContainer {
+		offset_transform_enabled: true
+		mouse_filter: Control.MOUSE_FILTER_PASS
+		
+		Button {
+			text: "add items"
+			@pressed: add_items
+		}
+	}
+}
