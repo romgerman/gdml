@@ -31,8 +31,20 @@ bool TreeRendererVisitorContext::has_global_signal(godot::String &p_name) {
 	return m_signals.find(p_name) != m_signals.end();
 }
 
+void TreeRendererVisitorContext::add_deferred_action(std::unique_ptr<DeferredAction> p_action) {
+	m_deferred_actions.push_back(std::move(p_action));
+}
+
 void TreeRendererVisitorContext::flush_deferred_actions() {
+	std::set<godot::Ref<gdml::GDMLDecorator>> one_time_dec_calls;
 	for (std::unique_ptr<DeferredAction> &action : m_deferred_actions) {
+		auto dec_action = dynamic_cast<DeferredDecoratorCall *>(action.get());
+		if (dec_action) {
+			if (one_time_dec_calls.find(dec_action->m_decorator) == one_time_dec_calls.end()) {
+				dec_action->m_decorator->before_render();
+				one_time_dec_calls.emplace(dec_action->m_decorator);
+			}
+		}
 		action->apply();
 	}
 

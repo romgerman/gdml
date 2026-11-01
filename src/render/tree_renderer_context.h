@@ -68,9 +68,9 @@ public:
 
 class DeferredDecoratorCall: public DeferredAction {
 	godot::Array m_args;
-	godot::Ref<gdml::GDMLDecorator> m_decorator;
 	godot::Ref<gdml::GDMLResult> m_result;
 public:
+	godot::Ref<gdml::GDMLDecorator> m_decorator;
 	godot::ObjectID m_node;
 	
 	DeferredDecoratorCall(
@@ -105,6 +105,7 @@ struct TreeRendererVisitorContext {
 
 	bool has_global_signal(godot::String &p_name);
 
+	void add_deferred_action(std::unique_ptr<DeferredAction> p_action);
 	void flush_deferred_actions();
 
 	std::shared_ptr<Scope> m_global_scope;

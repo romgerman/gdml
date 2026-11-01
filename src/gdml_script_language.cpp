@@ -142,100 +142,11 @@ Dictionary GdmlScriptLanguage::_complete_code(const String &p_code, const String
 
 	if (context_node) {
 		if (context_node->type == GDMLNodeType::IMPORT) {
-			std::vector<String> files;
-			get_directory_contents(EditorInterface::get_singleton()->get_resource_filesystem()->get_filesystem(), files);
-
-			for (String &file_path : files) {
-				Dictionary complete_option;
-				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_FILE_PATH;
-				complete_option["display"] = file_path;
-				complete_option["insert_text"] = file_path;
-				complete_option["default_value"] = Variant();
-				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
-				
-				options.push_back(complete_option);
-			}
+			autocompleteImport(options, context_node);
 		} else if (context_node->type == GDMLNodeType::NODE_DEFINITION) {
-			NodeDefinitionNode *node = (NodeDefinitionNode *)context_node;
-			String node_name = node->name->name;
-
-			PackedStringArray classes = ClassDB::get_inheriters_from_class(StringName("Control"));
-			classes.push_back("Control");
-
-			for (String &name : classes) {
-				Dictionary complete_option;
-				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_CLASS;
-				complete_option["display"] = name;
-				complete_option["insert_text"] = name;
-				complete_option["default_value"] = Variant();
-				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
-			
-				options.push_back(complete_option);
-			}
-	
-			if (ClassDB::class_exists(node_name)) {
-				TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
-	
-				for (Dictionary prop_info : props) {
-					uint64_t usage = (uint64_t)prop_info["usage"];
-					if (usage != PropertyUsageFlags::PROPERTY_USAGE_GROUP
-						|| usage != PropertyUsageFlags::PROPERTY_USAGE_SUBGROUP
-						|| usage != PropertyUsageFlags::PROPERTY_USAGE_CATEGORY) {
-						Dictionary complete_option;
-						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
-						complete_option["display"] = prop_info.get("name", "");
-						complete_option["insert_text"] = prop_info.get("name", "");
-						complete_option["default_value"] = Variant();
-						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
-					
-						options.push_back(complete_option);
-					}
-				}
-
-				if (ClassDB::is_parent_class(node_name, StringName("Control"))) {
-					Ref<Theme> theme = ThemeDB::get_singleton()->get_default_theme();
-					PackedStringArray overrides_list;
-					overrides_list.append_array(theme->get_icon_list(node_name));
-					overrides_list.append_array(theme->get_font_list(node_name));
-					overrides_list.append_array(theme->get_color_list(node_name));
-					overrides_list.append_array(theme->get_constant_list(node_name));
-					overrides_list.append_array(theme->get_stylebox_list(node_name));
-
-					for (String &name : overrides_list) {
-						Dictionary complete_option;
-						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_NODE_PATH;
-						complete_option["display"] = name;
-						complete_option["insert_text"] = name;
-						complete_option["default_value"] = Variant();
-						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
-					
-						options.push_back(complete_option);
-					}
-				}
-			}
+			autocompleteNodeDefinition(options, context_node);
 		} else if (context_node->type== GDMLNodeType::RESOURCE_DEFINITION) {
-			ResourceDefinitionNode *node = (ResourceDefinitionNode *)context_node;
-			String node_name = node->name->name;
-
-			if (ClassDB::class_exists(node_name)) {
-				TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
-	
-				for (Dictionary prop_info : props) {
-					uint64_t usage = (uint64_t)prop_info["usage"];
-					if (usage != PropertyUsageFlags::PROPERTY_USAGE_GROUP
-						|| usage != PropertyUsageFlags::PROPERTY_USAGE_SUBGROUP
-						|| usage != PropertyUsageFlags::PROPERTY_USAGE_CATEGORY) {
-						Dictionary complete_option;
-						complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
-						complete_option["display"] = prop_info.get("name", "");
-						complete_option["insert_text"] = prop_info.get("name", "");
-						complete_option["default_value"] = Variant();
-						complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
-					
-						options.push_back(complete_option);
-					}
-				}
-			}
+			autocompleteResourceDefinition(options, context_node);
 		}
 	}
 
@@ -351,6 +262,120 @@ Ref<Script> GdmlScriptLanguage::_make_template(const String &_template, const St
 Object *GdmlScriptLanguage::_create_script() const {
 	return memnew(GdmlScript);
 }
+
+#pragma region Autocomplete
+
+void GdmlScriptLanguage::autocompleteImport(Array p_options, GdmlNode *p_context_node) const {
+	std::vector<String> files;
+	get_directory_contents(EditorInterface::get_singleton()->get_resource_filesystem()->get_filesystem(), files);
+
+	for (String &file_path : files) {
+		Dictionary complete_option;
+		complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_FILE_PATH;
+		complete_option["display"] = file_path;
+		complete_option["insert_text"] = file_path;
+		complete_option["default_value"] = Variant();
+		complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+		
+		p_options.push_back(complete_option);
+	}
+}
+
+void GdmlScriptLanguage::autocompleteNodeDefinition(Array p_options, GdmlNode *p_context_node) const {
+	NodeDefinitionNode *node = (NodeDefinitionNode *)p_context_node;
+	String node_name = node->name->name;
+
+	PackedStringArray classes = ClassDB::get_inheriters_from_class(StringName("Control"));
+	classes.push_back("Control");
+
+	for (String &name : classes) {
+		Dictionary complete_option;
+		complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_CLASS;
+		complete_option["display"] = name;
+		complete_option["insert_text"] = name;
+		complete_option["default_value"] = Variant();
+		complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+	
+		p_options.push_back(complete_option);
+	}
+
+	if (ClassDB::class_exists(node_name)) {
+		TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+
+		for (Dictionary prop_info : props) {
+			uint64_t usage = (uint64_t)prop_info["usage"];
+			if (usage & PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
+				Dictionary complete_option;
+				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
+				complete_option["display"] = prop_info.get("name", "");
+				complete_option["insert_text"] = prop_info.get("name", "");
+				complete_option["default_value"] = Variant();
+				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+			
+				p_options.push_back(complete_option);
+			}
+		}
+
+		TypedArray<Dictionary> signals = ClassDB::class_get_signal_list(node_name, false);
+
+		for (Dictionary signal_info : signals) {
+			Dictionary complete_option;
+			complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_SIGNAL;
+			complete_option["display"] = signal_info.get("name", "");
+			complete_option["insert_text"] = signal_info.get("name", "");
+			complete_option["default_value"] = Variant();
+			complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+		
+			p_options.push_back(complete_option);
+		}
+
+		if (ClassDB::is_parent_class(node_name, StringName("Control"))) {
+			Ref<Theme> theme = ThemeDB::get_singleton()->get_default_theme();
+			PackedStringArray overrides_list;
+			overrides_list.append_array(theme->get_icon_list(node_name));
+			overrides_list.append_array(theme->get_font_list(node_name));
+			overrides_list.append_array(theme->get_color_list(node_name));
+			overrides_list.append_array(theme->get_constant_list(node_name));
+			overrides_list.append_array(theme->get_stylebox_list(node_name));
+
+			for (String &name : overrides_list) {
+				Dictionary complete_option;
+				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_NODE_PATH;
+				complete_option["display"] = name;
+				complete_option["insert_text"] = name;
+				complete_option["default_value"] = Variant();
+				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+			
+				p_options.push_back(complete_option);
+			}
+		}
+	}
+}
+
+void GdmlScriptLanguage::autocompleteResourceDefinition(Array p_options, GdmlNode *p_context_node) const {
+	ResourceDefinitionNode *node = (ResourceDefinitionNode *)p_context_node;
+	String node_name = node->name->name;
+
+	if (ClassDB::class_exists(node_name)) {
+		TypedArray<Dictionary> props = ClassDB::class_get_property_list(node_name, false);
+
+		for (Dictionary prop_info : props) {
+			uint64_t usage = (uint64_t)prop_info["usage"];
+			if (usage & PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
+				Dictionary complete_option;
+				complete_option["kind"] = CodeCompletionKind::CODE_COMPLETION_KIND_MEMBER;
+				complete_option["display"] = prop_info.get("name", "");
+				complete_option["insert_text"] = prop_info.get("name", "");
+				complete_option["default_value"] = Variant();
+				complete_option["location"] = CodeCompletionLocation::LOCATION_LOCAL;
+			
+				p_options.push_back(complete_option);
+			}
+		}
+	}
+}
+
+#pragma endregion Autocomplete
 
 GdmlScriptLanguage *GdmlScriptLanguage::get_singleton() {
 	return instance;

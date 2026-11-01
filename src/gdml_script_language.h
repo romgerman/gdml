@@ -7,6 +7,7 @@
 #include <godot_cpp/classes/editor_file_system_directory.hpp>
 
 namespace godot {
+class GdmlNode;
 
 class GdmlScriptLanguage : public ScriptLanguageExtension {
 	GDCLASS(GdmlScriptLanguage, ScriptLanguageExtension)
@@ -62,6 +63,10 @@ public:
 
 	Ref<Script> _make_template(const String &p_template, const String &p_class_name, const String &p_base_class_name) const override;
 	Object *_create_script() const override;
+
+	void autocompleteImport(Array p_options, GdmlNode *p_context_node) const;
+	void autocompleteNodeDefinition(Array p_options, GdmlNode *p_context_node) const;
+	void autocompleteResourceDefinition(Array p_options, GdmlNode *p_context_node) const;
 
 	static GdmlScriptLanguage *get_singleton();
 	static GdmlScriptLanguage *get_or_create_singleton();

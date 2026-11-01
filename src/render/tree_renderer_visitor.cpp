@@ -331,7 +331,7 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 				}
 			}
 
-			m_context->m_deferred_actions.push_back(std::make_unique<DeferredDecoratorCall>(
+			m_context->add_deferred_action(std::make_unique<DeferredDecoratorCall>(
 				args,
 				(ObjectID)obj_as_node->get_instance_id(),
 				decorator,
@@ -495,7 +495,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 
 		old_nodes.clear();
 		
-		m_context->m_deferred_actions.push_back(std::make_unique<DeferredSignalUpdate>(
+		m_context->add_deferred_action(std::make_unique<DeferredSignalUpdate>(
 			m_context.get(),
 			m_result
 		));
@@ -514,7 +514,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 	};
 
 	for (String &var_name : m_context->get_scope()->get_active_reactive_variables()) {
-		m_context->m_deferred_actions.push_back(std::make_unique<DeferredAtomRenderCallbackAction>(
+		m_context->add_deferred_action(std::make_unique<DeferredAtomRenderCallbackAction>(
 			m_context.get(),
 			var_name,
 			fragment,
@@ -631,7 +631,7 @@ void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &state
 
 bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &variant, String &prop_key, ExpressionNode &value_node) {
 	if (PropertyHelper::references_self(value_node)) {
-		m_context->m_deferred_actions.push_back(std::make_unique<DeferredSetPropertyAction>(
+		m_context->add_deferred_action(std::make_unique<DeferredSetPropertyAction>(
 			m_prop_helper.get(),
 			root_variant,
 			variant,

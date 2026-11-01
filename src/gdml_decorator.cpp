@@ -8,9 +8,16 @@ using namespace godot;
 namespace gdml {
 
 void GDMLDecorator::_bind_methods() {
+	GDVIRTUAL_BIND(before_render);
 	GDVIRTUAL_BIND(modify, "control", "args", "context");
 	GDVIRTUAL_BIND(modify_resource, "resource", "args");
 	GDVIRTUAL_BIND(get_decorator_name);
+}
+
+void GDMLDecorator::before_render() {
+	if (GDVIRTUAL_IS_OVERRIDDEN(before_render)) {
+		GDVIRTUAL_CALL(before_render);
+	}
 }
 
 void GDMLDecorator::modify(Control *p_control, Array p_args, godot::Ref<GDMLResult> p_context) {

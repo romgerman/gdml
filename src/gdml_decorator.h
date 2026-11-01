@@ -14,10 +14,12 @@ protected:
 	static void _bind_methods();
 
 public:
+	virtual void before_render();
 	virtual void modify(godot::Control *p_control, godot::Array p_args, godot::Ref<GDMLResult> p_context);
 	virtual godot::Variant modify_resource(godot::Variant *p_resource, godot::Array p_args);
 	virtual godot::StringName get_decorator_name();
 
+	GDVIRTUAL0(before_render);
 	GDVIRTUAL3(modify, godot::Variant, godot::Array, godot::Ref<GDMLResult>);
 	GDVIRTUAL2R(godot::Variant, modify_resource, godot::Variant, godot::Array);
 	GDVIRTUAL0R(godot::Variant, get_decorator_name);
