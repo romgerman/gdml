@@ -551,16 +551,17 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 		if (range_variant.get_type() == Variant::ARRAY) {
 			Array arr = range_variant;
 			for (int64_t i = 0; i < arr.size(); i++) {
-				Variant item = arr[i];
+				Variant value = arr[i];
 				if (has_iter2) {
 					m_context->get_scope()->set_variable(iter_name, i);
-					m_context->get_scope()->set_variable(iter_name2, item);
+					m_context->get_scope()->set_variable(iter_name2, value);
 				} else {
-					m_context->get_scope()->set_variable(iter_name, item);
+					m_context->get_scope()->set_variable(iter_name, value);
 				}
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
+						result_node->set_meta(StringName("__gdml_key"), value);
 						nodes->push_back(result_node);
 					}
 				}
@@ -578,6 +579,7 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
+						result_node->set_meta(StringName("__gdml_key"), value);
 						nodes->push_back(result_node);
 					}
 				}
@@ -588,6 +590,7 @@ void TreeRendererVisitor::renderForStatement(godot::ForStatementNode *statement,
 				for (std::unique_ptr<NodeDefinitionNode> &item : statement->statements) {
 					Node *result_node = visitNodeDefinition(*item);
 					if (result_node) {
+						result_node->set_meta(StringName("__gdml_key"), i);
 						nodes->push_back(result_node);
 					}
 				}

@@ -43,8 +43,8 @@ godot::Ref<GDMLFunction> FunctionCache::get(godot::String p_name) {
 				continue;
 			}
 
-			Variant decorator_variant = ClassDB::instantiate(script->get_instance_base_type());
-			function_object = decorator_variant.get_validated_object();
+			Variant function_variant = ClassDB::instantiate(script->get_instance_base_type());
+			function_object = function_variant.get_validated_object();
 			if (!function_object) {
 				continue;
 			}

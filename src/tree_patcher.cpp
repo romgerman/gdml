@@ -1,13 +1,32 @@
 #include "tree_patcher.h"
 
+#include "built-in/decorators/transition.hpp"
+
+#include <godot_cpp/classes/ref.hpp>
+#include <godot_cpp/classes/tween.hpp>
+
 namespace gdml {
 
 void gdml::TreePatcher::patch(const std::vector<DiffItem> &diff) {
 	// deletions
 	for (const DiffItem &item : diff) {
 		if (item.type == DiffType::DELETE) {
-			if (item.node) {
-				item.node->queue_free();
+			if (item.node && !item.node->has_meta(godot::StringName("__gdml_transition_is_exiting"))) {
+				if (item.node->has_meta(godot::StringName("__gdml_transition"))
+					&& item.node->get_meta(godot::StringName("__gdml_transition")) == godot::Variant(true)
+					&& item.node->has_meta(godot::StringName("__gdml_transition_out_tween_factory"))) {
+					item.node->set_meta(godot::StringName("__gdml_transition_is_exiting"), true);
+
+					godot::Callable tween_factory = item.node->get_meta(godot::StringName("__gdml_transition_out_tween_factory"));
+					godot::Ref<godot::Tween> tween = tween_factory.call(item.node);
+					tween->connect(godot::StringName("finished"), callable_mp(item.node, &godot::Node::queue_free), godot::Object::CONNECT_ONE_SHOT);
+
+					if (item.node->get_parent()) {
+						item.node->get_parent()->move_child(item.node, item.index);
+					}
+				} else {
+					item.node->queue_free();
+				}
 			}
 		}
 	}
@@ -25,7 +44,7 @@ void gdml::TreePatcher::patch(const std::vector<DiffItem> &diff) {
 		}
 	}
 
-	// move and update
+	// update
 	for (const DiffItem &item : diff) {
 		if (item.type == DiffType::UPDATE) {
 			if (item.old_node && item.node) {

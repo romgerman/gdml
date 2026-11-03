@@ -12,15 +12,45 @@ func _ready() -> void:
 	connect("add_items", func (_c):
 		var vals := items.value as Array
 		for i in 5:
-			vals.push_back(vals.back() + 1)
+			if vals.is_empty():
+				vals.push_back(1)
+			else:
+				vals.push_back(vals.back() + 1)
 		items.value = vals
 	)
+	connect("delete_item", func (c: Control):
+		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var vals := items.value as Array
+		var index := c.get_parent().get_parent().get_index()
+		vals.remove_at(index)
+		items.value = vals
+	)
+	
+	var tw_in_factory = func (ctrl: Control):
+		ctrl.modulate = Color.TRANSPARENT
+		#ctrl.offset_transform_position.y = 50
+		var tw := create_tween()
+		tw.parallel().tween_property(ctrl, "modulate", Color.WHITE, 0.55).set_delay(ctrl.get_index() * 0.05)
+		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
+		return tw
+	
+	var tw_out_factory = func (ctrl: Control):
+		var tw := create_tween()
+		tw.parallel().tween_property(ctrl, "modulate", Color.TRANSPARENT, 0.55)
+		tw.parallel().tween_property(ctrl, "offset_transform_scale:y", 0.0, 0.55)
+		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
+		return tw
+	
+	get_variable("trans_in").value = tw_in_factory
+	get_variable("trans_out").value = tw_out_factory
 
 func _process(delta: float) -> void:
 	var ctrls := get_variable_value("item_refs") as Dictionary
 	
 	if is_dragging:
 		for c: Control in ctrls.values():
+			if not is_instance_valid(c):
+				continue
 			if c == dragged_ctrl:
 				continue
 			var offset_start_y := dragged_ctrl.global_position.y + dragged_ctrl.offset_transform_position.y
@@ -38,12 +68,13 @@ func _process(delta: float) -> void:
 					delta * 10.0
 				)
 	else:
-		for c: Control in ctrls.values():
-			c.offset_transform_position.y = lerpf(
-				c.offset_transform_position.y,
-				0.0,
-				delta * 10.0
-			)
+		for c in ctrls.values():
+			if is_instance_valid(c):
+				c.offset_transform_position.y = lerpf(
+					c.offset_transform_position.y,
+					0.0,
+					delta * 10.0
+				)
 
 func _gui_input(event: InputEvent) -> void:
 	if is_dragging and dragged_ctrl:
@@ -60,6 +91,7 @@ func _on_item_drag_handle_input(ctrl: Control, e: InputEvent) -> void:
 				_drag_start(ctrl)
 
 func _drag_end() -> void:
+	get_variable("is_trans_enabled").value = false
 	dragged_ctrl.z_index = 0
 	var ctrls := get_variable_value("item_refs") as Dictionary
 	var offset_y := dragged_ctrl.get_global_rect().get_center().y + dragged_ctrl.offset_transform_position.y
@@ -77,6 +109,7 @@ func _drag_end() -> void:
 	is_dragging = false
 	dragged_ctrl = null
 	dragged_index = -1
+	get_variable("is_trans_enabled").value = true
 
 func _drag_start(ctrl: Control) -> void:
 	is_dragging = true

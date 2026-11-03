@@ -15,14 +15,24 @@ void gdml::Differ::diff(
 	std::vector<DiffItem> &out_diff,
 	std::map<godot::ObjectID, godot::ObjectID> &remaps
 ) {
-	if (nodes_a.empty() && nodes_b.empty()) {
+	// Check if any node is currently exiting the tree by a transition and do not check it against anything
+
+	std::vector<godot::Node *> nodes_a_filtered;
+	
+	for (godot::Node *n : nodes_a) {
+		if (!n->has_meta(godot::StringName("__gdml_transition_is_exiting"))) {
+			nodes_a_filtered.push_back(n);
+		}
+	}
+
+	if (nodes_a_filtered.empty() && nodes_b.empty()) {
 		return;
 	}
 
 	// myers diff algo
 	// https://docs.moonbitlang.com/en/latest/example/myers-diff/myers-diff.html
 
-	int32_t n = nodes_a.size();
+	int32_t n = nodes_a_filtered.size();
 	int32_t m = nodes_b.size();
 	int32_t max = n + m;
 	std::vector<int32_t> v(max * 2 + 1);
@@ -48,7 +58,7 @@ void gdml::Differ::diff(
 
 			y = x - k;
 
-			while (x < n && y < m && is_node_equal(nodes_a[x], nodes_b[y])) {
+			while (x < n && y < m && is_node_equal(nodes_a_filtered[x], nodes_b[y])) {
 				x++;
 				y++;
 			}
@@ -92,7 +102,7 @@ void gdml::Differ::diff(
 		int32_t prev_y = prev_x - prev_k;
 
 		while (x > prev_x && y > prev_y) {
-			godot::Node *a = nodes_a[x - 1];
+			godot::Node *a = nodes_a_filtered[x - 1];
 			godot::Node *b = nodes_b[y - 1];
 
 			matches.push_back({ a, b });
@@ -127,10 +137,12 @@ void gdml::Differ::diff(
 			y--;
 		} else {
 			// deletion
-			godot::Node *a = nodes_a[x - 1];
+			godot::Node *a = nodes_a_filtered[x - 1];
+			int32_t a_index = a->get_index() == 0xFFFFFFFF ? 0 : a->get_index();
 			DiffItem item;
 			item.type = DiffType::DELETE;
 			item.node = a;
+			item.index = a_index + 1;
 			diffs.push_back(item);
 			x--;
 		}
@@ -168,14 +180,15 @@ bool Differ::is_node_equal(godot::Node *a, godot::Node *b) {
 	if (aa || ba) {
 		return aa && ba;
 	}
-	if (a->get_class() == b->get_class()) {
-		if (a->has_meta(godot::StringName("__gdml_key")) && b->has_meta(godot::StringName("__gdml_key"))) {
-			return a->get_meta(godot::StringName("__gdml_key")) == b->get_meta(godot::StringName("__gdml_key"));
-		} else {
-			return true;
-		}
-	} else {
+	if (a->get_class() != b->get_class()) {
 		return false;
+	}
+	bool a_has_key = a->has_meta(godot::StringName("__gdml_key"));
+	bool b_has_key = b->has_meta(godot::StringName("__gdml_key"));
+	if (a_has_key || b_has_key) {
+		return a_has_key && b_has_key && a->get_meta(godot::StringName("__gdml_key")) == b->get_meta(godot::StringName("__gdml_key"));
+	} else {
+		return true;
 	}
 }
 
@@ -185,7 +198,7 @@ void Differ::diff_node_props(godot::Node *a, godot::Node *b, std::vector<godot::
 		int64_t usage = (int64_t)prop_info["usage"];
 		if (usage & godot::PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
 			godot::StringName prop_key = prop_info["name"];
-			if (a->get(prop_key) != b->get(prop_key)) {
+			if (!prop_key.contains("metadata/") && a->get(prop_key) != b->get(prop_key)) {
 				out_props.push_back(prop_key);
 			}
 		}

@@ -1,5 +1,8 @@
 let items = [1, 2, 3, 4, 5]
 let item_refs = {}
+let trans_in
+let trans_out
+let is_trans_enabled = true
 
 let handle_sb = StyleBoxFlat {
 	bg_color: Color.WHITE
@@ -7,6 +10,7 @@ let handle_sb = StyleBoxFlat {
 
 signal item_drag_handle_input
 signal add_items
+signal delete_item
 
 component DragHandle = Control {
 	name: "DragHandle"
@@ -32,7 +36,11 @@ component DragHandle = Control {
 
 VBoxContainer(anchors(0, 0, 1, 1)) {
 	@for i, value in items {
-		PanelContainer(ref(item_refs, i)) {
+		PanelContainer(
+			ref(item_refs, i),
+			transition("enter", trans_in, is_trans_enabled),
+			transition("exit", trans_out, is_trans_enabled)
+		) {
 			offset_transform_enabled: true
 			mouse_filter: Control.MOUSE_FILTER_PASS
 			
@@ -42,13 +50,19 @@ VBoxContainer(anchors(0, 0, 1, 1)) {
 					size_flags_horizontal: Container.SIZE_EXPAND_FILL
 				}
 				
+				Button {
+					text: "delete"
+					flat: true
+					$font_color: Color.RED
+					@pressed: delete_item
+				}
+				
 				DragHandle {}
 			}
 		}
 	}
 	
 	PanelContainer {
-		offset_transform_enabled: true
 		mouse_filter: Control.MOUSE_FILTER_PASS
 		
 		Button {
