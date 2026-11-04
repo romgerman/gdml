@@ -4,6 +4,11 @@ let trans_in
 let trans_out
 let is_trans_enabled = true
 
+# TODO: doesn't "re-render" resources
+let trans_enter = GDMLTransitionEnter { tween_factory: trans_in; enabled: is_trans_enabled; }
+let trans_exit = GDMLTransitionExit { tween_factory: trans_out; enabled: is_trans_enabled; }
+
+
 let handle_sb = StyleBoxFlat {
 	bg_color: Color.WHITE
 }
@@ -34,40 +39,50 @@ component DragHandle = Control {
 	}
 }
 
-VBoxContainer(anchors(0, 0, 1, 1)) {
-	@for i, value in items {
-		PanelContainer(
-			ref(item_refs, i),
-			transition("enter", trans_in, is_trans_enabled),
-			transition("exit", trans_out, is_trans_enabled)
-		) {
-			offset_transform_enabled: true
-			mouse_filter: Control.MOUSE_FILTER_PASS
-			
-			HBoxContainer {
-				Label {
-					text: value
-					size_flags_horizontal: Container.SIZE_EXPAND_FILL
-				}
+ScrollContainer(anchors(0, 0, 1, 1)) {
+	VBoxContainer {
+		size_flags_horizontal: Container.SIZE_EXPAND_FILL
+		
+		@for i, value in items {
+			PanelContainer(
+				ref(item_refs, i),
+				transition(GDMLTransitionEnter {
+					tween_factory: trans_in
+					enabled: is_trans_enabled
+				}),
+				transition(GDMLTransitionExit {
+					tween_factory: trans_out
+					enabled: is_trans_enabled
+				})
+			) {
+				offset_transform_enabled: true
+				mouse_filter: Control.MOUSE_FILTER_PASS
 				
-				Button {
-					text: "delete"
-					flat: true
-					$font_color: Color.RED
-					@pressed: delete_item
+				HBoxContainer {
+					Label {
+						text: value
+						size_flags_horizontal: Container.SIZE_EXPAND_FILL
+					}
+					
+					Button {
+						text: "delete"
+						flat: true
+						$font_color: Color.RED
+						@pressed: delete_item
+					}
+					
+					DragHandle {}
 				}
-				
-				DragHandle {}
 			}
 		}
-	}
-	
-	PanelContainer {
-		mouse_filter: Control.MOUSE_FILTER_PASS
 		
-		Button {
-			text: "add items"
-			@pressed: add_items
+		PanelContainer {
+			mouse_filter: Control.MOUSE_FILTER_PASS
+			
+			Button {
+				text: "add items"
+				@pressed: add_items
+			}
 		}
 	}
 }

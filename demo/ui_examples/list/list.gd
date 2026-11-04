@@ -43,6 +43,8 @@ func _ready() -> void:
 	
 	get_variable("trans_in").value = tw_in_factory
 	get_variable("trans_out").value = tw_out_factory
+	
+	print(get_variable("trans_enter").value.tween_factory)
 
 func _process(delta: float) -> void:
 	var ctrls := get_variable_value("item_refs") as Dictionary
@@ -106,10 +108,10 @@ func _drag_end() -> void:
 		var moved = vals.pop_at(dragged_index)
 		vals.insert(to_index, moved)
 		items.value = vals
+	get_variable("is_trans_enabled").value = true
 	is_dragging = false
 	dragged_ctrl = null
 	dragged_index = -1
-	get_variable("is_trans_enabled").value = true
 
 func _drag_start(ctrl: Control) -> void:
 	is_dragging = true

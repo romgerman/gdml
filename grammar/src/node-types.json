@@ -272,6 +272,10 @@
           "named": true
         },
         {
+          "type": "resource_definition",
+          "named": true
+        },
+        {
           "type": "self",
           "named": true
         },
@@ -576,10 +580,6 @@
           {
             "type": "expression",
             "named": true
-          },
-          {
-            "type": "resource_definition",
-            "named": true
           }
         ]
       }
@@ -783,10 +783,6 @@
           {
             "type": "expression",
             "named": true
-          },
-          {
-            "type": "resource_definition",
-            "named": true
           }
         ]
       }
@@ -816,10 +812,6 @@
           },
           {
             "type": "expression",
-            "named": true
-          },
-          {
-            "type": "resource_definition",
             "named": true
           }
         ]

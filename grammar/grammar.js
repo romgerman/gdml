@@ -28,6 +28,7 @@ module.exports = grammar({
   ],
   conflicts: $ => [
     [$.resource_definition, $._callee],
+    [$.resource_definition, $._primary_expression]
     //[$.node_definition, $._callee]
   ],
   rules: {
@@ -78,7 +79,7 @@ module.exports = grammar({
     property_definition: $ => seq(
       field("name", choice($.signal_expression, $.identifier, $.property_path)),
       ':',
-      field("value", choice($.expression, $.resource_definition)),
+      field("value", $.expression),
       choice('\n', ';')
     ),
     property_path: $ => seq(
@@ -92,7 +93,7 @@ module.exports = grammar({
       '$',
       field("name", choice($.signal_expression, $.identifier, $.member_expression)),
       ':',
-      field("value", choice($.expression, $.resource_definition)),
+      field("value", $.expression),
       choice('\n', ';')
     ),
     signal_definition: $ => seq("signal", field('name', $.identifier), choice('\n', ';')),
@@ -101,7 +102,7 @@ module.exports = grammar({
       field("name", $.identifier),
       optional(field("value", seq(
         '=',
-        choice($.expression, $.resource_definition)
+        $.expression
       ))),
       choice('\n', ';')
     ),
@@ -159,7 +160,8 @@ module.exports = grammar({
     expression: $ => choice(
       $._primary_expression,
       $.member_expression,
-      $.binary_expression
+      $.binary_expression,
+      $.resource_definition
     ),
     _primary_expression: $ => choice(
       $.identifier,
@@ -170,7 +172,7 @@ module.exports = grammar({
       $.array_expression,
       $.dictionary_expression,
       $.function_call,
-      $.subscript_expression
+      $.subscript_expression,
     ),
     member_expression: $ => prec.left('member', seq(
       field('object', $.expression),

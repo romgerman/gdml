@@ -459,6 +459,8 @@ std::unique_ptr<ExpressionNode> GdmlParser::visitExpression(ts::Node node, CharS
 		return visitBinaryExpression(node, text);
 	} else if (node.isType("subscript_expression")) {
 		return visitSubscriptExpression(node, text);
+	} else if (node.isType("resource_definition")) {
+		return visitResource(node, text);
 	} else {
 		pushError("Unknown node " + String(node.getType()) + " while parsing expression", node);
 	}

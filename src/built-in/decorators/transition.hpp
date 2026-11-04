@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gdml_decorator.h"
+#include "transition_settings.hpp"
 
 #include <set>
 
@@ -40,20 +41,16 @@ public:
 	}
 
 	void modify(godot::Control *p_control, godot::Array p_args, godot::Ref<GDMLResult> p_context) override {
-		if (p_args.size() > 1) {
-			godot::String transition_type = p_args[0];
-			if (p_args.size() > 2) {
-				bool is_enabled = (bool)p_args[2];
-				if (!is_enabled) {
-					p_control->set_meta(godot::StringName("__gdml_transition"), false);
-					return;
+		for (godot::Variant arg_item : p_args) {
+			godot::Ref<GDMLTransitionEnter> enter_settings = Object::cast_to<GDMLTransitionEnter>(arg_item);
+			if (enter_settings.is_valid()) {
+				if (!enter_settings->get_enabled()) {
+					continue;
 				}
-			}
-			if (transition_type == "enter") {
 				if (transitioned_nodes_in.find((godot::ObjectID)p_control->get_instance_id()) != transitioned_nodes_in.end()) {
-					return;
+					continue;
 				}
-				godot::Callable tween_factory = p_args[1];
+				godot::Callable tween_factory = enter_settings->get_tween_factory();
 				if (tween_factory.is_valid()) {
 					p_control->set_meta(godot::StringName("__gdml_transition"), true);
 					p_control->set_meta(godot::StringName("__gdml_transition_in_tween_factory"), tween_factory);
@@ -62,8 +59,15 @@ public:
 					
 					transitioned_nodes_in.emplace((godot::ObjectID)p_control->get_instance_id());
 				}
-			} else if (transition_type == "exit") {
-				godot::Callable tween_factory = p_args[1];
+				continue;
+			}
+
+			godot::Ref<GDMLTransitionExit> exit_settings = Object::cast_to<GDMLTransitionExit>(arg_item);
+			if (exit_settings.is_valid()) {
+				if (!exit_settings->get_enabled()) {
+					continue;
+				}
+				godot::Callable tween_factory = exit_settings->get_tween_factory();
 				if (tween_factory.is_valid()) {
 					p_control->set_meta(godot::StringName("__gdml_transition"), true);
 					p_control->set_meta(godot::StringName("__gdml_transition_out_tween_factory"), tween_factory);

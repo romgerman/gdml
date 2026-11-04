@@ -1,7 +1,6 @@
 #include "diff.h"
 
 #include <cassert>
-
 #include <algorithm>
 
 #include <godot_cpp/core/print_string.hpp>
@@ -175,31 +174,45 @@ void gdml::Differ::diff(
 }
 
 bool Differ::is_node_equal(godot::Node *a, godot::Node *b) {
-	bool aa = a->has_meta(godot::StringName("__gdml_anchor"));
-	bool ba = b->has_meta(godot::StringName("__gdml_anchor"));
+	static const godot::StringName ANCHOR_META = godot::StringName("__gdml_anchor");
+	static const godot::StringName KEY_META = godot::StringName("__gdml_key");
+
+	bool aa = a->has_meta(ANCHOR_META);
+	bool ba = b->has_meta(ANCHOR_META);
 	if (aa || ba) {
 		return aa && ba;
 	}
 	if (a->get_class() != b->get_class()) {
 		return false;
 	}
-	bool a_has_key = a->has_meta(godot::StringName("__gdml_key"));
-	bool b_has_key = b->has_meta(godot::StringName("__gdml_key"));
+	bool a_has_key = a->has_meta(KEY_META);
+	bool b_has_key = b->has_meta(KEY_META);
 	if (a_has_key || b_has_key) {
-		return a_has_key && b_has_key && a->get_meta(godot::StringName("__gdml_key")) == b->get_meta(godot::StringName("__gdml_key"));
+		return a_has_key && b_has_key && a->get_meta(KEY_META) == b->get_meta(KEY_META);
 	} else {
 		return true;
 	}
 }
 
 void Differ::diff_node_props(godot::Node *a, godot::Node *b, std::vector<godot::StringName> &out_props) {
-	for (godot::Variant item : a->get_property_list()) {
-		godot::Dictionary prop_info = (godot::Dictionary)item;
-		int64_t usage = (int64_t)prop_info["usage"];
-		if (usage & godot::PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
-			godot::StringName prop_key = prop_info["name"];
+	static const godot::StringName DEFINED_PROPS_META = godot::StringName("__gdml_defined_props");
+
+	if (a->has_meta(DEFINED_PROPS_META)) {
+		for (godot::Variant item : (godot::Array)a->get_meta(DEFINED_PROPS_META)) {
+			godot::String prop_key = item;
 			if (!prop_key.contains("metadata/") && a->get(prop_key) != b->get(prop_key)) {
 				out_props.push_back(prop_key);
+			}
+		}
+	} else {
+		for (godot::Variant item : a->get_property_list()) {
+			godot::Dictionary prop_info = (godot::Dictionary)item;
+			int64_t usage = (int64_t)prop_info["usage"];
+			if (usage & godot::PropertyUsageFlags::PROPERTY_USAGE_STORAGE) {
+				godot::StringName prop_key = prop_info["name"];
+				if (!prop_key.contains("metadata/") && a->get(prop_key) != b->get(prop_key)) {
+					out_props.push_back(prop_key);
+				}
 			}
 		}
 	}

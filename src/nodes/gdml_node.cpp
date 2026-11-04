@@ -1,10 +1,10 @@
 #include "gdml_node.h"
 
-#include <godot_cpp/classes/engine.hpp>
-#include <godot_cpp/classes/script_language.hpp>
-
 #include "gdml_script.h"
 #include "render/gdml_renderer.h"
+
+#include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/script_language.hpp>
 
 using namespace godot;
 

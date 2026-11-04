@@ -13,6 +13,7 @@
 #include "gdml_function.h"
 
 #include "built-in/functions/load.hpp"
+#include "built-in/decorators/transition_settings.hpp"
 #include "built-in/decorators/transition.hpp"
 
 #include "render/gdml_renderer.h"
@@ -45,6 +46,9 @@ void initialize_gdml_module(ModuleInitializationLevel p_level) {
 
 			// Register built-ins
 			GDREGISTER_CLASS(gdml::GDMLFunction_load);
+			GDREGISTER_CLASS(gdml::GDMLTransitionOptions);
+			GDREGISTER_CLASS(gdml::GDMLTransitionEnter);
+			GDREGISTER_CLASS(gdml::GDMLTransitionExit);
 			GDREGISTER_CLASS(gdml::GDMLDecorator_transition);
 
 			GdmlScriptLanguage::get_or_create_singleton();

@@ -268,16 +268,26 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 
 	m_context->get_scope()->set_parent_node(obj_as_node);
 
+	Array defined_props;
 	for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
+		if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+			defined_props.push_back(static_cast<IdentifierNode*>(property->name.get())->name);
+		} else if (property->name->type == GDMLNodeType::PROPERTY_PATH) {
+			defined_props.push_back(static_cast<PropertyPathNode*>(property->name.get())->path[0]->name);
+		}
+
 		if (property->is_theme_override) {
 			Control *control = Object::cast_to<Control>(root_variant);
-			if (control) {
-				if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-					IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-					setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
-				}
-			} else {
+			if (!control) {
 				m_context->push_error("Trying to set theme override on a non-Control node", *property);
+				continue;
+			}
+
+			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
+				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
+				setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
+			} else {
+				m_context->push_error("Currently only flat identifiers are supported in theme overrides", *property);
 			}
 		} else {
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
@@ -303,6 +313,8 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 			}
 		}
 	}
+
+	obj_as_node->set_meta(StringName("__gdml_defined_props"), defined_props);
 
 	for (const std::unique_ptr<VariableDefinitionNode> &var : node.variables) {
 		Variant value;
@@ -625,6 +637,7 @@ void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, c
 }
 
 void TreeRendererVisitor::visitSignalDefinition(SignalDefinitionNode &definition) {
+	// TODO: make it possible to bind arguments to signals
 	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
 }
 

@@ -4,8 +4,6 @@
 
 #include <vector>
 
-#include <godot_cpp/classes/node.hpp>
-
 namespace gdml {
 
 class TreePatcher {
