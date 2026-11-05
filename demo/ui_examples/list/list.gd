@@ -5,6 +5,27 @@ var dragged_ctrl: Control
 var dragged_index := -1
 
 var items: GDMLAtom = GDML.atom(&"items", [1, 2, 3, 4, 5])
+var trans_in := GDML.atom(&"trans_in")
+var trans_out := GDML.atom(&"trans_out")
+
+func _enter_tree() -> void:
+	var tw_in_factory = func (ctrl: Control):
+		ctrl.modulate = Color.TRANSPARENT
+		#ctrl.offset_transform_position.y = 50
+		var tw := create_tween()
+		tw.parallel().tween_property(ctrl, "modulate", Color.WHITE, 0.55).set_delay(ctrl.get_index() * 0.05)
+		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
+		return tw
+	
+	var tw_out_factory = func (ctrl: Control):
+		var tw := create_tween()
+		tw.parallel().tween_property(ctrl, "modulate", Color.TRANSPARENT, 0.55)
+		tw.parallel().tween_property(ctrl, "offset_transform_scale:y", 0.0, 0.55)
+		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
+		return tw
+	
+	trans_in.value = tw_in_factory
+	trans_out.value = tw_out_factory
 
 func _ready() -> void:
 	connect("item_drag_handle_input", _on_item_drag_handle_input)
@@ -23,24 +44,6 @@ func _ready() -> void:
 		vals.remove_at(index)
 		items.value = vals
 	)
-	
-	var tw_in_factory = func (ctrl: Control):
-		ctrl.modulate = Color.TRANSPARENT
-		#ctrl.offset_transform_position.y = 50
-		var tw := create_tween()
-		tw.parallel().tween_property(ctrl, "modulate", Color.WHITE, 0.55).set_delay(ctrl.get_index() * 0.05)
-		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
-		return tw
-	
-	var tw_out_factory = func (ctrl: Control):
-		var tw := create_tween()
-		tw.parallel().tween_property(ctrl, "modulate", Color.TRANSPARENT, 0.55)
-		tw.parallel().tween_property(ctrl, "offset_transform_scale:y", 0.0, 0.55)
-		tw.parallel().tween_property(ctrl, "offset_transform_position:y", 0.0, 0.55)
-		return tw
-	
-	get_variable("trans_in").value = tw_in_factory
-	get_variable("trans_out").value = tw_out_factory
 
 func _process(delta: float) -> void:
 	var ctrls := get_variable_value("item_refs") as Dictionary
