@@ -33,8 +33,6 @@ public:
 	GDMLNode();
 	~GDMLNode();
 
-	void _ready() override;
-
 	void _notification(int p_what);
 	
 	void on_markup_changed();
@@ -55,6 +53,7 @@ public:
 
 	Ref<reactive::GDMLAtom> get_variable(String p_name);
 	Variant get_variable_value(String p_name);
+	void set_variable_value(String p_name, Variant value);
 
 	void use_effect(Callable p_fn);
 };

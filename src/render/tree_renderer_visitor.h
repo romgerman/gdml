@@ -42,9 +42,10 @@ class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
 	gdml::DecoratorCache m_decorator_cache;
 	std::unique_ptr<PropertyHelper> m_prop_helper;
 	std::vector<std::shared_ptr<FragmentContext>> m_fragments_stack;
+	std::vector<godot::Ref<reactive::GDMLAtom>> m_initial_variables;
 
 public:
-	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> p_result, godot::Node *p_parent);
+	TreeRendererVisitor(godot::Ref<gdml::GDMLResult> p_result, godot::Node *p_parent, std::vector<godot::Ref<reactive::GDMLAtom>> variables);
 	TreeRendererVisitorResult visit(const godot::GdmlNode &root_node) override;
 
 private:

@@ -1,6 +1,7 @@
 #include "tree_patcher.h"
 
 #include "built-in/decorators/transition.hpp"
+#include "built-in/decorators/transition_settings.hpp"
 
 #include <godot_cpp/classes/ref.hpp>
 #include <godot_cpp/classes/tween.hpp>
@@ -13,8 +14,10 @@ void gdml::TreePatcher::patch(const std::vector<DiffItem> &diff) {
 		if (item.type == DiffType::DELETE) {
 			if (item.node && !item.node->has_meta(godot::StringName("__gdml_transition_is_exiting"))) {
 				if (item.node->has_meta(godot::StringName("__gdml_transition"))
-					&& item.node->get_meta(godot::StringName("__gdml_transition")) == godot::Variant(true)
-					&& item.node->has_meta(godot::StringName("__gdml_transition_out_tween_factory"))) {
+					&& item.node->has_meta(godot::StringName("__gdml_transition_out_tween_factory"))
+					&& item.node->has_meta(godot::StringName("__gdml_transition_out_tween_settings"))
+					&& godot::Object::cast_to<GDMLTransitionOptions>(item.node->get_meta(godot::StringName("__gdml_transition_out_tween_settings")))->get_enabled()
+				) {
 					item.node->set_meta(godot::StringName("__gdml_transition_is_exiting"), true);
 
 					godot::Callable tween_factory = item.node->get_meta(godot::StringName("__gdml_transition_out_tween_factory"));

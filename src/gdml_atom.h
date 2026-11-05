@@ -30,6 +30,8 @@ public:
 
 	void add_callback(std::weak_ptr<void> p_owner, std::function<void()> p_callback);
 
+	// API
+
 	void set_value(godot::Variant p_value);
 	godot::Variant get_value();
 

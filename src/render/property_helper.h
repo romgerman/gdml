@@ -13,10 +13,22 @@ namespace traversal {
 
 class TreeRendererVisitorContext;
 
+struct UntrackReactiveVariable {
+	bool &m_is_untracked;
+	bool m_previous;
+	UntrackReactiveVariable(bool &is_untracked): m_is_untracked(is_untracked), m_previous(is_untracked) {
+		is_untracked = true;
+	}
+	~UntrackReactiveVariable() {
+		m_is_untracked = m_previous;
+	}
+};
+
 class PropertyHelper {
 	TreeRendererVisitorContext *m_context;
 	gdml::DecoratorCache *m_decorator_cache;
 	std::shared_ptr<gdml::FunctionCache> m_function_cache;
+	bool m_is_untracked = false;
 public:
 	PropertyHelper(TreeRendererVisitorContext *ctx, gdml::DecoratorCache *dec_cache);
 	bool get_property(godot::Variant &root, godot::String &prop_key, godot::Variant &out);

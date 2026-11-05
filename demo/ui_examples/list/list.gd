@@ -4,10 +4,9 @@ var is_dragging := false
 var dragged_ctrl: Control
 var dragged_index := -1
 
-var items: GDMLAtom
+var items: GDMLAtom = GDML.atom(&"items", [1, 2, 3, 4, 5])
 
 func _ready() -> void:
-	items = get_variable("items")
 	connect("item_drag_handle_input", _on_item_drag_handle_input)
 	connect("add_items", func (_c):
 		var vals := items.value as Array
@@ -19,7 +18,6 @@ func _ready() -> void:
 		items.value = vals
 	)
 	connect("delete_item", func (c: Control):
-		c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vals := items.value as Array
 		var index := c.get_parent().get_parent().get_index()
 		vals.remove_at(index)
@@ -43,14 +41,12 @@ func _ready() -> void:
 	
 	get_variable("trans_in").value = tw_in_factory
 	get_variable("trans_out").value = tw_out_factory
-	
-	print(get_variable("trans_enter").value.tween_factory)
 
 func _process(delta: float) -> void:
 	var ctrls := get_variable_value("item_refs") as Dictionary
 	
 	if is_dragging:
-		for c: Control in ctrls.values():
+		for c in ctrls.values():
 			if not is_instance_valid(c):
 				continue
 			if c == dragged_ctrl:
@@ -98,7 +94,9 @@ func _drag_end() -> void:
 	var ctrls := get_variable_value("item_refs") as Dictionary
 	var offset_y := dragged_ctrl.get_global_rect().get_center().y + dragged_ctrl.offset_transform_position.y
 	var to_index := 0
-	for c: Control in ctrls.values():
+	for c in ctrls.values():
+		if not is_instance_valid(c):
+			continue
 		if c == dragged_ctrl:
 			continue
 		if c.get_global_rect().get_center().y < offset_y:

@@ -39,7 +39,9 @@ bool traversal::PropertyHelper::get_property(godot::Variant &root, godot::String
 	if (m_context->has_reactive_variable(prop_key)) {
 		godot::Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(prop_key);
 		out = atom->get_value();
-		m_context->get_scope()->set_reactive_variable_active(prop_key);
+		if (!m_is_untracked) {
+			m_context->get_scope()->set_reactive_variable_active(prop_key);
+		}
 		return true;
 	}
 
@@ -424,7 +426,16 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			for (const std::unique_ptr<godot::PropertyDefinitionNode> &property : node.properties) {
 				if (property->name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					godot::IdentifierNode *identifier = static_cast<godot::IdentifierNode *>(property->name.get());
+					UntrackReactiveVariable untrack_guard(m_is_untracked);
 					set_property(root, resource_variant, identifier->name, *property->value.get());
+
+					if (property->value->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
+						godot::IdentifierNode *value_identifier = static_cast<godot::IdentifierNode *>(property->value.get());
+						if (m_context->has_reactive_variable(value_identifier->name)) {
+							godot::Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(value_identifier->name);
+							atom->add_dependency(resource_variant, identifier->name);
+						}
+					}
 				} else if (property->name->type == godot::GDMLNodeType::PROPERTY_PATH) {
 					godot::PropertyPathNode *path = static_cast<godot::PropertyPathNode *>(property->name.get());
 					set_deep_property(root, resource_variant, *path, *property->value.get());

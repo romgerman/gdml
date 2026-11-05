@@ -4,8 +4,6 @@
 #include "diff.h"
 #include "tree_patcher.h"
 
-#include <assert.h>
-
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/core/class_db.hpp>
@@ -233,7 +231,7 @@ Ref<reactive::GDMLAtom> GDMLResult::get_variable(String p_name) {
 	if (m_variables.has(p_name)) {
 		return m_variables[p_name];
 	} else {
-		print_error("Cannot access variable with name '" + p_name + "'");
+		print_error("Cannot access a variable with name '" + p_name + "'");
 		return Ref<reactive::GDMLAtom>(memnew(reactive::GDMLAtom()));
 	}
 }
@@ -243,14 +241,14 @@ Array GDMLResult::get_signals() {
 }
 
 void GDMLRenderer::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("render_string", "root_node", "source"), &GDMLRenderer::render_string);
-	ClassDB::bind_method(D_METHOD("render_markup", "root_node", "markup_script"), &GDMLRenderer::render_markup);
+	ClassDB::bind_method(D_METHOD("render_string", "root_node", "source", "variables"), &GDMLRenderer::render_string, DEFVAL(Array()));
+	ClassDB::bind_method(D_METHOD("render_markup", "root_node", "markup_script", "variables"), &GDMLRenderer::render_markup, DEFVAL(Array()));
 }
 
 GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
-Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source) {
+Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source, godot::Array variables) {
 	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
 
 	print_line(traversal::GdmlPrinterVisitor().visit(*result));
@@ -259,8 +257,14 @@ Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source
 		print_error(err.toString());
 	}
 
+	std::vector<godot::Ref<reactive::GDMLAtom>> vars_native;
+
+	for (godot::Variant item : variables) {
+		vars_native.push_back(godot::Object::cast_to<reactive::GDMLAtom>(item));
+	}
+
 	Ref<GDMLResult> out = Ref<GDMLResult>(memnew(GDMLResult));
-	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out, p_root);
+	m_visitor = std::make_unique<traversal::TreeRendererVisitor>(out, p_root, vars_native);
 	traversal::TreeRendererVisitorResult &visitor_result = m_visitor->visit(*result);
 
 	for (std::pair<String, Ref<reactive::GDMLAtom>> pair : visitor_result.variables) {
@@ -276,8 +280,8 @@ Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source
 	return out;
 }
 
-Ref<GDMLResult> GDMLRenderer::render_markup(Node *p_root, GdmlScript *p_script) {
-	return render_string(p_root, p_script->get_source_code());
+Ref<GDMLResult> GDMLRenderer::render_markup(Node *p_root, GdmlScript *p_script, godot::Array variables) {
+	return render_string(p_root, p_script->get_source_code(), variables);
 }
 
 }

@@ -77,6 +77,14 @@ void GDMLAtom::set_value(Variant p_value) {
 			}
 		}
 	}
+	
+	for (auto it = m_dependencies.cbegin(); it != m_dependencies.cend();) {
+		if (!ObjectDB::get_instance(it->first)) {
+			m_dependencies.erase(it++);
+		} else {
+			++it;
+		}
+	}
 
 	auto callbacks_copy = m_callbacks;
 	for (std::pair<std::weak_ptr<void>, std::function<void()>> &pair : callbacks_copy) {

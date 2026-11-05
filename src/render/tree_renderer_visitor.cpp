@@ -25,15 +25,20 @@ using namespace parser;
 
 namespace traversal {
 
-TreeRendererVisitor::TreeRendererVisitor(godot::Ref<gdml::GDMLResult> p_result, godot::Node *p_parent) {
+TreeRendererVisitor::TreeRendererVisitor(godot::Ref<gdml::GDMLResult> p_result, godot::Node *p_parent, std::vector<godot::Ref<reactive::GDMLAtom>> variables) {
 	m_result = p_result;
 	m_parent = p_parent;
+	m_initial_variables = variables;
 }
 
 TreeRendererVisitorResult TreeRendererVisitor::visit(const GdmlNode &root_node) {
 	m_context = std::make_unique<TreeRendererVisitorContext>();
 	m_prop_helper = std::make_unique<PropertyHelper>(m_context.get(), &m_decorator_cache);
 	m_context->get_scope()->set_parent_node(m_parent);
+
+	for (godot::Ref<reactive::GDMLAtom> atom : m_initial_variables) {
+		m_context->m_variables[atom->get_name()] = atom;
+	}
 
 	if (root_node.type == GDMLNodeType::SOURCE_FILE) {
 		TreeRendererVisitorResult result;
@@ -69,6 +74,11 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		case GDMLNodeType::VARIABLE_DEFINITION: {
 			Variant value;
 			VariableDefinitionNode *var = static_cast<VariableDefinitionNode *>(definition->statement.get());
+
+			// Maybe not the best way to do this. This prevent overriding which... should we have it for global reactive vars?
+			if (m_context->has_reactive_variable(var->name->name)) {
+				continue;
+			}
 
 			if (var->value) {
 				if (m_prop_helper->resolve(value, *var->value, value)) {
@@ -244,13 +254,10 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 		}
 	}
 
-	bool is_node = false;
 	Node *obj_as_node;
 	if (root_variant.get_type() == Variant::Type::OBJECT) {
 		obj_as_node = Object::cast_to<Node>(root_variant);
-		if (obj_as_node) {
-			is_node = true;
-		} else {
+		if (!obj_as_node) {
 			m_context->push_error("Object is not a node", node);
 			Object *obj = Object::cast_to<Object>(root_variant);
 			if (obj && !Object::cast_to<RefCounted>(obj)) {
@@ -352,22 +359,16 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 	for (const std::unique_ptr<StatementNode> &statement : node.statements) {
 		if (statement->type == GDMLNodeType::NODE_DEFINITION) {
 			const NodeDefinitionNode *child = static_cast<const NodeDefinitionNode *>(statement.get());
-			m_context->push_scope();
-			Variant child_variant = visitNodeDefinition(*child);
-			m_context->pop_scope();
+			ScopeGuard guard(*m_context);
+			Node *child_node = visitNodeDefinition(*child);
 
-			if (child_variant.get_type() != Variant::Type::NIL) {
-				Object *child_obj = child_variant.get_validated_object();
-				assert(child_obj);
-				Node *child_node = Object::cast_to<Node>(child_obj);
-				assert(child_node);
+			if (child_node) {
 				obj_as_node->add_child(child_node);
 			}
 		} else if (statement->type == GDMLNodeType::FOR_STATEMENT || statement->type == GDMLNodeType::IF_STATEMENT) {
 			std::vector<Node *> nodes;
-			m_context->push_scope();
+			ScopeGuard guard(*m_context);
 			visitStatement(statement.get(), nodes);
-			m_context->pop_scope();
 
 			for (Node *node : nodes) {
 				obj_as_node->add_child(node);

@@ -45,6 +45,7 @@ public:
 			godot::Ref<GDMLTransitionEnter> enter_settings = Object::cast_to<GDMLTransitionEnter>(arg_item);
 			if (enter_settings.is_valid()) {
 				if (!enter_settings->get_enabled()) {
+					transitioned_nodes_in.emplace((godot::ObjectID)p_control->get_instance_id());
 					continue;
 				}
 				if (transitioned_nodes_in.find((godot::ObjectID)p_control->get_instance_id()) != transitioned_nodes_in.end()) {
@@ -54,6 +55,7 @@ public:
 				if (tween_factory.is_valid()) {
 					p_control->set_meta(godot::StringName("__gdml_transition"), true);
 					p_control->set_meta(godot::StringName("__gdml_transition_in_tween_factory"), tween_factory);
+					p_control->set_meta(godot::StringName("__gdml_transition_in_tween_settings"), enter_settings);
 					
 					tween_factory.call_deferred(p_control);
 					
@@ -71,8 +73,13 @@ public:
 				if (tween_factory.is_valid()) {
 					p_control->set_meta(godot::StringName("__gdml_transition"), true);
 					p_control->set_meta(godot::StringName("__gdml_transition_out_tween_factory"), tween_factory);
+					p_control->set_meta(godot::StringName("__gdml_transition_out_tween_settings"), exit_settings);
 				}
+
+				continue;
 			}
+
+			godot::print_error("Unsupported argument type in transition decorator");
 		}
 	}
 

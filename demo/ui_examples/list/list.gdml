@@ -4,11 +4,6 @@ let trans_in
 let trans_out
 let is_trans_enabled = true
 
-# TODO: doesn't "re-render" resources
-let trans_enter = GDMLTransitionEnter { tween_factory: trans_in; enabled: is_trans_enabled; }
-let trans_exit = GDMLTransitionExit { tween_factory: trans_out; enabled: is_trans_enabled; }
-
-
 let handle_sb = StyleBoxFlat {
 	bg_color: Color.WHITE
 }
@@ -47,8 +42,8 @@ ScrollContainer(anchors(0, 0, 1, 1)) {
 			PanelContainer(
 				ref(item_refs, i),
 				transition(GDMLTransitionEnter {
-					tween_factory: trans_in
-					enabled: is_trans_enabled
+					tween_factory: trans_in;
+					enabled: is_trans_enabled;
 				}),
 				transition(GDMLTransitionExit {
 					tween_factory: trans_out

@@ -5,6 +5,7 @@
 
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/script_language.hpp>
+#include <godot_cpp/classes/script.hpp>
 
 using namespace godot;
 
@@ -40,6 +41,7 @@ void GDMLNode::_bind_methods() {
 
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLNode::get_variable);
 	ClassDB::bind_method(D_METHOD("get_variable_value", "name"), &GDMLNode::get_variable_value);
+	ClassDB::bind_method(D_METHOD("set_variable_value", "name", "value"), &GDMLNode::set_variable_value);
 
 	ClassDB::bind_method(D_METHOD("use_effect", "fn"), &GDMLNode::use_effect);
 }
@@ -50,8 +52,6 @@ GDMLNode::GDMLNode() {
 
 GDMLNode::~GDMLNode() {
 }
-
-void GDMLNode::_ready() {}
 
 void GDMLNode::_notification(int p_what) {
 	switch (p_what)
@@ -65,6 +65,11 @@ void GDMLNode::_notification(int p_what) {
 			render_in_game();
 		}
 	} break;
+	case NOTIFICATION_EDITOR_PRE_SAVE:
+	// TODO: do not save live nodes
+	break;
+	case NOTIFICATION_EDITOR_POST_SAVE:
+	break;
 	}
 }
 
@@ -83,7 +88,15 @@ void GDMLNode::render_in_editor() {
 
 void GDMLNode::render_in_game() {
 	if (_markup.is_valid()) {
-		_renderer_result = _renderer->render_markup(this, _markup.ptr());
+		Array variables;
+		if (get_script()) {
+			for (godot::Dictionary prop_info : get_property_list()) {
+				if (prop_info["class_name"] == StringName("GDMLAtom")) {
+					variables.push_back(get(prop_info["name"]));
+				}
+			}
+		}
+		_renderer_result = _renderer->render_markup(this, _markup.ptr(), variables);
 		on_signals_changed();
 		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 		_renderer_result->attach(true);
@@ -190,6 +203,10 @@ Ref<reactive::GDMLAtom> GDMLNode::get_variable(String p_name) {
 
 Variant GDMLNode::get_variable_value(String p_name) {
 	return _renderer_result->get_variable(p_name)->get_value();
+}
+
+void GDMLNode::set_variable_value(String p_name, Variant value) {
+	_renderer_result->get_variable(p_name)->set_value(value);
 }
 
 void GDMLNode::use_effect(Callable p_fn) {
