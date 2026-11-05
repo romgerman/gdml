@@ -13,9 +13,6 @@
 #include <godot_cpp/core/print_string.hpp>
 #include <godot_cpp/classes/node.hpp>
 #include <godot_cpp/classes/control.hpp>
-#include <godot_cpp/classes/theme.hpp>
-#include <godot_cpp/classes/font.hpp>
-#include <godot_cpp/classes/style_box.hpp>
 #include <godot_cpp/classes/object.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
@@ -285,7 +282,7 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 
 			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-				setControlThemeOverride(root_variant, root_variant, identifier->name, *property->value.get());
+				m_prop_helper->set_control_theme_override(root_variant, root_variant, identifier->name, *property->value.get());
 			} else {
 				m_context->push_error("Currently only flat identifiers are supported in theme overrides", *property);
 			}
@@ -660,161 +657,6 @@ bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &
 	}
 }
 
-void TreeRendererVisitor::setControlThemeOverride(Variant &root_variant, Variant &variant, String &prop_key, const ExpressionNode &value_node) {
-	Control *control = Object::cast_to<Control>(variant);
-
-	if (value_node.type == GDMLNodeType::NUMBER_EXPRESSION) {
-		NumberNode node = (NumberNode &)value_node;
-
-		if (control->has_theme_constant(prop_key)) {
-			control->add_theme_constant_override(prop_key, node.getInteger());
-		} else if (control->has_theme_font_size(prop_key)) {
-			control->add_theme_font_size_override(prop_key, node.getInteger());
-		}
-	} else if (value_node.type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-		IdentifierNode &node = (IdentifierNode &)value_node;
-
-		if (m_context->has_reactive_variable(node.name)) {
-			subscribeToVariable(node.name, prop_key, variant);
-		}
-
-		Variant out_value;
-		if (m_prop_helper->get_property(root_variant, node.name, out_value)) {
-			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
-				if (control->has_theme_constant(prop_key)) {
-					control->add_theme_constant_override(prop_key, out_value);
-				} else if (control->has_theme_font_size(prop_key)) {
-					control->add_theme_font_size_override(prop_key, out_value);
-				}
-			} else if (out_value.get_type() == Variant::COLOR) {
-				if (control->has_theme_color(prop_key)) {
-					control->add_theme_color_override(prop_key, out_value);
-				}
-			} else {
-				if (control->has_theme_icon(prop_key)) {
-					control->add_theme_icon_override(prop_key, out_value);
-				} else if (control->has_theme_stylebox(prop_key)) {
-					control->add_theme_stylebox_override(prop_key, out_value);
-				} else if (control->has_theme_font(prop_key)) {
-					control->add_theme_font_override(prop_key, out_value);
-				}
-			}
-		}
-	} else if (value_node.type == GDMLNodeType::MEMBER_ACCESS_EXPRESSION) {
-		MemberExpressionNode &node = (MemberExpressionNode &)value_node;
-		Variant out_value;
-		if (m_prop_helper->get_deep_property(root_variant, node, out_value)) {
-			if (out_value.get_type() == Variant::INT || out_value.get_type() == Variant::FLOAT) {
-				if (control->has_theme_constant(prop_key)) {
-					control->add_theme_constant_override(prop_key, out_value);
-				} else if (control->has_theme_font_size(prop_key)) {
-					control->add_theme_font_size_override(prop_key, out_value);
-				}
-			} else if (out_value.get_type() == Variant::COLOR) {
-				if (control->has_theme_color(prop_key)) {
-					control->add_theme_color_override(prop_key, out_value);
-				}
-			} else {
-				if (control->has_theme_icon(prop_key)) {
-					control->add_theme_icon_override(prop_key, out_value);
-				} else if (control->has_theme_stylebox(prop_key)) {
-					control->add_theme_stylebox_override(prop_key, out_value);
-				} else if (control->has_theme_font(prop_key)) {
-					control->add_theme_font_override(prop_key, out_value);
-				}
-			}
-		} else {
-			m_context->push_error("Cannot resolve expression", node);
-		}
-	} else if (value_node.type == GDMLNodeType::RESOURCE_DEFINITION) {
-		const ResourceDefinitionNode &node = (ResourceDefinitionNode &)value_node;
-		Variant resource_variant;
-
-		if (VariantRegistry::is_builtin(node.name->name)) {
-			if (!VariantRegistry::construct(node.name->name, resource_variant)) {
-				print_error("Error constructing variant of type " + node.name->name);
-				return;
-			}
-		} else {
-			if (ClassDB::class_exists(node.name->name)) {
-				resource_variant = ClassDB::instantiate(node.name->name);
-			} else {
-				print_error("Error instantiating class of type " + node.name->name);
-				return;
-			}
-		}
-
-		for (const std::unique_ptr<PropertyDefinitionNode> &property : node.properties) {
-			if (property->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-				IdentifierNode *identifier = static_cast<IdentifierNode *>(property->name.get());
-				m_prop_helper->set_property(root_variant, resource_variant, identifier->name, *property->value.get());
-			} else if (property->name->type == GDMLNodeType::PROPERTY_PATH) {
-				PropertyPathNode *path = static_cast<PropertyPathNode *>(property->name.get());
-				m_prop_helper->set_deep_property(root_variant, resource_variant, *path, *property->value.get());
-			}
-		}
-
-		if (control->has_theme_icon(prop_key)) {
-			control->add_theme_icon_override(prop_key, resource_variant);
-		} else if (control->has_theme_stylebox(prop_key)) {
-			control->add_theme_stylebox_override(prop_key, resource_variant);
-		} else if (control->has_theme_font(prop_key)) {
-			control->add_theme_font_override(prop_key, resource_variant);
-		}
-	} else if (value_node.type == GDMLNodeType::FUNCTION_CALL) {
-		const FunctionCallExpressionNode &node = (FunctionCallExpressionNode &)value_node;
-
-		if (node.name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-			IdentifierNode *name_node = static_cast<IdentifierNode *>(node.name.get());
-
-			if (m_context->has_reactive_variable(name_node->name)) {
-				Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(name_node->name);
-				Variant value = atom->get_value();
-
-				if (value.get_type() == Variant::Type::CALLABLE) {
-					Callable callable = value;
-					Array args;
-
-					for (const std::unique_ptr<ExpressionNode> &expr : node.arguments) {
-						Variant arg_value;
-						if (m_prop_helper->resolve(root_variant, *expr.get(), arg_value)) {
-							args.push_back(arg_value);
-						} else {
-							print_error("Unsupported argument of type " + String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
-						}
-					}
-
-					const Variant result = callable.callv(args);
-
-					if (result.get_type() == Variant::INT || result.get_type() == Variant::FLOAT) {
-						if (control->has_theme_constant(prop_key)) {
-							control->add_theme_constant_override(prop_key, result);
-						} else if (control->has_theme_font_size(prop_key)) {
-							control->add_theme_font_size_override(prop_key, result);
-						}
-					} else if (result.get_type() == Variant::COLOR) {
-						if (control->has_theme_color(prop_key)) {
-							control->add_theme_color_override(prop_key, result);
-						}
-					} else {
-						if (control->has_theme_icon(prop_key)) {
-							control->add_theme_icon_override(prop_key, result);
-						} else if (control->has_theme_stylebox(prop_key)) {
-							control->add_theme_stylebox_override(prop_key, result);
-						} else if (control->has_theme_font(prop_key)) {
-							control->add_theme_font_override(prop_key, result);
-						}
-					}
-				} else {
-					print_error("Cannot call non-Callable");
-				}
-			}
-		} else {
-			print_error("Other types of expressions are not implemented for a function call");
-		}
-	}
-}
-
 bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, String &callable_name) {
 	Object *obj = variant.get_validated_object();
 	
@@ -841,11 +683,6 @@ bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant,
 	}
 
 	return false;
-}
-
-void TreeRendererVisitor::subscribeToVariable(String &p_variable, String &p_prop, Variant &variant) {
-	Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(p_variable);
-	atom->add_dependency(variant, p_prop);
 }
 
 } //namespace traversal

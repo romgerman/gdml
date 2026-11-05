@@ -57,11 +57,7 @@ private:
 	void visitImportStatement(godot::ImportStatementNode &statement);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
-	void setControlThemeOverride(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &value_node);
-
 	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::String &callable_name);
-
-	void subscribeToVariable(godot::String &p_variable, godot::String &p_prop, godot::Variant &variant);
 };
 
 } //namespace traversal

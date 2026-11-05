@@ -11,9 +11,11 @@
 #include <godot_cpp/classes/project_settings.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/engine.hpp>
+#include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/theme.hpp>
+#include <godot_cpp/classes/font.hpp>
+#include <godot_cpp/classes/style_box.hpp>
 #include <godot_cpp/core/class_db.hpp>
-
-using namespace godot;
 
 namespace traversal {
 
@@ -159,18 +161,183 @@ bool PropertyHelper::set_deep_property(godot::Variant &root, godot::Variant &var
 		current_variant = current_variant.get(it->get()->name, &is_valid);
 
 		if (!is_valid) {
-			print_error("Cannot get property " + it->get()->name + " in path");
+			m_context->push_error("Cannot get property " + it->get()->name + " in path", expr);
 			return false;
 		}
 	}
 
-	String &variant_property = path_expr.path.back()->name;
+	godot::String &variant_property = path_expr.path.back()->name;
 	if (set_property(root, current_variant, variant_property, expr)) {
-		const String &previous_property = (path_expr.path.end() - 2)->get()->name;
+		const godot::String &previous_property = (path_expr.path.end() - 2)->get()->name;
 		previous_variant.set(previous_property, current_variant, &is_valid);
 	}
 
 	return is_valid;
+}
+
+bool PropertyHelper::set_control_theme_override(godot::Variant &root, godot::Variant &variant, godot::String &prop_key, const godot::ExpressionNode &expr) {
+	godot::Control *control = godot::Object::cast_to<godot::Control>(variant);
+
+	switch (expr.type)
+	{
+	case godot::GDMLNodeType::NUMBER_EXPRESSION: {
+		godot::NumberNode node = (godot::NumberNode &)expr;
+
+		if (control->has_theme_constant(prop_key)) {
+			control->add_theme_constant_override(prop_key, node.getInteger());
+		} else if (control->has_theme_font_size(prop_key)) {
+			control->add_theme_font_size_override(prop_key, node.getInteger());
+		}
+	} break;
+	case godot::GDMLNodeType::IDENTIFIER_EXPRESSION: {
+		godot::IdentifierNode &node = (godot::IdentifierNode &)expr;
+
+		if (m_context->has_reactive_variable(node.name)) {
+			godot::Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(node.name);
+			atom->add_dependency(variant, prop_key);
+		}
+
+		godot::Variant out_value;
+		if (get_property(root, node.name, out_value)) {
+			if (out_value.get_type() == godot::Variant::INT || out_value.get_type() == godot::Variant::FLOAT) {
+				if (control->has_theme_constant(prop_key)) {
+					control->add_theme_constant_override(prop_key, out_value);
+				} else if (control->has_theme_font_size(prop_key)) {
+					control->add_theme_font_size_override(prop_key, out_value);
+				}
+			} else if (out_value.get_type() == godot::Variant::COLOR) {
+				if (control->has_theme_color(prop_key)) {
+					control->add_theme_color_override(prop_key, out_value);
+				}
+			} else {
+				if (control->has_theme_icon(prop_key)) {
+					control->add_theme_icon_override(prop_key, out_value);
+				} else if (control->has_theme_stylebox(prop_key)) {
+					control->add_theme_stylebox_override(prop_key, out_value);
+				} else if (control->has_theme_font(prop_key)) {
+					control->add_theme_font_override(prop_key, out_value);
+				}
+			}
+		}
+	} break;
+	case godot::GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
+		godot::MemberExpressionNode &node = (godot::MemberExpressionNode &)expr;
+		godot::Variant out_value;
+		if (get_deep_property(root, node, out_value)) {
+			if (out_value.get_type() == godot::Variant::INT || out_value.get_type() == godot::Variant::FLOAT) {
+				if (control->has_theme_constant(prop_key)) {
+					control->add_theme_constant_override(prop_key, out_value);
+				} else if (control->has_theme_font_size(prop_key)) {
+					control->add_theme_font_size_override(prop_key, out_value);
+				}
+			} else if (out_value.get_type() == godot::Variant::COLOR) {
+				if (control->has_theme_color(prop_key)) {
+					control->add_theme_color_override(prop_key, out_value);
+				}
+			} else {
+				if (control->has_theme_icon(prop_key)) {
+					control->add_theme_icon_override(prop_key, out_value);
+				} else if (control->has_theme_stylebox(prop_key)) {
+					control->add_theme_stylebox_override(prop_key, out_value);
+				} else if (control->has_theme_font(prop_key)) {
+					control->add_theme_font_override(prop_key, out_value);
+				}
+			}
+		} else {
+			m_context->push_error("Cannot resolve expression", node);
+		}
+	} break;
+	case godot::GDMLNodeType::RESOURCE_DEFINITION: {
+		const godot::ResourceDefinitionNode &node = (godot::ResourceDefinitionNode &)expr;
+		godot::Variant resource_variant;
+
+		if (VariantRegistry::is_builtin(node.name->name)) {
+			if (!VariantRegistry::construct(node.name->name, resource_variant)) {
+				print_error("Error constructing variant of type " + node.name->name);
+				return false;
+			}
+		} else {
+			if (godot::ClassDB::class_exists(node.name->name)) {
+				resource_variant = godot::ClassDB::instantiate(node.name->name);
+			} else {
+				print_error("Error instantiating class of type " + node.name->name);
+				return false;
+			}
+		}
+
+		for (const std::unique_ptr<godot::PropertyDefinitionNode> &property : node.properties) {
+			if (property->name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
+				godot::IdentifierNode *identifier = static_cast<godot::IdentifierNode *>(property->name.get());
+				set_property(root, resource_variant, identifier->name, *property->value.get());
+			} else if (property->name->type == godot::GDMLNodeType::PROPERTY_PATH) {
+				godot::PropertyPathNode *path = static_cast<godot::PropertyPathNode *>(property->name.get());
+				set_deep_property(root, resource_variant, *path, *property->value.get());
+			}
+		}
+
+		if (control->has_theme_icon(prop_key)) {
+			control->add_theme_icon_override(prop_key, resource_variant);
+		} else if (control->has_theme_stylebox(prop_key)) {
+			control->add_theme_stylebox_override(prop_key, resource_variant);
+		} else if (control->has_theme_font(prop_key)) {
+			control->add_theme_font_override(prop_key, resource_variant);
+		}
+	} break;
+	case godot::GDMLNodeType::FUNCTION_CALL: {
+		const godot::FunctionCallExpressionNode &node = (godot::FunctionCallExpressionNode &)expr;
+
+		if (node.name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
+			godot::IdentifierNode *name_node = static_cast<godot::IdentifierNode *>(node.name.get());
+
+			if (m_context->has_reactive_variable(name_node->name)) {
+				godot::Ref<reactive::GDMLAtom> atom = m_context->get_reactive_variable(name_node->name);
+				godot::Variant value = atom->get_value();
+
+				if (value.get_type() == godot::Variant::Type::CALLABLE) {
+					godot::Callable callable = value;
+					godot::Array args;
+
+					for (const std::unique_ptr<godot::ExpressionNode> &expr : node.arguments) {
+						godot::Variant arg_value;
+						if (resolve(root, *expr.get(), arg_value)) {
+							args.push_back(arg_value);
+						} else {
+							godot::print_error("Unsupported argument of type " + godot::String::num_int64((int)expr->type) + " in function \"" + name_node->name + "\"");
+						}
+					}
+
+					const godot::Variant result = callable.callv(args);
+
+					if (result.get_type() == godot::Variant::INT || result.get_type() == godot::Variant::FLOAT) {
+						if (control->has_theme_constant(prop_key)) {
+							control->add_theme_constant_override(prop_key, result);
+						} else if (control->has_theme_font_size(prop_key)) {
+							control->add_theme_font_size_override(prop_key, result);
+						}
+					} else if (result.get_type() == godot::Variant::COLOR) {
+						if (control->has_theme_color(prop_key)) {
+							control->add_theme_color_override(prop_key, result);
+						}
+					} else {
+						if (control->has_theme_icon(prop_key)) {
+							control->add_theme_icon_override(prop_key, result);
+						} else if (control->has_theme_stylebox(prop_key)) {
+							control->add_theme_stylebox_override(prop_key, result);
+						} else if (control->has_theme_font(prop_key)) {
+							control->add_theme_font_override(prop_key, result);
+						}
+					}
+				} else {
+					godot::print_error("Cannot call non-Callable");
+				}
+			}
+		} else {
+			godot::print_error("Other types of expressions are not implemented for a function call");
+		}
+	} break;
+	}
+
+	return true;
 }
 
 bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, godot::Variant &out) {
@@ -307,8 +474,6 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 			}
 
 			if (node.name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
-				godot::IdentifierNode *name_node = static_cast<godot::IdentifierNode *>(node.name.get());
-
 				godot::Variant target;
 				if (!resolve(root, *node.name, target)) {
 					return false;
@@ -497,49 +662,49 @@ bool PropertyHelper::resolve(godot::Variant &root, godot::ExpressionNode &expr, 
 bool PropertyHelper::references_self(godot::ExpressionNode &expr) {
 	switch (expr.type)
 	{
-	case GDMLNodeType::IDENTIFIER_EXPRESSION: {
-		return static_cast<IdentifierNode &>(expr).name == "self";
-	} break;
-	case GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
-		return references_self(*static_cast<MemberExpressionNode &>(expr).expression);
-	} break;
-	case GDMLNodeType::ARRAY_EXPRESSION: {
-		for (std::unique_ptr<ExpressionNode> &value : static_cast<ArrayExpressionNode &>(expr).values) {
+	case godot::GDMLNodeType::IDENTIFIER_EXPRESSION: {
+		return static_cast<godot::IdentifierNode &>(expr).name == "self";
+	}
+	case godot::GDMLNodeType::MEMBER_ACCESS_EXPRESSION: {
+		return references_self(*static_cast<godot::MemberExpressionNode &>(expr).expression);
+	}
+	case godot::GDMLNodeType::ARRAY_EXPRESSION: {
+		for (std::unique_ptr<godot::ExpressionNode> &value : static_cast<godot::ArrayExpressionNode &>(expr).values) {
 			if (references_self(*value)) {
 				return true;
 			}
 		}	
 	} break;
-	case GDMLNodeType::DICTIONARY_EXPRESSION: {
-		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<DictionaryExpressionNode &>(expr).values) {
+	case godot::GDMLNodeType::DICTIONARY_EXPRESSION: {
+		for (std::unique_ptr<godot::PropertyDefinitionNode> &value : static_cast<godot::DictionaryExpressionNode &>(expr).values) {
 			if (references_self(*value->value)) {
 				return true;
 			}
 		}
 	} break;
-	case GDMLNodeType::RESOURCE_DEFINITION: {
-		for (std::unique_ptr<PropertyDefinitionNode> &value : static_cast<ResourceDefinitionNode &>(expr).properties) {
+	case godot::GDMLNodeType::RESOURCE_DEFINITION: {
+		for (std::unique_ptr<godot::PropertyDefinitionNode> &value : static_cast<godot::ResourceDefinitionNode &>(expr).properties) {
 			if (references_self(*value->value)) {
 				return true;
 			}
 		}
 	} break;
-	case GDMLNodeType::FUNCTION_CALL: {
-		if (references_self(*static_cast<FunctionCallExpressionNode &>(expr).name)) {
+	case godot::GDMLNodeType::FUNCTION_CALL: {
+		if (references_self(*static_cast<godot::FunctionCallExpressionNode &>(expr).name)) {
 			return true;
 		}
-		for (std::unique_ptr<ExpressionNode> &value : static_cast<FunctionCallExpressionNode &>(expr).arguments) {
+		for (std::unique_ptr<godot::ExpressionNode> &value : static_cast<godot::FunctionCallExpressionNode &>(expr).arguments) {
 			if (references_self(*value)) {
 				return true;
 			}
 		}
 	} break;
-	case GDMLNodeType::SUBSCRIPT_EXPRESSION: {
-		return references_self(*static_cast<SubscriptExpressionNode &>(expr).object) || references_self(*static_cast<SubscriptExpressionNode &>(expr).index);
-	} break;
-	case GDMLNodeType::BINARY_EXPRESSION: {
-		return references_self(*static_cast<BinaryExpressionNode &>(expr).left) || references_self(*static_cast<BinaryExpressionNode &>(expr).right);
-	} break;
+	case godot::GDMLNodeType::SUBSCRIPT_EXPRESSION: {
+		return references_self(*static_cast<godot::SubscriptExpressionNode &>(expr).object) || references_self(*static_cast<godot::SubscriptExpressionNode &>(expr).index);
+	}
+	case godot::GDMLNodeType::BINARY_EXPRESSION: {
+		return references_self(*static_cast<godot::BinaryExpressionNode &>(expr).left) || references_self(*static_cast<godot::BinaryExpressionNode &>(expr).right);
+	}
 	}
 
 	return false;
