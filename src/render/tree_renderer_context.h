@@ -58,6 +58,21 @@ public:
 	void apply() override;
 };
 
+class DeferredGlobalSignalConnect: public DeferredAction {
+	godot::Ref<gdml::GDMLResult> m_result;
+	godot::String m_signal_name;
+	godot::ObjectID m_target;
+	godot::StringName m_target_signal;
+public:
+	DeferredGlobalSignalConnect(
+		godot::Ref<gdml::GDMLResult> p_result,
+		godot::String p_signal_name,
+		godot::ObjectID p_target,
+		godot::StringName p_target_signal
+	);
+	void apply() override;
+};
+
 class DeferredSignalUpdate: public DeferredAction {
 	TreeRendererVisitorContext *m_context;
 	godot::Ref<gdml::GDMLResult> m_result;

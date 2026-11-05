@@ -108,7 +108,7 @@ void TreeRendererVisitor::visitSourceFile(const SourceFileNode &source_node, Tre
 		} break;
 		case GDMLNodeType::SIGNAL_DEFINITION: {
 			SignalDefinitionNode *def = static_cast<SignalDefinitionNode *>(definition->statement.get());
-			visitSignalDefinition(*def);
+			visitSignalDefinition(def);
 		} break;
 		}
 	}
@@ -634,9 +634,8 @@ void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, c
 	}
 }
 
-void TreeRendererVisitor::visitSignalDefinition(SignalDefinitionNode &definition) {
-	// TODO: make it possible to bind arguments to signals
-	m_context->m_signals[definition.name->name] = TreeRendererVisitorContext::SignalTarget();
+void TreeRendererVisitor::visitSignalDefinition(SignalDefinitionNode *definition) {
+	m_context->m_signals[definition->name->name] = TreeRendererVisitorContext::SignalTarget();
 }
 
 void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &statement) {
@@ -661,10 +660,19 @@ bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &
 bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, String &callable_name) {
 	Object *obj = variant.get_validated_object();
 	
+	// TODO: make it possible to bind arguments to signals
+
 	if (m_context->has_global_signal(callable_name)) {
-		m_result->connect_signal(callable_name, (ObjectID)obj->get_instance_id(), signal_name);
+		m_context->add_deferred_action(std::make_unique<DeferredGlobalSignalConnect>(
+			m_result,
+			callable_name,
+			(ObjectID)obj->get_instance_id(),
+			signal_name
+		));
 		return true;
 	}
+
+	// TODO: "self" stuff
 
 	if (obj) {
 		const Variant name_or_callable = m_context->get_scope()->get_variable(callable_name);

@@ -54,7 +54,7 @@ private:
 	void visitStatement(godot::StatementNode *statement, std::vector<godot::Node *> &out_nodes);
 	void renderForStatement(godot::ForStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes);
 	void renderIfStatement(godot::IfStatementNode *statement, const std::shared_ptr<std::vector<godot::Node *>> &nodes);
-	void visitSignalDefinition(godot::SignalDefinitionNode &definition);
+	void visitSignalDefinition(godot::SignalDefinitionNode *definition);
 	void visitImportStatement(godot::ImportStatementNode &statement);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);

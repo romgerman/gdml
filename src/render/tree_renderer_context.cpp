@@ -81,8 +81,7 @@ DeferredSetPropertyAction::DeferredSetPropertyAction(
 	godot::Variant &p_variant,
 	godot::String &p_prop_key,
 	godot::ExpressionNode &p_expr
-): m_prop_helper(p_prop_helper), m_root_variant(p_root_variant), m_variant(p_variant), m_prop_key(p_prop_key), m_expr(p_expr) {
-}
+): m_prop_helper(p_prop_helper), m_root_variant(p_root_variant), m_variant(p_variant), m_prop_key(p_prop_key), m_expr(p_expr) {}
 
 void DeferredSetPropertyAction::apply() {
 	m_prop_helper->set_property(m_root_variant, m_variant, m_prop_key, m_expr);
@@ -93,8 +92,7 @@ DeferredAtomRenderCallbackAction::DeferredAtomRenderCallbackAction(
 	godot::String &p_var_name,
 	std::weak_ptr<FragmentContext> p_fragment,
 	std::function<void()> p_render_callback
-): m_context(p_context), m_var_name(p_var_name), m_fragment(std::move(p_fragment)), m_render_callback(std::move(p_render_callback)) {
-}
+): m_context(p_context), m_var_name(p_var_name), m_fragment(std::move(p_fragment)), m_render_callback(std::move(p_render_callback)) {}
 
 void DeferredAtomRenderCallbackAction::apply() {
 	if (m_fragment.lock()) {
@@ -105,8 +103,7 @@ void DeferredAtomRenderCallbackAction::apply() {
 DeferredSignalUpdate::DeferredSignalUpdate(
 	TreeRendererVisitorContext *p_context,
 	godot::Ref<gdml::GDMLResult> p_result
-): m_context(p_context), m_result(p_result) {
-}
+): m_context(p_context), m_result(p_result) {}
 
 void DeferredSignalUpdate::apply() {
 	for (std::pair<godot::String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
@@ -131,8 +128,7 @@ void DeferredSignalUpdate::apply() {
 }
 
 DeferredDecoratorCall::DeferredDecoratorCall(godot::Array p_args, godot::ObjectID p_node, godot::Ref<gdml::GDMLDecorator> p_decorator, godot::Ref<gdml::GDMLResult> p_result):
-	m_args(p_args), m_node(p_node), m_decorator(p_decorator), m_result(p_result) {
-}
+	m_args(p_args), m_node(p_node), m_decorator(p_decorator), m_result(p_result) {}
 
 void DeferredDecoratorCall::apply() {
 	godot::Node *node = godot::Object::cast_to<godot::Node>(godot::ObjectDB::get_instance(m_node));
@@ -148,6 +144,16 @@ void DeferredDecoratorCall::apply() {
 	if (m_decorator->has_method(godot::StringName("modify"))) {
 		m_decorator->callv(godot::StringName("modify"), call_args);
 	}
+}
+
+DeferredGlobalSignalConnect::DeferredGlobalSignalConnect(godot::Ref<gdml::GDMLResult> p_result, godot::String p_signal_name, godot::ObjectID p_target, godot::StringName p_target_signal):
+	m_result(p_result),
+	m_signal_name(p_signal_name),
+	m_target(p_target),
+	m_target_signal(p_target_signal) {}
+
+void DeferredGlobalSignalConnect::apply() {
+	m_result->connect_signal(m_signal_name, m_target, m_target_signal);
 }
 
 } //namespace traversal
