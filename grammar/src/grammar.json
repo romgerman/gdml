@@ -389,21 +389,8 @@
           "type": "FIELD",
           "name": "name",
           "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "signal_expression"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "identifier"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "member_expression"
-              }
-            ]
+            "type": "SYMBOL",
+            "name": "identifier"
           }
         },
         {

@@ -5,10 +5,10 @@
 #include "tree_renderer_scope.h"
 #include "gdml_renderer.h"
 #include "gdml_decorator.h"
+#include "renderer_objects.hpp"
 
 #include <vector>
 #include <map>
-#include <set>
 #include <functional>
 
 #include <godot_cpp/variant/variant.hpp>
@@ -59,16 +59,18 @@ public:
 };
 
 class DeferredGlobalSignalConnect: public DeferredAction {
-	godot::Ref<gdml::GDMLResult> m_result;
+	TreeRendererVisitorContext *m_context;
 	godot::String m_signal_name;
 	godot::ObjectID m_target;
 	godot::StringName m_target_signal;
+	godot::Array m_args;
 public:
 	DeferredGlobalSignalConnect(
-		godot::Ref<gdml::GDMLResult> p_result,
+		TreeRendererVisitorContext *p_context,
 		godot::String p_signal_name,
 		godot::ObjectID p_target,
-		godot::StringName p_target_signal
+		godot::StringName p_target_signal,
+		godot::Array p_args
 	);
 	void apply() override;
 };
@@ -104,13 +106,12 @@ struct TreeRendererVisitorContext {
 		godot::NodeDefinitionNode *node;
 		std::vector<godot::String> params;
 	};
-
-	typedef std::map<godot::ObjectID, std::set<godot::StringName>> SignalTarget;
-
+	
+	
 	std::vector<std::unique_ptr<DeferredAction>> m_deferred_actions;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> m_variables;
 	// signal definition name <-> [signal target <-> [signal names]]
-	std::map<godot::String, SignalTarget> m_signals;
+	std::map<godot::String, gdml::SignalTarget> m_signals;
 	std::map<godot::String, godot::String> m_imports;
 	std::map<godot::String, Component> m_components;
 

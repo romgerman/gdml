@@ -106,28 +106,33 @@ DeferredSignalUpdate::DeferredSignalUpdate(
 ): m_context(p_context), m_result(p_result) {}
 
 void DeferredSignalUpdate::apply() {
-	for (std::pair<godot::String, traversal::TreeRendererVisitorContext::SignalTarget> pair : m_context->m_signals) {
-		std::vector<godot::ObjectID> to_remove;
+	for (std::pair<godot::String, gdml::SignalTarget> pair : m_context->m_signals) {
+		godot::String &signal_name = pair.first;
+		gdml::SignalTarget &target_map = pair.second;
 
-		for (std::pair<godot::ObjectID, std::set<godot::StringName>> target_pair : pair.second) {
+		for (std::pair<godot::ObjectID, gdml::SignalTargetItem> target_pair : target_map) {
 			godot::Object *target_obj = godot::ObjectDB::get_instance(target_pair.first);
 
 			if (target_obj) {
-				for (godot::StringName target_signal : target_pair.second) {
-					m_result->connect_signal(pair.first, target_pair.first, target_signal);
+				for (godot::StringName target_signal_name : target_pair.second.signals) {
+					if (!target_obj->is_connected(target_signal_name, m_result->m_connected_signals[signal_name].callable)) {
+						godot::Callable callable = m_result->m_connected_signals[signal_name].callable;
+						uint32_t flags = m_result->m_connected_signals[signal_name].flags;
+						godot::Callable bound_callable = callable.bindv(target_pair.second.args);
+						target_obj->connect(target_signal_name, bound_callable, flags);
+					}
 				}
-			} else {
-				to_remove.push_back(target_pair.first);
 			}
-		}
-
-		for (godot::ObjectID id : to_remove) {
-			m_context->m_signals[pair.first].erase(id);
 		}
 	}
 }
 
-DeferredDecoratorCall::DeferredDecoratorCall(godot::Array p_args, godot::ObjectID p_node, godot::Ref<gdml::GDMLDecorator> p_decorator, godot::Ref<gdml::GDMLResult> p_result):
+DeferredDecoratorCall::DeferredDecoratorCall(
+	godot::Array p_args,
+	godot::ObjectID p_node,
+	godot::Ref<gdml::GDMLDecorator> p_decorator,
+	godot::Ref<gdml::GDMLResult> p_result
+):
 	m_args(p_args), m_node(p_node), m_decorator(p_decorator), m_result(p_result) {}
 
 void DeferredDecoratorCall::apply() {
@@ -146,14 +151,22 @@ void DeferredDecoratorCall::apply() {
 	}
 }
 
-DeferredGlobalSignalConnect::DeferredGlobalSignalConnect(godot::Ref<gdml::GDMLResult> p_result, godot::String p_signal_name, godot::ObjectID p_target, godot::StringName p_target_signal):
-	m_result(p_result),
+DeferredGlobalSignalConnect::DeferredGlobalSignalConnect(
+	TreeRendererVisitorContext *p_context,
+	godot::String p_signal_name,
+	godot::ObjectID p_target,
+	godot::StringName p_target_signal,
+	godot::Array p_args
+):
+	m_context(p_context),
 	m_signal_name(p_signal_name),
 	m_target(p_target),
-	m_target_signal(p_target_signal) {}
+	m_target_signal(p_target_signal),
+	m_args(p_args) {}
 
 void DeferredGlobalSignalConnect::apply() {
-	m_result->connect_signal(m_signal_name, m_target, m_target_signal);
+	m_context->m_signals[m_signal_name][m_target].signals.emplace(m_target_signal);
+	m_context->m_signals[m_signal_name][m_target].args = m_args;
 }
 
 } //namespace traversal

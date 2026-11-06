@@ -4,6 +4,7 @@
 #include "gdml_script_language.h"
 #include "gdml_traversal.h"
 #include "gdml_atom.h"
+#include "renderer_objects.hpp"
 
 #include <memory>
 #include <functional>
@@ -23,16 +24,13 @@ class GDMLResult : public godot::RefCounted {
 	friend class GDMLRenderer;
 	GDCLASS(GDMLResult, godot::RefCounted)
 
-	template<typename... Args>
-	void on_defined_signal(Args ...args, godot::String signal_name, godot::Variant target);
-	void on_defined_signal0(godot::String signal_name, godot::Variant target);
-	void on_defined_signal1(godot::Variant arg1, godot::String signal_name, godot::Variant target);
-	void on_defined_signal2(godot::Variant arg1, godot::Variant arg2, godot::String signal_name, godot::Variant target);
-	void on_defined_signal3(godot::Variant arg1, godot::Variant arg2, godot::Variant arg3, godot::String signal_name, godot::Variant target);
+	struct ConnectedSignal {
+		godot::Callable callable;
+		uint32_t flags;
+	};
 
 protected:
 	godot::Dictionary m_variables;
-	godot::Array m_signals;
 	godot::Node *m_root;
 	godot::Array m_nodes;
 	bool is_first_renderer = true;
@@ -43,18 +41,20 @@ public:
 	GDMLResult();
 	
 	void add_variable(godot::String &p_name, godot::Ref<reactive::GDMLAtom> atom);
-	void connect_signal(godot::String signal_name, godot::ObjectID target, godot::StringName target_signal);
 	void attach(bool p_set_owner = true);
 	godot::Node *get_root();
 
+	std::vector<std::shared_ptr<traversal::FragmentContext>> m_owned_fragments;
+	std::map<godot::String, gdml::SignalTarget> m_signals;
+	std::map<godot::String, ConnectedSignal> m_connected_signals;
+	
 	// API
 
 	godot::Array get_variable_list();
 	godot::Ref<reactive::GDMLAtom> get_variable(godot::String p_name);
 	
 	godot::Array get_signals();
-
-	std::vector<std::shared_ptr<traversal::FragmentContext>> m_owned_fragments;
+	godot::Error connect_signal(godot::String p_signal_name, godot::Callable p_callable, uint32_t p_flags = 0U);
 };
 
 class GDMLRenderer : public godot::RefCounted {

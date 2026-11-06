@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://bxhxgk0msycmh"]
+
+[sub_resource type="GDScript" id="GDScript_dulgj"]
+script/source = "extends Control
+
+func _ready() -> void:
+	var renderer := GDMLRenderer.new()
+	var result := renderer.render_string(self, \"
+		signal input
+		
+		Control(anchors(0, 0, 1, 1)) {
+			@gui_input: input(self)
+		}
+	\")
+	result.attach()
+	await get_tree().process_frame
+	var err := result.connect_signal(\"input\", func (_i: InputEvent, ctrl: Control):
+		print(\"here\", ctrl)
+	)
+	if err != OK:
+		print(\"err connecting: \", err)
+"
+
+[node name="TestSignals" type="Control" unique_id=1456248200]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = SubResource("GDScript_dulgj")

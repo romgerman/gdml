@@ -304,15 +304,9 @@ Node *TreeRendererVisitor::visitNodeDefinition(const NodeDefinitionNode &node) {
 				const SignalExpressionNode *signal_expression = static_cast<SignalExpressionNode *>(property->name.get());
 				if (signal_expression->name->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
 					const String signal_name = static_cast<IdentifierNode *>(signal_expression->name.get())->name;
-					if (property->value->type == GDMLNodeType::IDENTIFIER_EXPRESSION) {
-						connectSignal(root_variant, root_variant, signal_name, static_cast<IdentifierNode *>(property->value.get())->name);
-					} else if (property->value->type == GDMLNodeType::STRING_EXPRESSION) {
-						connectSignal(root_variant, root_variant, signal_name, static_cast<StringNode *>(property->value.get())->value);
-					} else {
-						m_context->push_error("Cannot connect signal. Callable name should be an identifier or a string", *property);
-					}
+					connectSignal(root_variant, root_variant, signal_name, property->value.get());
 				} else {
-					m_context->push_error("Cannot connect signal. Wrong name expression type", *property);
+					m_context->push_error("Signal name must be an identifier", *property);
 				}
 			}
 		}
@@ -504,6 +498,28 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		}
 
 		old_nodes.clear();
+
+		for (std::pair<const godot::String, gdml::SignalTarget> &pair : m_context->m_signals) {
+			gdml::SignalTarget remapped;
+			for (std::pair<const godot::ObjectID, gdml::SignalTargetItem> &target_pair : pair.second) {
+				godot::ObjectID target_id = target_pair.first;
+				gdml::SignalTargetItem &item = target_pair.second;
+
+				auto it = remaps.find(target_id);
+				if (it == remaps.end()) {
+					remapped.emplace(target_id, std::move(item));
+					continue;
+				}
+
+				godot::Object *new_target = godot::ObjectDB::get_instance(it->second);
+				if (!new_target) {
+					continue;
+				}
+
+				remapped.emplace(it->second, std::move(item));
+			}
+			pair.second = std::move(remapped);
+		}
 		
 		m_context->add_deferred_action(std::make_unique<DeferredSignalUpdate>(
 			m_context.get(),
@@ -635,7 +651,7 @@ void TreeRendererVisitor::renderIfStatement(godot::IfStatementNode *statement, c
 }
 
 void TreeRendererVisitor::visitSignalDefinition(SignalDefinitionNode *definition) {
-	m_context->m_signals[definition->name->name] = TreeRendererVisitorContext::SignalTarget();
+	m_context->m_signals[definition->name->name] = gdml::SignalTarget();
 }
 
 void TreeRendererVisitor::visitImportStatement(godot::ImportStatementNode &statement) {
@@ -657,38 +673,57 @@ bool TreeRendererVisitor::trySetVariantProperty(Variant &root_variant, Variant &
 	}
 }
 
-bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, String &callable_name) {
+bool TreeRendererVisitor::connectSignal(Variant &root_variant, Variant &variant, const String &signal_name, godot::ExpressionNode *expr_node) {
 	Object *obj = variant.get_validated_object();
 	
-	// TODO: make it possible to bind arguments to signals
+	// -> TODO: make it possible to bind arguments to signals
 
-	if (m_context->has_global_signal(callable_name)) {
-		m_context->add_deferred_action(std::make_unique<DeferredGlobalSignalConnect>(
-			m_result,
-			callable_name,
-			(ObjectID)obj->get_instance_id(),
-			signal_name
-		));
-		return true;
-	}
+	if (expr_node->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
+		// Simple signal connection
+		godot::String &callable_name = static_cast<godot::IdentifierNode *>(expr_node)->name;
+		if (m_context->has_global_signal(callable_name)) {
+			m_context->add_deferred_action(std::make_unique<DeferredGlobalSignalConnect>(
+				m_context.get(),
+				callable_name,
+				(ObjectID)obj->get_instance_id(),
+				signal_name,
+				godot::Array()
+			));
+			return true;
+		} else {
+			m_context->push_error("Signal target not found", *expr_node);
+		}
+	} else if (expr_node->type == godot::GDMLNodeType::FUNCTION_CALL) {
+		// Here we can bind arguments to the signal
+		godot::FunctionCallExpressionNode *call_expr = static_cast<godot::FunctionCallExpressionNode *>(expr_node);
+		if (call_expr->name->type == godot::GDMLNodeType::IDENTIFIER_EXPRESSION) {
+			godot::String &callable_name = static_cast<godot::IdentifierNode *>(call_expr->name.get())->name;
+			if (m_context->has_global_signal(callable_name)) {
+				godot::Array args;
+	
+				for (const std::unique_ptr<godot::ExpressionNode> &e : call_expr->arguments) {
+					godot::Variant arg_value;
+					if (m_prop_helper->resolve(root_variant, *e.get(), arg_value)) {
+						args.push_back(arg_value);
+					} else {
+						m_context->push_error("Unsupported argument type '" + godot::String::num_int64((int)e->type) + "' in function call", *call_expr);
+					}
+				}
 
-	// TODO: "self" stuff
-
-	if (obj) {
-		const Variant name_or_callable = m_context->get_scope()->get_variable(callable_name);
-		if (name_or_callable) {
-			if (name_or_callable.get_type() == Variant::STRING) {
-				obj->connect(signal_name, Callable(root_variant, name_or_callable));
-				return true;
-			} else if (name_or_callable.get_type() == Variant::CALLABLE) {
-				obj->connect(signal_name, name_or_callable);
+				m_context->add_deferred_action(std::make_unique<DeferredGlobalSignalConnect>(
+					m_context.get(),
+					callable_name,
+					(ObjectID)obj->get_instance_id(),
+					signal_name,
+					args
+				));
 				return true;
 			} else {
-				print_error("Trying to connect signal with \"" + name_or_callable.get_type_name(name_or_callable.get_type()) + "\"");
+				m_context->push_error("Signal target not found", *expr_node);
 			}
+		} else {
+			m_context->push_error("Signal target not found", *expr_node);
 		}
-	} else {
-		print_error("Trying to connect signal for non-Object type");
 	}
 
 	return false;

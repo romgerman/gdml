@@ -28,8 +28,8 @@ func _enter_tree() -> void:
 	trans_out.value = tw_out_factory
 
 func _ready() -> void:
-	connect("item_drag_handle_input", _on_item_drag_handle_input)
-	connect("add_items", func (_c):
+	connect_signal("item_drag_handle_input", _on_item_drag_handle_input)
+	connect_signal("add_items", func ():
 		var vals := items.value as Array
 		for i in 5:
 			if vals.is_empty():
@@ -38,7 +38,7 @@ func _ready() -> void:
 				vals.push_back(vals.back() + 1)
 		items.value = vals
 	)
-	connect("delete_item", func (c: Control):
+	connect_signal("delete_item", func (c: Control):
 		var vals := items.value as Array
 		var index := c.get_parent().get_parent().get_index()
 		vals.remove_at(index)
@@ -85,7 +85,7 @@ func _gui_input(event: InputEvent) -> void:
 			if event.button_index == MOUSE_BUTTON_LEFT and event.is_released():
 				_drag_end()
 
-func _on_item_drag_handle_input(ctrl: Control, e: InputEvent) -> void:
+func _on_item_drag_handle_input(e: InputEvent, ctrl: Control) -> void:
 	if not is_dragging:
 		if e is InputEventMouseButton:
 			if e.button_index == MOUSE_BUTTON_LEFT and e.pressed:

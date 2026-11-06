@@ -36,11 +36,8 @@ public:
 	void _notification(int p_what);
 	
 	void on_markup_changed();
-	void on_bubble_signal0(Variant target, String signal_name);
-	void on_bubble_signal1(Variant target, Variant arg1, String signal_name);
-	void on_bubble_signal2(Variant target, Variant arg1, Variant arg2, String signal_name);
-	void on_bubble_signal3(Variant target, Variant arg1, Variant arg2, Variant arg3, String signal_name);
-	void on_signals_changed();
+
+	// API
 
 	void set_markup(const Ref<GdmlScript> &p_markup);
 	Ref<GdmlScript> get_markup();
@@ -54,6 +51,8 @@ public:
 	Ref<reactive::GDMLAtom> get_variable(String p_name);
 	Variant get_variable_value(String p_name);
 	void set_variable_value(String p_name, Variant value);
+
+	godot::Error connect_signal(godot::String p_signal_name, godot::Callable p_callable, uint32_t p_flags = 0U);
 
 	void use_effect(Callable p_fn);
 };

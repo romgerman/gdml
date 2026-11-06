@@ -19,125 +19,16 @@ void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_variable", "name"), &GDMLResult::get_variable);
 	
 	ClassDB::bind_method(D_METHOD("get_signals"), &GDMLResult::get_signals);
+	ClassDB::bind_method(D_METHOD("connect_signal", "name", "callable", "flags"), &GDMLResult::connect_signal, DEFVAL(0));
 	ClassDB::bind_method(D_METHOD("attach", "set_owner"), &GDMLResult::attach, DEFVAL(true));
 }
 
 GDMLResult::GDMLResult() {
-	add_user_signal("signals_changed");
+	// add_user_signal("signals_changed");
 }
 
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
 	m_variables[p_name] = atom;
-}
-
-void GDMLResult::connect_signal(String signal_name, ObjectID target, StringName target_signal) {
-	Object *target_object = ObjectDB::get_instance(target);
-
-	if (target_object) {
-		for (Variant item : target_object->get_signal_list()) {
-			Dictionary signal_info = item;
-			if (signal_info["name"] == String(target_signal)) {
-				Array args = signal_info["args"];
-				switch (args.size())
-				{
-				case 0: {
-					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal0))) {
-						return;
-					} else {
-						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal0).bind(signal_name, target_object));
-					}
-
-					if (!has_user_signal(signal_name)) {
-						Dictionary target_arg;
-						target_arg["name"] = "target";
-						target_arg["type"] = Variant::OBJECT;
-						add_user_signal(signal_name, Array({
-							target_arg
-						}));
-						m_signals.push_back(signal_name);
-					}
-				} break;
-				case 1: {
-					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal1))) {
-						return;
-					} else {
-						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal1).bind(signal_name, target_object));
-					}
-
-					if (!has_user_signal(signal_name)) {
-						Dictionary target_arg;
-						target_arg["name"] = "target";
-						target_arg["type"] = Variant::OBJECT;
-						Dictionary arg1_arg;
-						arg1_arg["name"] = "arg1";
-						arg1_arg["type"] = Variant::NIL;
-						add_user_signal(signal_name, Array({
-							target_arg,
-							arg1_arg
-						}));
-						m_signals.push_back(signal_name);
-					}
-				} break;
-				case 2: {
-					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal2))) {
-						return;
-					} else {
-						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal2).bind(signal_name, target_object));
-					}
-
-					if (!has_user_signal(signal_name)) {
-						Dictionary target_arg;
-						target_arg["name"] = "target";
-						target_arg["type"] = Variant::OBJECT;
-						Dictionary arg1_arg;
-						arg1_arg["name"] = "arg1";
-						arg1_arg["type"] = Variant::NIL;
-						Dictionary arg2_arg;
-						arg2_arg["name"] = "arg2";
-						arg2_arg["type"] = Variant::NIL;
-						add_user_signal(signal_name, Array({
-							target_arg,
-							arg1_arg,
-							arg2_arg
-						}));
-						m_signals.push_back(signal_name);
-					}
-				} break;
-				case 3: {
-					if (target_object->is_connected(target_signal, callable_mp(this, &GDMLResult::on_defined_signal3))) {
-						return;
-					} else {
-						target_object->connect(target_signal, callable_mp(this, &GDMLResult::on_defined_signal3).bind(signal_name, target_object));
-					}
-
-					if (!has_user_signal(signal_name)) {
-						Dictionary target_arg;
-						target_arg["name"] = "target";
-						target_arg["type"] = Variant::OBJECT;
-						Dictionary arg1_arg;
-						arg1_arg["name"] = "arg1";
-						arg1_arg["type"] = Variant::NIL;
-						Dictionary arg2_arg;
-						arg2_arg["name"] = "arg2";
-						arg2_arg["type"] = Variant::NIL;
-						Dictionary arg3_arg;
-						arg3_arg["name"] = "arg3";
-						arg3_arg["type"] = Variant::NIL;
-						add_user_signal(signal_name, Array({
-							target_arg,
-							arg1_arg,
-							arg2_arg,
-							arg3_arg,
-						}));
-						m_signals.push_back(signal_name);
-					}
-				} break;
-				}
-			}
-		}
-		
-		emit_signal("signals_changed");
-	}
 }
 
 void GDMLResult::attach(bool p_set_owner) {
@@ -202,27 +93,6 @@ Node *GDMLResult::get_root() {
 	return m_root;
 }
 
-template<typename... Args>
-void GDMLResult::on_defined_signal(Args ...args, String signal_name, Variant target) {
-	emit_signal(signal_name, target, ...args);
-}
-
-void GDMLResult::on_defined_signal0(String signal_name, Variant target) {
-	emit_signal(signal_name, target);
-}
-
-void GDMLResult::on_defined_signal1(Variant arg1, String signal_name, Variant target) {
-	emit_signal(signal_name, target, arg1);
-}
-
-void GDMLResult::on_defined_signal2(Variant arg1, Variant arg2, String signal_name, Variant target) {
-	emit_signal(signal_name, target, arg1, arg2);
-}
-
-void GDMLResult::on_defined_signal3(Variant arg1, Variant arg2, Variant arg3, String signal_name, Variant target) {
-	emit_signal(signal_name, target, arg1, arg2, arg3);
-}
-
 Array GDMLResult::get_variable_list() {
 	return m_variables.keys();
 }
@@ -237,7 +107,37 @@ Ref<reactive::GDMLAtom> GDMLResult::get_variable(String p_name) {
 }
 
 Array GDMLResult::get_signals() {
-	return m_signals;
+	godot::Array out;
+
+	for (auto it : m_signals) {
+		out.push_back(it.first);
+	}
+
+	return out;
+}
+
+godot::Error GDMLResult::connect_signal(godot::String p_signal_name, godot::Callable p_callable, uint32_t p_flags) {
+	auto it = m_signals.find(p_signal_name);
+	if (it == m_signals.end()) {
+		return godot::ERR_DOES_NOT_EXIST;
+	}
+
+	for (std::pair<const godot::ObjectID, gdml::SignalTargetItem> &target : it->second) {
+		Object *obj = godot::ObjectDB::get_instance(target.first);
+		if (obj) {
+			for (godot::StringName target_signal_name : target.second.signals) {
+				godot::Callable bound_callable = p_callable.bindv(target.second.args);
+				godot::Error err = obj->connect(target_signal_name, bound_callable, p_flags);
+				if (err != godot::OK) {
+					return err;
+				} else {
+					m_connected_signals[p_signal_name] = ConnectedSignal { p_callable, p_flags };
+				}
+			}
+		}
+	}
+
+	return godot::OK;
 }
 
 void GDMLRenderer::_bind_methods() {
@@ -271,8 +171,9 @@ Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source
 		out->add_variable(pair.first, pair.second);
 	}
 
+	out->m_signals = visitor_result.signals;
 	out->m_root = p_root;
-	
+
 	for (Node *node : visitor_result.nodes) {
 		out->m_nodes.push_back(node);
 	}

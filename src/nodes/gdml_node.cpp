@@ -43,6 +43,8 @@ void GDMLNode::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_variable_value", "name"), &GDMLNode::get_variable_value);
 	ClassDB::bind_method(D_METHOD("set_variable_value", "name", "value"), &GDMLNode::set_variable_value);
 
+	ClassDB::bind_method(D_METHOD("connect_signal", "name", "callable", "flags"), &GDMLNode::connect_signal, DEFVAL(0));
+
 	ClassDB::bind_method(D_METHOD("use_effect", "fn"), &GDMLNode::use_effect);
 }
 
@@ -97,8 +99,6 @@ void GDMLNode::render_in_game() {
 			}
 		}
 		_renderer_result = _renderer->render_markup(this, _markup.ptr(), variables);
-		on_signals_changed();
-		_renderer_result->connect("signals_changed", callable_mp(this, &GDMLNode::on_signals_changed));
 		_renderer_result->attach(true);
 	}
 }
@@ -106,69 +106,6 @@ void GDMLNode::render_in_game() {
 void GDMLNode::on_markup_changed() {
 	if (Engine::get_singleton()->is_editor_hint()) {
 		render_in_editor();
-	}
-}
-
-void GDMLNode::on_bubble_signal0(Variant target, String signal_name) {
-	emit_signal(signal_name, target);
-}
-
-void GDMLNode::on_bubble_signal1(Variant target, Variant arg1, String signal_name) {
-	emit_signal(signal_name, target, arg1);
-}
-
-void GDMLNode::on_bubble_signal2(Variant target, Variant arg1, Variant arg2, String signal_name) {
-	emit_signal(signal_name, target, arg1, arg2);
-}
-
-void GDMLNode::on_bubble_signal3(Variant target, Variant arg1, Variant arg2, Variant arg3, String signal_name) {
-	emit_signal(signal_name, target, arg1, arg2, arg3);
-}
-
-void GDMLNode::on_signals_changed() {
-	for (Variant signal_name : _renderer_result->get_signals()) {
-		for (Variant item : _renderer_result->get_signal_list()) {
-			Dictionary signal_info = item;
-			if (signal_info["name"] == String(signal_name)) {
-				Array args = signal_info["args"];
-				
-				switch (args.size())
-				{
-				case 1: {
-					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal0))) {
-						continue;
-					} else {
-						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal0).bind(signal_name));
-					}
-				} break;
-				case 2: {
-					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal1))) {
-						continue;
-					} else {
-						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal1).bind(signal_name));
-					}
-				} break;
-				case 3: {
-					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal2))) {
-						continue;
-					} else {
-						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal2).bind(signal_name));
-					}
-				} break;
-				case 4: {
-					if (_renderer_result->is_connected(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal3))) {
-						continue;
-					} else {
-						_renderer_result->connect(signal_name, callable_mp(this, &GDMLNode::on_bubble_signal3).bind(signal_name));
-					}
-				} break;
-				}
-			}
-		}
-		
-		if (!has_user_signal(signal_name)) {
-			add_user_signal(signal_name);
-		}
 	}
 }
 
@@ -207,6 +144,10 @@ Variant GDMLNode::get_variable_value(String p_name) {
 
 void GDMLNode::set_variable_value(String p_name, Variant value) {
 	_renderer_result->get_variable(p_name)->set_value(value);
+}
+
+godot::Error GDMLNode::connect_signal(godot::String p_signal_name, godot::Callable p_callable, uint32_t p_flags) {
+	return _renderer_result->connect_signal(p_signal_name, p_callable, p_flags);
 }
 
 void GDMLNode::use_effect(Callable p_fn) {

@@ -16,7 +16,7 @@ component DragHandle = Control {
 	name: "DragHandle"
 	custom_minimum_size.x: 32
 	mouse_filter: Control.MOUSE_FILTER_PASS
-	@gui_input: item_drag_handle_input
+	@gui_input: item_drag_handle_input(self)
 	
 	VBoxContainer(anchors(0, 0, 1, 1)) {
 		alignment: BoxContainer.ALIGNMENT_CENTER
@@ -63,7 +63,7 @@ ScrollContainer(anchors(0, 0, 1, 1)) {
 						text: "delete"
 						flat: true
 						$font_color: Color.RED
-						@pressed: delete_item
+						@pressed: delete_item(self)
 					}
 					
 					DragHandle {}

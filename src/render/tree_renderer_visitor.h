@@ -8,11 +8,10 @@
 #include "decorator_cache.h"
 #include "tree_renderer_scope.h"
 #include "tree_renderer_context.h"
-#include "variant_registry.h"
 #include "property_helper.h"
+#include "renderer_objects.hpp"
 
 #include <map>
-#include <set>
 #include <memory>
 #include <vector>
 
@@ -31,7 +30,7 @@ struct FragmentContext;
 struct TreeRendererVisitorResult {
 	std::vector<godot::Node *> nodes;
 	std::map<godot::String, godot::Ref<reactive::GDMLAtom>> variables;
-	std::map<godot::String, TreeRendererVisitorContext::SignalTarget> signals;
+	std::map<godot::String, gdml::SignalTarget> signals;
 };
 
 class TreeRendererVisitor : public GdmlVisitor<TreeRendererVisitorResult> {
@@ -58,7 +57,7 @@ private:
 	void visitImportStatement(godot::ImportStatementNode &statement);
 
 	bool trySetVariantProperty(godot::Variant &root_variant, godot::Variant &variant, godot::String &prop_key, godot::ExpressionNode &value_node);
-	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::String &callable_name);
+	bool connectSignal(godot::Variant &root_variant, godot::Variant &variant, const godot::String &signal_name, godot::ExpressionNode *expr_node);
 };
 
 } //namespace traversal

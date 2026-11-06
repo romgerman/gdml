@@ -765,14 +765,6 @@
           {
             "type": "identifier",
             "named": true
-          },
-          {
-            "type": "member_expression",
-            "named": true
-          },
-          {
-            "type": "signal_expression",
-            "named": true
           }
         ]
       },

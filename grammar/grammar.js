@@ -91,7 +91,7 @@ module.exports = grammar({
     ),
     theme_property_definition: $ => seq(
       '$',
-      field("name", choice($.signal_expression, $.identifier, $.member_expression)),
+      field("name", $.identifier),
       ':',
       field("value", $.expression),
       choice('\n', ';')
