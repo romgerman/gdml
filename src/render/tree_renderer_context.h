@@ -61,10 +61,11 @@ public:
 class DeferredGlobalSignalConnect: public DeferredAction {
 	TreeRendererVisitorContext *m_context;
 	godot::String m_signal_name;
-	godot::ObjectID m_target;
 	godot::StringName m_target_signal;
-	godot::Array m_args;
 public:
+	godot::ObjectID m_target;
+	godot::Array m_args;
+	
 	DeferredGlobalSignalConnect(
 		TreeRendererVisitorContext *p_context,
 		godot::String p_signal_name,

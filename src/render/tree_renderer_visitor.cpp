@@ -447,6 +447,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		gdml::Differ differ;
 		differ.diff(old_nodes, *fragment->rendered_nodes, parent, diff, remaps);
 
+		// Remap fragment nodes
 		std::vector<FragmentContext *> fragment_stack;
 		fragment_stack.push_back(fragment.get());
 		while (!fragment_stack.empty()) {
@@ -488,6 +489,7 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 			}
 		}
 
+		// Move children based on the anchor
 		int32_t base_index = anchor->get_index() - fragment->rendered_nodes->size();
 		int32_t idx = 0;
 		for (Node *node : *fragment->rendered_nodes) {
@@ -498,40 +500,42 @@ void TreeRendererVisitor::visitStatement(godot::StatementNode *statement, std::v
 		}
 
 		old_nodes.clear();
-
-		for (std::pair<const godot::String, gdml::SignalTarget> &pair : m_context->m_signals) {
-			gdml::SignalTarget remapped;
-			for (std::pair<const godot::ObjectID, gdml::SignalTargetItem> &target_pair : pair.second) {
-				godot::ObjectID target_id = target_pair.first;
-				gdml::SignalTargetItem &item = target_pair.second;
-
-				auto it = remaps.find(target_id);
-				if (it == remaps.end()) {
-					remapped.emplace(target_id, std::move(item));
-					continue;
-				}
-
-				godot::Object *new_target = godot::ObjectDB::get_instance(it->second);
-				if (!new_target) {
-					continue;
-				}
-
-				remapped.emplace(it->second, std::move(item));
-			}
-			pair.second = std::move(remapped);
-		}
 		
 		m_context->add_deferred_action(std::make_unique<DeferredSignalUpdate>(
 			m_context.get(),
 			m_result
 		));
 
+		// Remap actions
 		for (std::unique_ptr<DeferredAction> &a : m_context->m_deferred_actions) {
 			auto dec_action = dynamic_cast<DeferredDecoratorCall *>(a.get());
 			if (dec_action) {
 				auto it = remaps.find(dec_action->m_node);
 				if (it != remaps.end()) {
 					dec_action->m_node = it->second;
+				}
+				continue;
+			}
+
+			auto signal_action = dynamic_cast<DeferredGlobalSignalConnect *>(a.get());
+			if (signal_action) {
+				auto it = remaps.find(signal_action->m_target);
+				if (it != remaps.end()) {
+					signal_action->m_target = it->second;
+					for (int32_t i = 0; i < signal_action->m_args.size(); i++) {
+						godot::Variant var = signal_action->m_args[i];
+						if (var.get_type() != Variant::Type::OBJECT) {
+							continue;
+						}
+						godot::Object *o = var.get_validated_object();
+						if (!o) {
+							continue;
+						}
+						auto ait = remaps.find((ObjectID)o->get_instance_id());
+						if (ait != remaps.end()) {
+							signal_action->m_args[i] = ObjectDB::get_instance(ait->second);
+						}
+					}
 				}
 			}
 		}

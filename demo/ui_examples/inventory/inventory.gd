@@ -32,7 +32,7 @@ func _ready() -> void:
 	).call_deferred()
 	
 	if not Engine.is_editor_hint():
-		connect("item_gui_input", _item_gui_input)
+		connect_signal("item_gui_input", _item_gui_input)
 
 func init_inventory() -> void:
 	for i in inventory_size:
@@ -47,7 +47,7 @@ var drag_ctrl: Control
 var active_drop_target: DropTarget
 var item_index: int
 
-func _item_gui_input(target: Control, event: InputEvent) -> void:
+func _item_gui_input(event: InputEvent, target: Control) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
 			if not drag_ctrl:

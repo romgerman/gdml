@@ -37,7 +37,9 @@ void TreeRendererVisitorContext::add_deferred_action(std::unique_ptr<DeferredAct
 
 void TreeRendererVisitorContext::flush_deferred_actions() {
 	std::set<godot::Ref<gdml::GDMLDecorator>> one_time_dec_calls;
-	for (std::unique_ptr<DeferredAction> &action : m_deferred_actions) {
+	std::vector<std::unique_ptr<traversal::DeferredAction>> deferred_action_copy;
+	deferred_action_copy.swap(m_deferred_actions);
+	for (std::unique_ptr<DeferredAction> &action : deferred_action_copy) {
 		auto dec_action = dynamic_cast<DeferredDecoratorCall *>(action.get());
 		if (dec_action) {
 			if (one_time_dec_calls.find(dec_action->m_decorator) == one_time_dec_calls.end()) {
@@ -115,16 +117,22 @@ void DeferredSignalUpdate::apply() {
 
 			if (target_obj) {
 				for (godot::StringName target_signal_name : target_pair.second.signals) {
-					if (!target_obj->is_connected(target_signal_name, m_result->m_connected_signals[signal_name].callable)) {
-						godot::Callable callable = m_result->m_connected_signals[signal_name].callable;
-						uint32_t flags = m_result->m_connected_signals[signal_name].flags;
+					auto it = m_result->m_connected_signals.find(signal_name);
+					if (it != m_result->m_connected_signals.end()) {
+						godot::Callable callable = it->second.callable;
+						uint32_t flags = it->second.flags;
 						godot::Callable bound_callable = callable.bindv(target_pair.second.args);
-						target_obj->connect(target_signal_name, bound_callable, flags);
+						if (!target_obj->is_connected(target_signal_name, bound_callable)) {
+							target_obj->connect(target_signal_name, bound_callable, flags);
+						}
 					}
 				}
 			}
 		}
 	}
+
+	// TODO: having two copies is confusing
+	m_result->m_signals = m_context->m_signals;
 }
 
 DeferredDecoratorCall::DeferredDecoratorCall(

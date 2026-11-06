@@ -23,7 +23,7 @@ signal item_gui_input
 component Item(item_info) = Control(anchors(0, 0, 1, 1)) {
 	name: "Item"
 	mouse_filter: Control.MOUSE_FILTER_PASS
-	@gui_input: item_gui_input
+	@gui_input: item_gui_input(self)
 	
 	ColorRect {
 		color: Color {
