@@ -68,6 +68,7 @@ protected:
 
 public:
 	GDMLRenderer();
+	~GDMLRenderer();
 	godot::Ref<GDMLResult> render_string(godot::Node *p_root, const godot::String &p_source, godot::Array variables = godot::Array());
 	godot::Ref<GDMLResult> render_markup(godot::Node *p_root, godot::GdmlScript *p_script, godot::Array variables = godot::Array());
 };

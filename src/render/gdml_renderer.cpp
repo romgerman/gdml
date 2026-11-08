@@ -114,6 +114,8 @@ void GDMLRenderer::_bind_methods() {
 GDMLRenderer::GDMLRenderer() :
 		m_parser(std::make_unique<GdmlParser>()) {}
 
+GDMLRenderer::~GDMLRenderer() = default;
+
 Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source, godot::Array variables) {
 	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
 
