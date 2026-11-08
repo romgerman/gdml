@@ -67,11 +67,24 @@ void GDMLNode::_notification(int p_what) {
 			render_in_game();
 		}
 	} break;
-	case NOTIFICATION_EDITOR_PRE_SAVE:
-	// TODO: do not save live nodes
-	break;
-	case NOTIFICATION_EDITOR_POST_SAVE:
-	break;
+	case NOTIFICATION_EDITOR_PRE_SAVE: {
+		for (Variant item : _renderer_result->get_root()->get_children()) {
+			Node *node = cast_to<Node>(item);
+			if (!temp_owner) {
+				temp_owner = node->get_owner();
+				node->set_owner(nullptr);
+			}
+		}
+	} break;
+	case NOTIFICATION_EDITOR_POST_SAVE: {
+		for (Variant item : _renderer_result->get_root()->get_children()) {
+			Node *node = cast_to<Node>(item);
+			if (temp_owner) {
+				node->set_owner(temp_owner);
+			}
+		}
+		temp_owner = nullptr;
+	} break;
 	}
 }
 

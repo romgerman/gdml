@@ -42,10 +42,9 @@ ScrollContainer(anchors(0, 0, 1, 1)) {
 			PanelContainer(
 				ref(item_refs, i),
 				transition(GDMLTransitionEnter {
-					tween_factory: trans_in;
-					enabled: is_trans_enabled;
-				}),
-				transition(GDMLTransitionExit {
+					tween_factory: trans_in
+					enabled: is_trans_enabled
+				}, GDMLTransitionExit {
 					tween_factory: trans_out
 					enabled: is_trans_enabled
 				})

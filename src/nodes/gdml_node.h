@@ -22,6 +22,7 @@ private:
 	Ref<gdml::GDMLResult> _renderer_result;
 	bool m_render_in_editor = true;
 	bool m_nodes_preview_enabled = false;
+	godot::Node *temp_owner = nullptr;
 
 	void render_in_editor();
 	void render_in_game();

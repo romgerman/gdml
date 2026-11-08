@@ -23,9 +23,7 @@ void GDMLResult::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("attach", "set_owner"), &GDMLResult::attach, DEFVAL(true));
 }
 
-GDMLResult::GDMLResult() {
-	// add_user_signal("signals_changed");
-}
+GDMLResult::GDMLResult() {}
 
 void GDMLResult::add_variable(String &p_name, Ref<reactive::GDMLAtom> atom) {
 	m_variables[p_name] = atom;
@@ -55,38 +53,6 @@ void GDMLResult::attach(bool p_set_owner) {
 		}
 		is_first_renderer = false;
 	}
-	// } else {
-	// 	gdml::Differ differ;
-	// 	std::vector<Node *> old_nodes;
-	// 	std::vector<Node *> new_nodes;
-	// 	for (Variant item : m_root->get_children()) {
-	// 		Node *node = cast_to<Node>(item);
-	// 		old_nodes.push_back(node);
-	// 	}
-	// 	for (Variant item : m_nodes) {
-	// 		Node *node = cast_to<Node>(item);
-	// 		new_nodes.push_back(node);
-	// 	}
-	// 	std::vector<gdml::DiffItem> diff;
-	// 	differ.diff(old_nodes, new_nodes, m_root, diff);
-	// 	for (gdml::DiffItem &item : diff) {
-	// 		if (item.type == gdml::DiffType::DELETE) {
-	// 			print_line("DELETE: ", item.node);
-	// 		} else if (item.type == gdml::DiffType::INSERT) {
-	// 			print_line("INSERT: ", item.node);
-	// 		} else if (item.type == gdml::DiffType::UPDATE) {
-	// 			print_line("UPDATE: ", item.node);
-	// 		}
-	// 	}
-	// 	gdml::TreePatcher patcher;
-	// 	patcher.patch(m_root, diff);
-	// 	for (Variant item : m_root->get_children()) {
-	// 		Node *node = cast_to<Node>(item);
-	// 		if (p_set_owner) {
-	// 			set_owner_recursively(node, m_root->get_owner() ? m_root->get_owner() : m_root);
-	// 		}
-	// 	}
-	// }
 }
 
 Node *GDMLResult::get_root() {
@@ -150,8 +116,6 @@ GDMLRenderer::GDMLRenderer() :
 
 Ref<GDMLResult> GDMLRenderer::render_string(Node *p_root, const String &p_source, godot::Array variables) {
 	std::shared_ptr<SourceFileNode> result = m_parser->parse(p_source);
-
-	print_line(traversal::GdmlPrinterVisitor().visit(*result));
 
 	for (GdmlParseError &err : m_parser->getParseErrors()) {
 		print_error(err.toString());

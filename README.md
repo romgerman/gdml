@@ -5,8 +5,8 @@
 
 A simple markup language for Godot 4+.
 
-Features:
-- Reactive
+## Features:
+- ### Reactive
 
     By defining top-level variables you can then re-render your UI just by changing their values
     ```coffee
@@ -18,7 +18,7 @@ Features:
         }
     }
     ```
-- Components
+- ### Components
 
     Define reusable parts of your UI
     ```coffee
@@ -32,7 +32,7 @@ Features:
         }
     }
     ```
-- Imports
+- ### Imports
 
     Import your components, custom scenes or GDScript Controls in your templates
     ```coffee
@@ -42,7 +42,7 @@ Features:
 
     ItemCmp {}
     ```
-- Decorators
+- ### Decorators
 
     You can change behavior of any node by providing a custom decorator to it. This can be used to simplify templates
     ```coffee
@@ -57,7 +57,7 @@ Features:
     # "anchors" is a decorator defined in GDScript
     VBoxContainer(anchors(0, 0, 1, 1)) {}
     ```
-- Custom functions
+- ### Custom functions
 
     You can define custom functions to be called from a template
     ```coffee
@@ -65,7 +65,7 @@ Features:
         texture: load("res://icon.svg") # load is a built-in function
     }
     ```
-- UI transitions based on Tweens
+- ### UI transitions based on Tweens
 
     Built-in "transition" decorator will help you to define enter/exit transitions
     ```coffee
@@ -79,7 +79,7 @@ Features:
         })
     ) {}
     ```
-- Control flow
+- ### Control flow
 
     Built-in `for` and `if` statements
     ```coffee
@@ -105,6 +105,6 @@ Features:
         }
     }
     ```
-- Renders in the editor
+- ### Renders in the editor
 
     All markup can be rendered in the editor and hot-reloaded when any of it changes when you use built-in GDMLNode
