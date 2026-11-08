@@ -45,7 +45,7 @@ jobs:
           sudo update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
           sudo update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
       - name: Install Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
       - name: Install SCons
         shell: bash
         run: |
@@ -53,12 +53,12 @@ jobs:
           python -m pip install scons
           scons --version
       - name: Checkout project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive
           fetch-depth: 0
       - name: Set up SCons cache
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
           path: |
             ${{ github.workspace }}/.scons-cache/
