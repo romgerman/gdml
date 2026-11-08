@@ -35,6 +35,7 @@ env.Append(LIBS=[tree_sitter_library])
 if env.get("is_msvc", False):
 	env.Append(CFLAGS=['/std:c11'])
 	env.Append(CFLAGS=['/TC'])
+	env.Append(CXXFLAGS=['/permissive-'])
 else:
     env.Append(CFLAGS=['-std=c11'])
 
