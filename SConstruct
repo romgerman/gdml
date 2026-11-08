@@ -32,8 +32,11 @@ sources = Glob("src/*.cpp") \
 
 tree_sitter_library = env.StaticLibrary("demo/addons/gdml/bin/tree-sitter", ["tree-sitter/lib/src/lib.c"])
 env.Append(LIBS=[tree_sitter_library])
-env.Append(CFLAGS=['/std:c11'])
-env.Append(CFLAGS=['/TC'])
+if env.get("is_msvc", False):
+	env.Append(CFLAGS=['/std:c11'])
+	env.Append(CFLAGS=['/TC'])
+else:
+    env.Append(CFLAGS=['-std=c11'])
 
 if env["platform"] == "macos":
     library = env.SharedLibrary(
