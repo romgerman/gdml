@@ -89,8 +89,8 @@ jobs:
             cp --no-clobber '${{ github.workspace }}/README.md' '${{ github.workspace }}/LICENSE' "$addon"
           done
           sed -i "s/^version=\".*\"/version=\"${{ steps.version.outputs.VERSION }}\"/" ${{ github.workspace }}/demo/addons/gdml/plugin.cfg
-          mkdir --parents ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.sha }}/
-          mv ${{ github.workspace }}/demo/addons/ ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.sha }}/
+          mkdir --parents ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.ref_name }}/
+          mv ${{ github.workspace }}/demo/addons/ ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.ref_name }}/
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
