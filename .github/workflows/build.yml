@@ -118,8 +118,13 @@ jobs:
         with:
           name: ${{ github.event.repository.name }}-${{ github.ref_name }}
           path: dist/
+      - name: Create archive
+        shell: bash
+        run: |
+          cd dist/${{ github.event.repository.name }}-${{ github.ref_name }}
+          zip -r ../../${{ github.event.repository.name }}-${{ github.ref_name }}.zip .
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          files: dist/**
+          files: ${{ github.event.repository.name }}-${{ github.ref_name }}.zip
           generate_release_notes: true
