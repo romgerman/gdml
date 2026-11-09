@@ -3,6 +3,8 @@
 name: Builds
 on:
   workflow_dispatch:
+  push:
+    tags: ['v*']
 
 jobs:
   build:
@@ -57,6 +59,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
       - name: Set up SCons cache
         uses: actions/cache@v5
         with:
@@ -83,6 +88,7 @@ jobs:
           for addon in ${{ github.workspace }}/demo/addons/*/; do
             cp --no-clobber '${{ github.workspace }}/README.md' '${{ github.workspace }}/LICENSE' "$addon"
           done
+          sed -i "s/^version=\".*\"/version=\"${{ steps.version.outputs.VERSION }}\"/" ${{ github.workspace }}/demo/addons/gdml/plugin.cfg
           mkdir --parents ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.sha }}/
           mv ${{ github.workspace }}/demo/addons/ ${{ github.workspace }}/github-artifact/${{ github.event.repository.name }}-${{ github.sha }}/
       - name: Upload artifact
@@ -96,7 +102,24 @@ jobs:
     needs: build
     steps:
       - name: Merge artifacts
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v5
         with:
           name: ${{ github.event.repository.name }}-${{ github.ref_name }}
           delete-merged: true
+  release:
+    needs: merge
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ github.event.repository.name }}-${{ github.ref_name }}
+          path: dist/
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**
+          generate_release_notes: true
