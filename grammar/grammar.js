@@ -51,6 +51,7 @@ module.exports = grammar({
       field('decorators', optional(seq(
         '(',
         optional(seq($.function_call, repeat(seq(',', $.function_call)))),
+        optional(','),
         ')'
       ))),
       '{',
@@ -70,6 +71,7 @@ module.exports = grammar({
       field('decorators', optional(seq(
         '(',
         optional(seq($.function_call, repeat(seq(',', $.function_call)))),
+        optional(','),
         ')'
       ))),
       '{',
@@ -118,6 +120,7 @@ module.exports = grammar({
             $.identifier
           ))
         ),
+        optional(','),
         ')'
       ))),
       field("value", seq(

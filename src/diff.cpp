@@ -107,7 +107,7 @@ void gdml::Differ::diff(
 			matches.push_back({ a, b });
 
 			DiffItem item;
-			item.type = DiffType::UPDATE;
+			item.type = DiffOp::UPDATE;
 			item.node = b;
 			item.old_node = a;
 			diff_node_props(a, b, item.props);
@@ -126,22 +126,23 @@ void gdml::Differ::diff(
 		if (prev_vert) {
 			// insertion
 			godot::Node *b = nodes_b[y - 1];
-			int32_t b_index = b->get_index() == 0xFFFFFFFF ? 0 : b->get_index();
+			//int32_t b_index = b->get_index() == 0xFFFFFFFF ? 0 : b->get_index();
 			DiffItem item;
-			item.type = DiffType::INSERT;
+			item.type = DiffOp::INSERT;
 			item.node = b;
-			item.index = b_index;
+			item.index = prev_y;
 			item.parent = parent_a;
 			diffs.push_back(item);
 			y--;
 		} else {
 			// deletion
 			godot::Node *a = nodes_a_filtered[x - 1];
-			int32_t a_index = a->get_index() == 0xFFFFFFFF ? 0 : a->get_index();
+			// int32_t a_index = a->get_index() == 0xFFFFFFFF ? 0 : a->get_index();
 			DiffItem item;
-			item.type = DiffType::DELETE;
+			item.type = DiffOp::DELETE;
 			item.node = a;
-			item.index = a_index + 1;
+			item.index = prev_x;
+			item.parent = parent_a;
 			diffs.push_back(item);
 			x--;
 		}
@@ -151,11 +152,61 @@ void gdml::Differ::diff(
 		}
 	}
 
-	// reverse the edits from backwards to forwards
-	for (auto it = diffs.rbegin(); it != diffs.rend(); ++it) {
-		out_diff.push_back(*it);
+	std::vector<bool> ops_to_erase(diffs.size(), false);
+	std::vector<DiffItem> moves;
+	std::vector<DiffItem> move_updates;
+
+	for (size_t i = 0; i < diffs.size(); i++) {
+		if (diffs[i].type != DiffOp::DELETE) {
+			continue;
+		}
+
+		for (size_t j = 0; j < diffs.size(); j++) {
+			if (ops_to_erase[j] || diffs[j].type != DiffOp::INSERT) {
+				continue;
+			}
+
+			if (is_node_equal(diffs[i].node, diffs[j].node)) {
+				DiffItem item;
+				item.type = DiffOp::MOVE;
+				item.old_node = diffs[i].node;
+				item.node = diffs[j].node;
+				item.old_index = diffs[i].index;
+				item.index = diffs[j].index;
+				item.parent = diffs[i].parent;
+				moves.push_back(item);
+				
+				matches.push_back({ item.old_node, item.node });
+				DiffItem update_item;
+				update_item.type = DiffOp::UPDATE;
+				update_item.old_node = item.old_node;
+				update_item.node = item.node;
+				diff_node_props(item.old_node, item.node, update_item.props);
+				if (!update_item.props.empty()) {
+					move_updates.push_back(update_item);
+				}
+
+				ops_to_erase[i] = true;
+				ops_to_erase[j] = true;
+				break;
+			}
+		}
 	}
 
+	std::sort(moves.begin(), moves.end(), [](DiffItem &a, DiffItem &b) {
+		return a.index < b.index;
+	});
+
+	// reverse the edits from backwards to forwards
+	for (int32_t i = diffs.size() - 1; i >= 0; i--) {
+		if (!ops_to_erase[i]) {
+			out_diff.push_back(diffs[i]);
+		}
+	}
+
+	out_diff.insert(out_diff.end(), move_updates.begin(), move_updates.end());
+	out_diff.insert(out_diff.end(), moves.begin(), moves.end());
+	
 	for (auto it = matches.rbegin(); it != matches.rend(); ++it) {
 		std::vector<godot::Node*> children_a;
 		std::vector<godot::Node*> children_b;

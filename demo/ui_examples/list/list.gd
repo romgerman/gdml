@@ -70,12 +70,13 @@ func _process(delta: float) -> void:
 				)
 	else:
 		for c in ctrls.values():
-			if is_instance_valid(c):
-				c.offset_transform_position.y = lerpf(
-					c.offset_transform_position.y,
-					0.0,
-					delta * 10.0
-				)
+			if not is_instance_valid(c):
+				continue
+			c.offset_transform_position.y = lerpf(
+				c.offset_transform_position.y,
+				0.0,
+				delta * 10.0
+			)
 
 func _gui_input(event: InputEvent) -> void:
 	if is_dragging and dragged_ctrl:
@@ -111,6 +112,7 @@ func _drag_end() -> void:
 		items.value = vals
 	get_variable("is_trans_enabled").value = true
 	is_dragging = false
+	#dragged_ctrl.offset_transform_position = Vector2.ZERO
 	dragged_ctrl = null
 	dragged_index = -1
 

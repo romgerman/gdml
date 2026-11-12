@@ -8,7 +8,7 @@
 
 namespace gdml {
 
-enum class DiffType {
+enum class DiffOp {
 	INSERT,
 	DELETE,
 	UPDATE,
@@ -16,10 +16,11 @@ enum class DiffType {
 };
 
 struct DiffItem {
-	DiffType type;
-	godot::Node *node = nullptr;
+	DiffOp type;
 	godot::Node *old_node = nullptr;
+	godot::Node *node = nullptr;
 	godot::Node *parent = nullptr;
+	int32_t old_index;
 	int32_t index;
 	std::vector<godot::StringName> props;
 };

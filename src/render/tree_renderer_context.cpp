@@ -146,6 +146,7 @@ DeferredDecoratorCall::DeferredDecoratorCall(
 void DeferredDecoratorCall::apply() {
 	godot::Node *node = godot::Object::cast_to<godot::Node>(godot::ObjectDB::get_instance(m_node));
 	if (!node) {
+		godot::print_error("Invalid node for a decorator call");
 		return;
 	}
 
