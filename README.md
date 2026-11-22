@@ -3,7 +3,7 @@
 > [!WARNING]
 > This is a hobby project
 
-A simple markup language for Godot 4+.
+A simple markup language for Godot 4.5+.
 
 ## Features:
 - ### Reactive

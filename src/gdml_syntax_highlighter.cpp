@@ -3,6 +3,7 @@
 #include "tree_sitter.h"
 
 #include <functional>
+#include <set>
 
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/editor_settings.hpp>

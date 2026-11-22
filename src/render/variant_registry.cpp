@@ -1,5 +1,7 @@
 #include "variant_registry.h"
 
+#include <godot_cpp/core/gdextension_interface_loader.hpp>
+
 using namespace godot;
 
 namespace traversal {
@@ -58,7 +60,7 @@ bool VariantRegistry::is_builtin(const godot::String &name) {
 bool VariantRegistry::get_constant(const godot::String &type, const godot::StringName &name, godot::Variant &out) {
 	initialize_map();
 
-	internal::gdextension_interface_variant_get_constant_value(
+	godot::gdextension_interface::variant_get_constant_value(
 			(GDExtensionVariantType)m_variant_type_map[type],
 			name._native_ptr(),
 			&out);
@@ -73,7 +75,7 @@ bool VariantRegistry::construct(const godot::String &name, godot::Variant &out) 
 	initialize_map();
 	
 	GDExtensionCallError error;
-	internal::gdextension_interface_variant_construct(
+	godot::gdextension_interface::variant_construct(
 			(GDExtensionVariantType)m_variant_type_map[name],
 			out._native_ptr(),
 			nullptr,
